@@ -122,7 +122,8 @@
 
 ;; Mode definition.
 
-;; FIXME: Syntax table based on tuareg-mode. Not really tested.
+;; FIXME: Syntax table cobbled together from entries in tuareg-mode and
+;; fsharp-mode. Not really tested.
 (defvar swift-mode-syntax-table
   (let ((st (make-syntax-table)))
     (modify-syntax-entry ?_ "_" st)
@@ -130,8 +131,14 @@
     (modify-syntax-entry ?? ". p" st)
     (modify-syntax-entry ?& ". p" st)
     (modify-syntax-entry ?! ". p" st)
+
+    ;; C++-style comments (//)
     (modify-syntax-entry ?/ ". 12b" st)
     (modify-syntax-entry ?\n "> b" st)
+    ;; C-style comments (/* */)
+    (modify-syntax-entry ?/ "()1n" st)
+    (modify-syntax-entry ?*  ". 23n" st)
+    (modify-syntax-entry ?/ ")(4n" st)
 
     (dolist (c '(?$ ?% ?+ ?- ?/ ?: ?< ?= ?> ?@ ?^ ?|))
       (modify-syntax-entry c "." st))
