@@ -31,11 +31,19 @@
 
 ;; Font lock.
 
-(defvar swift-mode--declaration-keywords
-  '("class" "deinit" "enum" "extension" "func" "import" "init" "let"
-    "protocol" "static" "struct" "subscript" "typealias" "var"))
+(defvar swift-mode--type-decl-keywords
+  '("class" "enum" "protocol" "struct" "typealias"))
 
-(defvar swift-mode--statment-keywords
+(defvar swift-mode--val-decl-keywords
+  '("let" "var"))
+
+(defvar swift-mode--fn-decl-keywords
+  '("deinit" "func" "init"))
+
+(defvar swift-mode--misc-keywords
+  '("import" "static" "subscript" "extension" "import"))
+
+(defvar swift-mode--statement-keywords
   '("break" "case" "continue" "default" "do" "else" "fallthrough"
     "if" "in" "for" "return" "switch" "where" "while"))
 
@@ -49,8 +57,10 @@
     "set" "unowned" "unowned(safe)" "unowned(unsafe)" "weak" "willSet"))
 
 (defvar swift-mode--keywords
-  (-flatten (list swift-mode--declaration-keywords
-                  swift-mode--statment-keywords
+  (-flatten (list swift-mode--type-decl-keywords
+                  swift-mode--val-decl-keywords
+                  swift-mode--fn-decl-keywords
+                  swift-mode--statement-keywords
                   swift-mode--expression-keywords
                   swift-mode--contextual-keywords))
   "Keywords used in the Swift language.")
@@ -64,12 +74,12 @@
     ;; Swift allows reserved words to be used as identifiers when enclosed
     ;; with backticks, in which case they should be highlighted as
     ;; identifiers, not keywords.
-    (cons
-     (rx-to-string `(and (or bol (not (any "`"))) bow
-                         (group (or ,@swift-mode--keywords))
-                         eow)
-                   t)
-     1)
+    (cons (rx-to-string
+           `(and (or bol (not (any "`"))) bow
+                 (group (or ,@swift-mode--keywords))
+                 eow)
+           t)
+          1)
 
     ;; Types
     ;;
@@ -80,12 +90,28 @@
 
     ;; Function names
     ;;
-    ;; Any string beginning after the `func' keyword is highlighted as a
-    ;; function name.
+    ;; Any token beginning after `func' is highlighted as a function name.
     (cons (rx bow "func" eow (+ space) (group bow (+ word) eow))
-          (list 1 font-lock-function-name-face)))
-   )
-  "Font lock values for `swift-mode'.")
+          (list 1 font-lock-function-name-face))
+
+    ;; Value bindings
+    ;;
+    ;; Any token beginning after `let' or `var' is highlighted as an
+    ;; identifier.
+    (cons (rx-to-string `(and bow
+                              (or ,@swift-mode--val-decl-keywords)
+                              eow
+                              (+ space)
+                              (group bow (+ word) eow))
+                        t)
+          (list 1 font-lock-variable-name-face))
+
+    ;; Imported modules
+    ;;
+    ;; Highlight the names of imported modules. Use `font-lock-string-face' for
+    ;; consistency with C modes.
+    (cons (rx bow "import" eow (+ space) (group (+ word)))
+          (list 1 font-lock-string-face)))))
 
 ;; Mode definition.
 
