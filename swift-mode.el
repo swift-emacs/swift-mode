@@ -2,8 +2,9 @@
 
 ;; Copyright (C) 2014 Chris Barrett
 
-;; Author: Chris Barrett <>
+;; Author: Chris Barrett <chris.d.barrett@me.com>
 ;; Version: 0.1
+;; Package-Requires: ((dash "2.2.0") (emacs "24.1"))
 
 ;; This file is not part of GNU Emacs.
 
