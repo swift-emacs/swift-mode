@@ -82,7 +82,7 @@
     ;;
     ;; Any token beginning with an uppercase character is highlighted as a
     ;; type.
-    (cons (rx bow upper (+ word) eow)
+    (cons (rx bow upper (* word) eow)
           font-lock-type-face)
 
     ;; Function names
