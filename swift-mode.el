@@ -106,6 +106,16 @@
                         t)
           (list 1 font-lock-variable-name-face))
 
+    ;; Use high-visibility face for pattern match wildcards.
+    (cons (rx (not (any word digit)) (group "_") (or eol (not (any word digit))))
+          (list 1 font-lock-negation-char-face))
+
+    ;; Attributes
+    ;;
+    ;; Use string face for attribute name.
+    (cons (rx (or bol space)(group "@" (+ word)) eow)
+          (list 1 font-lock-string-face))
+
     ;; Imported modules
     ;;
     ;; Highlight the names of imported modules. Use `font-lock-string-face' for
