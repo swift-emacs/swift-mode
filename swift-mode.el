@@ -110,11 +110,6 @@
     st)
   "Syntax table for `swift-mode'.")
 
-(defvar swift-mode-map
-  (let ((map (make-sparse-keymap)))
-    map)
-  "Keymap used in `swift-mode'.")
-
 (define-derived-mode swift-mode prog-mode "Swift"
   "Major mode for Apple's Swift programming language.
 
