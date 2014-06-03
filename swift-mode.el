@@ -48,10 +48,6 @@
   '("break" "case" "continue" "default" "do" "else" "fallthrough"
     "if" "in" "for" "return" "switch" "where" "while"))
 
-(defvar swift-mode--expression-keywords
-  '("as" "dynamicType" "is" "new" "super" "self" "Self" "Type"
-    "__COLUMN__" "__FILE__" "__FUNCTION__" "__LINE__"))
-
 (defvar swift-mode--contextual-keywords
   '("associativity" "didSet" "get" "infix" "inout" "left" "mutating" "none"
     "nonmutating" "operator" "override" "postfix" "precedence" "prefix" "right"
@@ -61,8 +57,8 @@
   (-flatten (list swift-mode--type-decl-keywords
                   swift-mode--val-decl-keywords
                   swift-mode--fn-decl-keywords
+                  swift-mode--misc-keywords
                   swift-mode--statement-keywords
-                  swift-mode--expression-keywords
                   swift-mode--contextual-keywords))
   "Keywords used in the Swift language.")
 
