@@ -89,6 +89,27 @@
 
 ;; Mode definition.
 
+;; FIXME: Syntax table based on tuareg-mode. Not really tested.
+(defvar swift-mode-syntax-table
+  (let ((st (make-syntax-table)))
+    (modify-syntax-entry ?_ "_" st)
+    (modify-syntax-entry ?. "'" st)     ; Make qualified names a single symbol.
+    (modify-syntax-entry ?? ". p" st)
+    (modify-syntax-entry ?& ". p" st)
+    (modify-syntax-entry ?! ". p" st)
+
+    (dolist (c '(?$ ?% ?+ ?- ?/ ?: ?< ?= ?> ?@ ?^ ?|))
+      (modify-syntax-entry c "." st))
+
+    (modify-syntax-entry ?' "_" st)      ; ' is part of symbols (for primes).
+    (modify-syntax-entry ?\" "\"" st)    ; " is a string delimiter
+    (modify-syntax-entry ?\\ "\\" st)
+    (modify-syntax-entry ?*  ". 23" st)
+    (modify-syntax-entry ?\( "()1n" st)
+    (modify-syntax-entry ?\) ")(4n" st)
+    st)
+  "Syntax table for `swift-mode'.")
+
 (defvar swift-mode-map
   (let ((map (make-sparse-keymap)))
     map)
@@ -99,7 +120,11 @@
 
 \\<swift-mode-map>"
   :group 'swift
-  (setq-local font-lock-defaults swift-mode--font-lock-defaults))
+  (setq-local font-lock-defaults swift-mode--font-lock-defaults)
+  (setq-local comment-start "//")
+  (setq-local tab-width 4)
+  (setq-local indent-tabs-mode nil)
+  )
 
 (provide 'swift-mode)
 
