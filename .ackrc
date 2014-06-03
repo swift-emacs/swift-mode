@@ -1,0 +1,4 @@
+--ignore-dir=.cask
+--ignore-file=match:flycheck-
+--ignore-file=match:info$
+--ignore-file=match:texi$
