@@ -151,9 +151,11 @@
 \\<swift-mode-map>"
   :group 'swift
   (setq-local font-lock-defaults swift-mode--font-lock-defaults)
-  (setq-local comment-start "//")
+  (setq-local comment-start "// ")
+  (setq-local comment-end "")
   (setq-local tab-width 4)
   (setq-local indent-tabs-mode nil)
+  (setq-local comment-start-skip (rx "//" (* "/") (* space)))
   )
 
 (provide 'swift-mode)
