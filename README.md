@@ -2,7 +2,10 @@
 
 ## Summary
 
-Major-mode for Apple's Swift programming language.
+Major-mode for Apple's Swift programming language. Currently provides:
+
+- syntax highlighting
+- indentation
 
 This is currently at an early stage of development and there's plenty of work to
 do. Check the issue tracker.
@@ -20,6 +23,10 @@ build the project.
 ## Contributing
 
 Yes, please do! See CONTRIBUTING.md for guidelines.
+
+## Acknowledgements
+
+The indentation code is heavily based on [rust-mode]()'s implementation.
 
 Thanks to the following users for their contributions:
 
