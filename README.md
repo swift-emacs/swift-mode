@@ -19,6 +19,10 @@ build the project.
 
 Yes, please do! See CONTRIBUTING.md for guidelines.
 
+Thanks to the following users for their contributions:
+
+- [@syohex](https://github.com/syohex) (Syohei Yoshida)
+
 ## License
 
 See COPYING. Copyright (c) 2014 Chris Barrett.
