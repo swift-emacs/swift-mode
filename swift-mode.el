@@ -62,6 +62,9 @@
                   swift-mode--contextual-keywords))
   "Keywords used in the Swift language.")
 
+(defvar swift-mode--constants
+  '("true" "false" "nil"))
+
 (defvar swift-mode--font-lock-defaults
   (list
    (list
@@ -106,6 +109,12 @@
     ;; Use high-visibility face for pattern match wildcards.
     (cons (rx (not (any word digit)) (group "_") (or eol (not (any word digit))))
           (list 1 font-lock-negation-char-face))
+
+    ;; Constants
+    ;;
+    ;; Highlight nil and boolean literals.
+    (cons (rx-to-string `(and bow (or ,@swift-mode--constants) eow))
+          font-lock-constant-face)
 
     ;; Attributes
     ;;
