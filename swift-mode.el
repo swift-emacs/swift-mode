@@ -30,6 +30,13 @@
 (require 'dash)
 (require 'rx)
 
+(eval-and-compile
+  ;; Added in Emacs 24.3
+  (unless (fboundp 'setq-local)
+    (defmacro setq-local (var val)
+      "Set variable VAR to value VAL in current buffer."
+      (list 'set (list 'make-local-variable (list 'quote var)) val))))
+
 ;; Font lock.
 
 (defvar swift-mode--type-decl-keywords
