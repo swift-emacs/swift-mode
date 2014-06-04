@@ -30,6 +30,8 @@
 (require 'dash)
 (require 'rx)
 
+(require 'swift-indentation)
+
 ;; Font lock.
 
 (defvar swift-mode--type-decl-keywords
@@ -131,35 +133,29 @@
 
 ;; Mode definition.
 
-;; FIXME: Syntax table cobbled together from entries in tuareg-mode and
-;; fsharp-mode. Not really tested.
+;; HACK: This syntax table is lifted directly from `rust-mode'. There may be
+;; corner cases in the Swift syntax that are not accounted for.
 (defvar swift-mode-syntax-table
-  (let ((st (make-syntax-table)))
-    (modify-syntax-entry ?_ "_" st)
-    (modify-syntax-entry ?. "'" st)     ; Make qualified names a single symbol.
-    (modify-syntax-entry ?? ". p" st)
-    (modify-syntax-entry ?& ". p" st)
-    (modify-syntax-entry ?! ". p" st)
+  (let ((table (make-syntax-table)))
 
-    ;; C++-style comments (//)
-    (modify-syntax-entry ?/ ". 12b" st)
-    (modify-syntax-entry ?\n "> b" st)
-    ;; C-style comments (/* */)
-    (modify-syntax-entry ?/ "()1n" st)
-    (modify-syntax-entry ?*  ". 23n" st)
-    (modify-syntax-entry ?/ ")(4n" st)
+    ;; Operators
+    (dolist (i '(?+ ?- ?* ?/ ?& ?| ?^ ?! ?< ?> ?~ ?@))
+      (modify-syntax-entry i "." table))
 
-    (dolist (c '(?$ ?% ?+ ?- ?/ ?: ?< ?= ?> ?@ ?^ ?|))
-      (modify-syntax-entry c "." st))
+    ;; Strings
+    (modify-syntax-entry ?\" "\"" table)
+    (modify-syntax-entry ?\\ "\\" table)
 
-    (modify-syntax-entry ?' "_" st)      ; ' is part of symbols (for primes).
-    (modify-syntax-entry ?\" "\"" st)    ; " is a string delimiter
-    (modify-syntax-entry ?\\ "\\" st)
-    (modify-syntax-entry ?*  ". 23" st)
-    (modify-syntax-entry ?\( "()1n" st)
-    (modify-syntax-entry ?\) ")(4n" st)
-    st)
-  "Syntax table for `swift-mode'.")
+    ;; _ is a word-char
+    (modify-syntax-entry ?_ "w" table)
+
+    ;; Comments
+    (modify-syntax-entry ?/  ". 124b" table)
+    (modify-syntax-entry ?*  ". 23"   table)
+    (modify-syntax-entry ?\n "> b"    table)
+    (modify-syntax-entry ?\^m "> b"   table)
+
+    table))
 
 ;;;###autoload
 (define-derived-mode swift-mode prog-mode "Swift"
@@ -167,6 +163,7 @@
 
 \\<swift-mode-map>"
   :group 'swift
+  :syntax-table swift-mode-syntax-table
   (setq-local font-lock-defaults swift-mode--font-lock-defaults)
   (setq-local comment-start "// ")
   (setq-local comment-end "")
