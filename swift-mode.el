@@ -161,6 +161,7 @@
     st)
   "Syntax table for `swift-mode'.")
 
+;;;###autoload
 (define-derived-mode swift-mode prog-mode "Swift"
   "Major mode for Apple's Swift programming language.
 
