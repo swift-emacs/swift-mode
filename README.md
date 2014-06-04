@@ -7,6 +7,8 @@ Major-mode for Apple's Swift programming language.
 This is currently at an early stage of development and there's plenty of work to
 do. Check the issue tracker.
 
+Requires Emacs 24 or later.
+
 ## Installing
 
 You will need Emacs 24+, `make` and [Cask](https://github.com/cask/cask) to
