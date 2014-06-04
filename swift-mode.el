@@ -174,8 +174,18 @@
   (setq-local comment-end "")
   (setq-local tab-width 4)
   (setq-local indent-tabs-mode nil)
-  (setq-local comment-start-skip (rx "//" (* "/") (* space)))
-  )
+
+  (setq-local comment-start-skip
+              (rx (or (and "//" (* "/")) (and "/*" (* "*"))) (* space)))
+
+  (setq-local paragraph-start
+              (rx-to-string `(and (* space)
+                                  (or (regex ,comment-start-skip)
+                                      (and "*" (? "/") (* space)))
+                                  eol)
+                            t))
+
+  (setq-local paragraph-separate paragraph-start))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.swift$" . swift-mode))
