@@ -20,7 +20,7 @@ Requires Emacs 24 or later.
 
 You can install a snapshot version of `swift-mode` from the
 [MELPA](http://melpa.milkbox.net) repository. The version of
-`switf-mode` there will always be up-to-date, but it might be unstable
+`swift-mode` there will always be up-to-date, but it might be unstable
 (albeit rarely).
 
 #### MELPA Stable
