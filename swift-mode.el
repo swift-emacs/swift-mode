@@ -30,8 +30,6 @@
 (require 'dash)
 (require 'rx)
 
-(require 'swift-indentation)
-
 ;; Font lock.
 
 (defvar swift-mode--type-decl-keywords
