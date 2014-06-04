@@ -51,7 +51,7 @@
 (defvar swift-mode--contextual-keywords
   '("associativity" "didSet" "get" "infix" "inout" "left" "mutating" "none"
     "nonmutating" "operator" "override" "postfix" "precedence" "prefix" "right"
-    "set" "unowned" "unowned(safe)" "unowned(unsafe)" "weak" "willSet"))
+    "set" "unowned" "unowned(safe)" "unowned(unsafe)" "weak" "willSet" "convenience"))
 
 (defvar swift-mode--keywords
   (-flatten (list swift-mode--type-decl-keywords
