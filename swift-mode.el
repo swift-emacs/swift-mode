@@ -30,6 +30,8 @@
 (require 'dash)
 (require 'rx)
 
+(require 'swift-indent)
+
 (eval-and-compile
   ;; Added in Emacs 24.3
   (unless (fboundp 'setq-local)
@@ -172,8 +174,9 @@
   (setq-local font-lock-defaults swift-mode--font-lock-defaults)
   (setq-local comment-start "// ")
   (setq-local comment-end "")
-  (setq-local tab-width 4)
+  (setq-local tab-width swift-indent-offset)
   (setq-local indent-tabs-mode nil)
+  (setq-local indent-line-function 'swift-indent-line)
 
   (setq-local comment-start-skip
               (rx (or (and "//" (* "/")) (and "/*" (* "*"))) (* space)))
