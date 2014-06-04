@@ -177,6 +177,9 @@
   (setq-local comment-start-skip (rx "//" (* "/") (* space)))
   )
 
+;;;###autoload
+(add-to-list 'auto-mode-alist '("\\.swift$" . swift-mode))
+
 (provide 'swift-mode)
 
 ;;; swift-mode.el ends here
