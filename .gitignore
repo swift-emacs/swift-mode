@@ -1,3 +1,4 @@
 /.cask/
 *.elc
 /swift-mode.elc
+/dist/
