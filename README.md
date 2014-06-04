@@ -14,6 +14,22 @@ Requires Emacs 24 or later.
 
 ## Installing
 
+### package.el
+
+#### MELPA
+
+You can install a snapshot version of `swift-mode` from the
+[MELPA](http://melpa.milkbox.net) repository. The version of
+`swift-mode` there will always be up-to-date, but it might be unstable
+(albeit rarely).
+
+#### MELPA Stable
+
+You can install the last stable version of `swift-mode` from the
+[MELPA Stable](http://melpa-stable.milkbox.net) repository.
+
+### Manual
+
 You will need Emacs 24+, `make` and [Cask](https://github.com/cask/cask) to
 build the project.
 
