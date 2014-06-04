@@ -143,23 +143,25 @@ Returns the column number as an integer."
             ;; Cases are indented to the same level as the enclosing switch statement.
             ((looking-at (rx bow (or "case" "default") eow))
              (- baseline swift-indent-offset))
+
+            ;; If we are at the first line, no indentation is needed, so stay at baseline.
             ((save-excursion
                (swift-indent--rewind-irrelevant)
                ;; Point is now at the end of the previous line
-               (or
-                ;; If we are at the first line, no indentation is needed, so stay at baseline...
-                (= 1 (line-number-at-pos (point)))
-                ;; ..or if the previous line ends with any of these:
-                ;;     { ? : ( , ; [ }
-                ;; then we are at the beginning of an expression, so stay on the baseline...
-                (looking-back "[(,:;?[{}]\\|[^|]|")
-                ;; or if the previous line is the end of an attribute, stay at the baseline...
-                (progn (swift-indent--rewind-to-beginning-of-current-level-expr) (looking-at "#"))))
+               (= 1 (line-number-at-pos (point))))
              baseline)
+
+            ((save-excursion
+               (swift-indent--rewind-irrelevant)
+               ;; Point is now at the end of the previous line
+               ;; If the previous line ends with any of these:
+               ;;     { ? : ( , ; [ }
+               ;; then we are at the beginning of an expression, so stay on the baseline.
+               (looking-back "[(,:;?[{}]\\|[^|]|"))
+             baseline)
+
             (t
-             ;; Otherwise, we are continuing the same expression from the previous line,
-             ;; so add one additional indent level
-             (+ baseline swift-indent-offset))))))))))
+             baseline)))))))))
 
 (defun swift-indent-line ()
   "Indent the current line.  Also see `swift-indent-offset'."
