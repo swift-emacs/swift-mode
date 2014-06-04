@@ -26,7 +26,9 @@ Yes, please do! See CONTRIBUTING.md for guidelines.
 
 ## Acknowledgements
 
-The indentation code is heavily based on [rust-mode]()'s implementation.
+The indentation code is heavily based on
+[rust-mode](https://github.com/mozilla/rust/tree/master/src/etc/emacs)'s
+implementation.
 
 Thanks to the following users for their contributions:
 
