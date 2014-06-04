@@ -99,7 +99,7 @@
                               (or ,@swift-mode--val-decl-keywords)
                               eow
                               (+ space)
-                              (group bow (+ word) eow))
+                              (group (? "`") bow (+ word) eow (? "`")))
                         t)
           (list 1 font-lock-variable-name-face))
 
