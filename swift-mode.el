@@ -72,11 +72,12 @@
   "Move backward past spaces and comments."
   (let ((starting (point)))
     (skip-chars-backward "[:space:]\n")
-    (if (looking-back "\\*/") (backward-char))
-    (if (swift-indent--in-str-or-cmnt)
-        (swift-indent--rewind-past-str-cmnt))
-    (if (/= starting (point))
-        (swift-indent--rewind-irrelevant))))
+    (when (looking-back "\\*/")
+      (backward-char))
+    (when (swift-indent--in-str-or-cmnt)
+      (swift-indent--rewind-past-str-cmnt))
+    (when (/= starting (point))
+      (swift-indent--rewind-irrelevant))))
 
 (defun swift-indent--align-to-expr-after-brace ()
   "Return the column to use for aligning an expression after a brace."
