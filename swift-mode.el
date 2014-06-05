@@ -52,7 +52,7 @@
   "Return the paren level at point."
   (nth 0 (syntax-ppss)))
 
-(defun swift-indent--in-str-or-cmnt ()
+(defun swift-indent--in-str-or-cmnt? ()
   "Non-nil if point is in a string or comment."
   (nth 8 (syntax-ppss)))
 
@@ -74,7 +74,7 @@
     (skip-chars-backward "[:space:]\n")
     (when (looking-back "\\*/")
       (backward-char))
-    (when (swift-indent--in-str-or-cmnt)
+    (when (swift-indent--in-str-or-cmnt?)
       (swift-indent--rewind-past-str-cmnt))
     (when (/= starting (point))
       (swift-indent--rewind-irrelevant))))
