@@ -15,7 +15,7 @@ repository. Follow the guidelines below to make sure everything goes smoothly.
 
 - Perform all changes on a topic branch for easier merging
 - Follow the coding conventions already in use
-- Verify Emacs Lisp code with =checkdoc=
+- Verify Emacs Lisp code with `checkdoc`
 - Add unit tests whenever possible
 - Open a [pull request](https://help.github.com/articles/using-pull-requests)
   relating to a single issue.
