@@ -1,4 +1,4 @@
-;;; swift-mode.el --- Major-mode for Apple's Swift programming language.
+;;; swift-mode.el --- Major-mode for Apple's Swift programming language. -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2014 Chris Barrett
 
