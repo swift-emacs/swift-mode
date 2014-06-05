@@ -46,6 +46,11 @@
   :group 'swift
   :type 'integer)
 
+(defcustom swift-indent-switch-case-offset 0
+  "Defines the indentation offset for cases in a switch statement."
+  :group 'swift
+  :type 'integer)
+
 ;;; Indentation
 
 (defun swift-indent--paren-level ()
@@ -153,9 +158,11 @@ Returns the column number as an integer."
            (cond
             ((swift-indent--at-enum-case?)
              baseline)
-            ;; Cases are indented to the same level as the enclosing switch statement.
+            ;; Cases are indented to the same level as the enclosing switch
+            ;; statement, plus a user-customisable offset.
             ((looking-at (rx bow (or "case" "default") eow))
-             (- baseline swift-indent-offset))
+             (+ (- baseline swift-indent-offset)
+                swift-indent-switch-case-offset))
             (t
              baseline)))))))))
 

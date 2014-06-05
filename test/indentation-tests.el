@@ -30,7 +30,7 @@
 (require 'swift-mode)
 (require 's)
 
-(defmacro check-indentation (description before after)
+(defmacro check-indentation (description before after &optional var-bindings)
   "Declare an ert test for indentation behaviour.
 The test will check that the swift indentation command changes the buffer
 from one state to another.  It will also test that point is moved to an
@@ -42,7 +42,10 @@ BEFORE is the buffer string before indenting, where a pipe (|) represents
 point.
 
 AFTER is the expected buffer string after indenting, where a pipe (|)
-represents the expected position of point."
+represents the expected position of point.
+
+VAR-BINDINGS is an optional let-bindings list.  It can be used to set the
+values of customisable variables."
   (declare (indent 1))
   (let ((fname (intern (format "indentation/%s" description))))
     `(ert-deftest ,fname ()
@@ -50,8 +53,10 @@ represents the expected position of point."
               (expected-cursor-pos (1+ (s-index-of "|" after)))
               (expected-state (delete ?| after))
 
-              ;; Set the offset to a consistent value for tests.
-              (swift-indent-offset 4))
+              ;; Bind customisable vars to default values for tests.
+              (swift-indent-offset 4)
+              (swift-indent-switch-case-offset 0)
+              ,@var-bindings)
          (with-temp-buffer
            (insert ,before)
            (goto-char (point-min))
@@ -228,6 +233,31 @@ switch true {
     }
 }
 ")
+
+(check-indentation indents-case-statements-to-user-defined-offset/1
+  "
+switch true {
+    |case
+}
+" "
+switch true {
+  |case
+}
+"
+((swift-indent-switch-case-offset 2)))
+
+(check-indentation indents-case-statements-to-user-defined-offset/2
+  "
+switch true {
+          |case
+}
+" "
+switch true {
+  |case
+}
+"
+((swift-indent-switch-case-offset 2)))
+
 
 (check-indentation indents-case-statements-in-enum/1
   "
