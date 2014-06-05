@@ -1,4 +1,5 @@
 [![License GPL 3][badge-license]][copying]
+[![Build Status][badge-travis]][travis]
 
 # swift-mode
 
@@ -70,6 +71,8 @@ Thanks to the following users for their contributions:
 See [COPYING][]. Copyright (c) 2014 Chris Barrett.
 
 [badge-license]: https://img.shields.io/badge/license-GPL_3-green.svg
+[badge-travis]: https://travis-ci.org/chrisbarrett/swift-mode.png?branch=master
+[travis]: https://travis-ci.org/chrisbarrett/swift-mode
 [COPYING]: https://github.com/chrisbarrett/swift-mode/blob/master/COPYING
 [CONTRIBUTING]: https://github.com/chrisbarrett/swift-mode/blob/master/CONTRIBUTING.md
 [swift]: https://developer.apple.com/swift/
