@@ -4,7 +4,6 @@
 
 ;; Author: Chris Barrett <chris.d.barrett@me.com>
 ;; Version: 0.1
-;; Package-Requires: ((dash "2.2.0") (emacs "24.1"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -27,9 +26,7 @@
 
 ;;; Code:
 
-(require 'dash)
 (require 'rx)
-
 (require 'swift-indent)
 
 (eval-and-compile
@@ -63,12 +60,12 @@
     "set" "unowned" "unowned(safe)" "unowned(unsafe)" "weak" "willSet" "convenience"))
 
 (defvar swift-mode--keywords
-  (-flatten (list swift-mode--type-decl-keywords
-                  swift-mode--val-decl-keywords
-                  swift-mode--fn-decl-keywords
-                  swift-mode--misc-keywords
-                  swift-mode--statement-keywords
-                  swift-mode--contextual-keywords))
+  (append swift-mode--type-decl-keywords
+          swift-mode--val-decl-keywords
+          swift-mode--fn-decl-keywords
+          swift-mode--misc-keywords
+          swift-mode--statement-keywords
+          swift-mode--contextual-keywords)
   "Keywords used in the Swift language.")
 
 (defvar swift-mode--constants
