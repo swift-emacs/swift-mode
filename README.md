@@ -1,8 +1,10 @@
+[![License GPL 3][badge-license]][copying]
+
 # swift-mode
 
 ## Summary
 
-Major-mode for Apple's Swift programming language. Currently provides:
+Major-mode for Apple's [Swift programming language][swift]. Currently provides:
 
 - syntax highlighting
 - indentation
@@ -38,7 +40,7 @@ build the project.
 
 ## Contributing
 
-Yes, please do! See CONTRIBUTING.md for guidelines.
+Yes, please do! See [CONTRIBUTING][] for guidelines.
 
 ## Acknowledgements
 
@@ -52,4 +54,9 @@ Thanks to the following users for their contributions:
 
 ## License
 
-See COPYING. Copyright (c) 2014 Chris Barrett.
+See [COPYING][]. Copyright (c) 2014 Chris Barrett.
+
+[badge-license]: https://img.shields.io/badge/license-GPL_3-green.svg
+[COPYING]: https://github.com/chrisbarrett/swift-mode/blob/master/COPYING
+[CONTRIBUTING]: https://github.com/chrisbarrett/swift-mode/blob/master/CONTRIBUTING.md
+[swift]: https://developer.apple.com/swift/
