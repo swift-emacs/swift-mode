@@ -87,13 +87,6 @@
         (backward-word 1))
       (current-column))))
 
-(defun swift-indent--rewind-to-beginning-of-current-level-expr ()
-  (let ((current-level (swift-indent--paren-level)))
-    (back-to-indentation)
-    (while (> (swift-indent--paren-level) current-level)
-      (backward-up-list)
-      (back-to-indentation))))
-
 (defun swift-indent--calculate-indentation ()
   "Calculate the indentation column to use for `swift-indent-line'.
 Returns the column number as an integer."
@@ -145,32 +138,9 @@ Returns the column number as an integer."
            (back-to-indentation)
            ;; Point is now at the beginning of the current line
            (cond
-            ;; If this line begins with "else" or "{", stay on the
-            ;; baseline as well (we are continuing an expression,
-            ;; but the "else" or "{" should align with the beginning
-            ;; of the expression it's in.)
-            ((looking-at (rx (or (and bow "else" eow) "{")))
-             baseline)
             ;; Cases are indented to the same level as the enclosing switch statement.
             ((looking-at (rx bow (or "case" "default") eow))
              (- baseline swift-indent-offset))
-
-            ;; If we are at the first line, no indentation is needed, so stay at baseline.
-            ((save-excursion
-               (swift-indent--rewind-irrelevant)
-               ;; Point is now at the end of the previous line
-               (= 1 (line-number-at-pos (point))))
-             baseline)
-
-            ((save-excursion
-               (swift-indent--rewind-irrelevant)
-               ;; Point is now at the end of the previous line
-               ;; If the previous line ends with any of these:
-               ;;     { ? : ( , ; [ }
-               ;; then we are at the beginning of an expression, so stay on the baseline.
-               (looking-back "[(,:;?[{}]\\|[^|]|"))
-             baseline)
-
             (t
              baseline)))))))))
 
