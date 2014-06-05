@@ -46,6 +46,8 @@
   :group 'swift
   :type 'integer)
 
+;;; Indentation
+
 (defun swift-indent--paren-level ()
   "Return the paren level at point."
   (nth 0 (syntax-ppss)))
@@ -181,7 +183,7 @@ Returns the column number as an integer."
       (save-excursion
         (indent-line-to indent)))))
 
-;; Font lock.
+;;; Font lock
 
 (defvar swift-mode--type-decl-keywords
   '("class" "enum" "protocol" "struct" "typealias"))
@@ -280,7 +282,7 @@ Returns the column number as an integer."
     (cons (rx bow "import" eow (+ space) (group (+ word)))
           (list 1 font-lock-string-face)))))
 
-;; Mode definition.
+;;; Mode definition
 
 ;; HACK: This syntax table is lifted directly from `rust-mode'. There may be
 ;; corner cases in the Swift syntax that are not accounted for.
