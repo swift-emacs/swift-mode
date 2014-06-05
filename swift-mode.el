@@ -57,7 +57,7 @@
   "Return the paren level at point."
   (nth 0 (syntax-ppss)))
 
-(defun swift-indent--in-str-or-cmnt? ()
+(defun swift-indent--in-str-or-cmnt-p ()
   "Non-nil if point is in a string or comment."
   (nth 8 (syntax-ppss)))
 
@@ -79,7 +79,7 @@
     (skip-chars-backward "[:space:]\n")
     (when (looking-back "\\*/")
       (backward-char))
-    (when (swift-indent--in-str-or-cmnt?)
+    (when (swift-indent--in-str-or-cmnt-p)
       (swift-indent--rewind-past-str-cmnt))
     (when (/= starting (point))
       (swift-indent--rewind-irrelevant))))
@@ -96,7 +96,7 @@
         (backward-word 1))
       (current-column))))
 
-(defun swift-indent--at-enum-case? ()
+(defun swift-indent--at-enum-case-p ()
   "Non-nil if point is at a case keyword at the top-level of an enum declaration."
   (save-excursion
     (back-to-indentation)
@@ -156,7 +156,7 @@ Returns the column number as an integer."
            (back-to-indentation)
            ;; Point is now at the beginning of the current line
            (cond
-            ((swift-indent--at-enum-case?)
+            ((swift-indent--at-enum-case-p)
              baseline)
             ;; Cases are indented to the same level as the enclosing switch
             ;; statement, plus a user-customisable offset.
