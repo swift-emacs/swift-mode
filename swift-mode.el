@@ -48,7 +48,7 @@
   '("deinit" "func" "init"))
 
 (defvar swift-mode--misc-keywords
-  '("import" "static" "subscript" "extension" "import"))
+  '("import" "static" "subscript" "extension"))
 
 (defvar swift-mode--statement-keywords
   '("break" "case" "continue" "default" "do" "else" "fallthrough"
