@@ -229,6 +229,28 @@ switch true {
 }
 ")
 
+(check-indentation indents-case-statements-in-enum/1
+  "
+enum T {
+|case
+}
+" "
+enum T {
+    |case
+}
+")
+
+(check-indentation indents-case-statements-in-enum/2
+  "
+enum T {
+         |case
+}
+" "
+enum T {
+    |case
+}
+")
+
 (provide 'indentation-tests)
 
 ;;; indentation-tests.el ends here
