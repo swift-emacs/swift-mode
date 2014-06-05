@@ -42,6 +42,15 @@ make && make install
 
 This will install `swift-mode` via `package.el` locally.
 
+You can also install `switf-mode` the old-school way by simply dropping it
+somewhere on your `load-path`. I favour the
+folder `~/.emacs.d/vendor`:
+
+```el
+(add-to-list 'load-path "~/emacs.d/vendor")
+(require 'swift-mode)
+```
+
 ## Contributing
 
 Yes, please do! See [CONTRIBUTING][] for guidelines.
