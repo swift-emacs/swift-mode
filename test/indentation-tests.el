@@ -32,9 +32,9 @@
 
 (defmacro check-indentation (description before after)
   "Declare an ert test for indentation behaviour.
-The test will check that the swift indentation command results changes the
-buffer from one state to another.  It will also test that point is moved to
-an expected position.
+The test will check that the swift indentation command changes the buffer
+from one state to another.  It will also test that point is moved to an
+expected position.
 
 DESCRIPTION is a symbol describing the test.
 
