@@ -44,12 +44,12 @@
 (defcustom swift-indent-offset 4
   "Defines the indentation offset for Swift code."
   :group 'swift
-  :type 'integer)
+  :type 'integerp)
 
 (defcustom swift-indent-switch-case-offset 0
   "Defines the indentation offset for cases in a switch statement."
   :group 'swift
-  :type 'integer)
+  :type 'integerp)
 
 ;;; Indentation
 
