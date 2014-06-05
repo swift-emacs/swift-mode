@@ -91,6 +91,15 @@
         (backward-word 1))
       (current-column))))
 
+(defun swift-indent--at-enum-case? ()
+  "Non-nil if point is at the case keyword at the top-level of an enum declaration."
+  (save-excursion
+    (back-to-indentation)
+    (when (looking-at (rx bow "case" eow))
+      (backward-up-list)
+      (swift-indent--back-to-start-of-level)
+      (looking-at (rx bow "enum" eow)))))
+
 (defun swift-indent--calculate-indentation ()
   "Calculate the indentation column to use for `swift-indent-line'.
 Returns the column number as an integer."
@@ -142,6 +151,8 @@ Returns the column number as an integer."
            (back-to-indentation)
            ;; Point is now at the beginning of the current line
            (cond
+            ((swift-indent--at-enum-case?)
+             baseline)
             ;; Cases are indented to the same level as the enclosing switch statement.
             ((looking-at (rx bow (or "case" "default") eow))
              (- baseline swift-indent-offset))
