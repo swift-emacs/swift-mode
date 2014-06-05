@@ -97,7 +97,7 @@
       (current-column))))
 
 (defun swift-indent--at-enum-case-p ()
-  "Non-nil if point is at a case keyword at the top-level of an enum declaration."
+  "Non-nil if point is at a case keyword at the top level of an enum declaration."
   (save-excursion
     (back-to-indentation)
     (when (looking-at (rx bow "case" eow))
