@@ -5,5 +5,4 @@
 
 (development
  (depends-on "flycheck")
- (depends-on "flycheck-cask")
- )
+ (depends-on "flycheck-cask"))
