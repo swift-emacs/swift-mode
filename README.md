@@ -21,18 +21,18 @@ Requires Emacs 24 or later.
 #### MELPA
 
 You can install a snapshot version of `swift-mode` from the
-[MELPA](http://melpa.milkbox.net) repository. The version of
+[MELPA][] repository. The version of
 `swift-mode` there will always be up-to-date, but it might be unstable
 (albeit rarely).
 
 #### MELPA Stable
 
 You can install the last stable version of `swift-mode` from the
-[MELPA Stable](http://melpa-stable.milkbox.net) repository.
+[MELPA Stable][] repository.
 
 ### Manual
 
-You will need `make` and [Cask](https://github.com/cask/cask) to
+You will need `make` and [Cask][] to
 build the project.
 
 ```
@@ -57,8 +57,7 @@ Yes, please do! See [CONTRIBUTING][] for guidelines.
 
 ## Acknowledgements
 
-The indentation code is heavily based on
-[rust-mode](https://github.com/mozilla/rust/tree/master/src/etc/emacs)'s
+The indentation code is heavily based on [rust-mode][]'s
 implementation.
 
 Thanks to the following users for their contributions:
@@ -73,3 +72,7 @@ See [COPYING][]. Copyright (c) 2014 Chris Barrett.
 [COPYING]: https://github.com/chrisbarrett/swift-mode/blob/master/COPYING
 [CONTRIBUTING]: https://github.com/chrisbarrett/swift-mode/blob/master/CONTRIBUTING.md
 [swift]: https://developer.apple.com/swift/
+[cask]: https://github.com/cask/cask
+[rust-mode]: https://github.com/mozilla/rust/tree/master/src/etc/emacs
+[melpa]: http://melpa.milkbox.net
+[melpa stable]: http://melpa-stable.milkbox.net
