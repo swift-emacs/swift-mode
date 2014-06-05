@@ -189,7 +189,7 @@
   (setq-local paragraph-separate paragraph-start))
 
 ;;;###autoload
-(add-to-list 'auto-mode-alist '("\\.swift$" . swift-mode))
+(add-to-list 'auto-mode-alist '("\\.swift\\'" . swift-mode))
 
 (provide 'swift-mode)
 
