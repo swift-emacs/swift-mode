@@ -28,7 +28,6 @@
 ;;; Code:
 
 (require 'rx)
-(require 'swift-indent)
 
 (eval-and-compile
   ;; Added in Emacs 24.3
