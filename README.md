@@ -62,6 +62,7 @@ implementation.
 
 Thanks to the following users for their contributions:
 
+- [@bbatsov](https://github.com/bbatsov) (Bozhidar Batsov)
 - [@syohex](https://github.com/syohex) (Syohei Yoshida)
 
 ## License
