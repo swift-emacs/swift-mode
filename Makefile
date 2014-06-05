@@ -20,6 +20,13 @@ deps : $(PKG_DIR)
 $(PKG_DIR) :
 	$(CASK) install
 
+.PHONY: check
+check : deps
+	$(CASK) exec $(EMACS) $(EMACSFLAGS)  \
+	$(patsubst %,-l % , $(SRCS))\
+	$(patsubst %,-l % , $(TESTS))\
+	-f ert-run-tests-batch-and-exit
+
 .PHONY: install
 install : $(DIST) $(USER_ELPA_D)
 	$(EMACS) $(EMACSFLAGS) -l package \
@@ -38,7 +45,7 @@ clean-all : clean
 
 .PHONY: clean
 clean :
-	cask clean-elc
+	$(CASK) clean-elc
 	rm -f *.elc
 	rm -rf $(DIST)
 
