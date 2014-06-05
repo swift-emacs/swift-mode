@@ -32,11 +32,15 @@ You can install the last stable version of `swift-mode` from the
 
 ### Manual
 
-You will need Emacs 24+, `make` and [Cask](https://github.com/cask/cask) to
+You will need `make` and [Cask](https://github.com/cask/cask) to
 build the project.
 
-    cd swift-mode
-    make && make install
+```
+cd swift-mode
+make && make install
+```
+
+This will install `swift-mode` via `package.el` locally.
 
 ## Contributing
 
