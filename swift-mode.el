@@ -65,9 +65,11 @@
       (back-to-indentation))))
 
 (defun swift-indent--rewind-past-str-cmnt ()
+  "Move to the start of the comment at point."
   (goto-char (nth 8 (syntax-ppss))))
 
 (defun swift-indent--rewind-irrelevant ()
+  "Move backward past spaces and comments."
   (let ((starting (point)))
     (skip-chars-backward "[:space:]\n")
     (if (looking-back "\\*/") (backward-char))
@@ -77,6 +79,7 @@
         (swift-indent--rewind-irrelevant))))
 
 (defun swift-indent--align-to-expr-after-brace ()
+  "Return the column to use for aligning an expression after a brace."
   (save-excursion
     (forward-char)
     ;; We don't want to indent out to the open bracket if the
