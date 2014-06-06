@@ -223,6 +223,91 @@ switch true {
 ")
 
 
+(check-indentation indents-case-statement-bodies/1
+"
+switch x {
+case y:
+|return z
+}
+" "
+switch x {
+case y:
+    |return z
+}
+")
+
+(check-indentation indents-case-statement-bodies/2
+"
+switch x {
+case y:
+       |return z
+}
+" "
+switch x {
+case y:
+    |return z
+}
+")
+
+(check-indentation indents-case-statement-bodies/3
+"
+switch x {
+case y:
+    |return z
+}
+" "
+switch x {
+case y:
+    |return z
+}
+")
+
+(check-indentation indents-case-statement-bodies/4
+"
+switch x {
+case y:
+    x
+    |return z
+}
+" "
+switch x {
+case y:
+    x
+    |return z
+}
+")
+
+(check-indentation indents-case-statement-bodies/5
+"
+switch x {
+case y:
+    x
+|return z
+}
+" "
+switch x {
+case y:
+    x
+    |return z
+}
+")
+
+(check-indentation indents-case-statement-bodies/6
+"
+switch x {
+case y:
+    x
+        |return z
+}
+" "
+switch x {
+case y:
+    x
+    |return z
+}
+")
+
+
 (check-indentation indents-default-statements-to-same-level-as-enclosing-switch/1
   "
 {
