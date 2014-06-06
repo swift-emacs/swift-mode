@@ -274,6 +274,25 @@ Returns the column number as an integer."
     (cons (rx bow "import" eow (+ space) (group (+ word)))
           (list 1 font-lock-string-face)))))
 
+;;; Imenu
+
+(defun swift-mode--mk-regex-for-def (keyword)
+  "Make a regex matching the identifier introduced by KEYWORD."
+  (let ((ident (rx (any word nonascii "_") (* (any word nonascii digit "_")))))
+    (rx-to-string `(and bow ,keyword eow (+ space) (group (regexp ,ident)))
+                  t)))
+
+(defvar swift-mode--imenu-generic-expression
+  (list
+   (list "Functions" (swift-mode--mk-regex-for-def "func") 1)
+   (list "Classes"   (swift-mode--mk-regex-for-def "class") 1)
+   (list "Enums"     (swift-mode--mk-regex-for-def "enum") 1)
+   (list "Protocols" (swift-mode--mk-regex-for-def "protocol") 1)
+   (list "Structs"   (swift-mode--mk-regex-for-def "struct") 1)
+   (list "Constants" (swift-mode--mk-regex-for-def "let") 1)
+   (list "Variables" (swift-mode--mk-regex-for-def "var") 1))
+  "Value for `imenu-generic-expression' in swift-mode.")
+
 ;;; Mode definition
 
 ;; HACK: This syntax table is lifted directly from `rust-mode'. There may be
@@ -308,6 +327,8 @@ Returns the column number as an integer."
   :group 'swift
   :syntax-table swift-mode-syntax-table
   (setq-local font-lock-defaults swift-mode--font-lock-defaults)
+  (setq-local imenu-generic-expression swift-mode--imenu-generic-expression)
+
   (setq-local comment-start "// ")
   (setq-local comment-end "")
   (setq-local tab-width swift-indent-offset)
