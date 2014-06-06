@@ -5,5 +5,7 @@
 
 (development
  (depends-on "s")
+ (depends-on "dash")
+ (depends-on "cl-lib")
  (depends-on "flycheck")
  (depends-on "flycheck-cask"))
