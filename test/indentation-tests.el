@@ -30,6 +30,8 @@
 (require 'swift-mode)
 (require 's)
 
+;;; Test utilities
+
 (defmacro check-indentation (description before after &optional var-bindings)
   "Declare an ert test for indentation behaviour.
 The test will check that the swift indentation command changes the buffer
@@ -67,6 +69,23 @@ values of customisable variables."
 
            (should (equal expected-state (buffer-string)))
            (should (equal expected-cursor-pos (point))))))))
+
+;; Provide font locking for easier test editing.
+
+(font-lock-add-keywords
+ 'emacs-lisp-mode
+ `((,(rx "(" (group "check-indentation") eow)
+    (1 font-lock-keyword-face))
+   (,(rx "("
+         (group "check-indentation") (+ space)
+         (group bow (+ (not space)) eow)
+         )
+    (1 font-lock-keyword-face)
+    (2 font-lock-function-name-face))))
+
+
+;;; Tests
+
 
 (check-indentation no-indentation-at-top-level
   "|x"
