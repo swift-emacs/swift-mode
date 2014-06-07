@@ -346,15 +346,15 @@ is run).
   (interactive (list (if current-prefix-arg
                          (read-string "Run swift-repl: " swift-repl-executable)
                        swift-repl-executable)))
-  (if (not (comint-check-proc "*swift-repl*"))
-      (save-excursion (let ((cmdlist (split-string cmd)))
-                        (set-buffer (apply 'make-comint "swift-repl" (car cmdlist)
-                                           nil (cdr cmdlist)))
-                        (swift-repl-mode))))
+  (unless (comint-check-proc "*swift-repl*")
+    (save-excursion (let ((cmdlist (split-string cmd)))
+                      (set-buffer (apply 'make-comint "swift-repl" (car cmdlist)
+                                         nil (cdr cmdlist)))
+                      (swift-repl-mode))))
   (setq swift-repl-executable cmd)
   (setq swift-repl-buffer "*swift-repl*")
-  (if (not dont-switch-p)
-      (pop-to-buffer "*swift-repl*")))
+  (unless dont-switch-p
+    (pop-to-buffer "*swift-repl*")))
 
 (defun swift-mode-send-region (start end)
   "Send the current region to the inferior swift process.
