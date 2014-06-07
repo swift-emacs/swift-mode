@@ -52,6 +52,16 @@
   :group 'swift
   :type 'integerp)
 
+(defcustom swift-repl-executable
+  "xcrun swift"
+  "Path to the Swift CLI."
+  :group 'swift)
+
+(defcustom swift-repl-mode-hook nil
+  "*Hook for customizing swift-repl mode."
+  :type 'hook
+  :group 'swift)
+
 ;;; Indentation
 
 (defun swift-indent--paren-level ()
@@ -317,54 +327,42 @@ Returns the column number as an integer."
 
      (add-to-list 'flycheck-checkers 'swift)))
 
-;;; Mode definition
-
 ;;; REPL
-(defcustom swift-mode-executable
-  "xcrun swift"
-  "Path to the Swift CLI.")
 
-(defgroup swift-repl nil
-  "Run a Swift REPL process in a buffer."
-  :group 'swift-repl)
+(defvar swift-repl-buffer nil
+  "Stores the name of the current swift repl buffer, or nil.")
 
-(defcustom swift-repl-mode-hook nil
-  "*Hook for customizing swift-repl mode."
-  :type 'hook
-  :group 'swift-repl)
-
+;;;###autoload
 (defun swift-mode-run-repl (cmd &optional dont-switch-p)
   "Run a REPL process, input and output via buffer `*swift-repl*'.
 If there is a process already running in `*swift-repl*', switch to that buffer.
 With argument CMD allows you to edit the command line (default is value
-of `swift-mode-executable').
+of `swift-repl-executable').
 With DONT-SWITCH-P cursor will stay in current buffer.
 Runs the hook `swift-repl-mode-hook' \(after the `comint-mode-hook'
 is run).
 \(Type \\[describe-mode] in the process buffer for a list of commands.)"
 
   (interactive (list (if current-prefix-arg
-                         (read-string "Run swift-repl: " swift-mode-executable)
-                       swift-mode-executable)))
+                         (read-string "Run swift-repl: " swift-repl-executable)
+                       swift-repl-executable)))
   (if (not (comint-check-proc "*swift-repl*"))
       (save-excursion (let ((cmdlist (split-string cmd)))
                         (set-buffer (apply 'make-comint "swift-repl" (car cmdlist)
                                            nil (cdr cmdlist)))
                         (swift-repl-mode))))
-  (setq swift-mode-executable cmd)
-  (setq swift-mode-repl-buffer "*swift-repl*")
+  (setq swift-repl-executable cmd)
+  (setq swift-repl-buffer "*swift-repl*")
   (if (not dont-switch-p)
       (pop-to-buffer "*swift-repl*")))
 
-(defvar swift-mode-repl-buffer)
-
 (defun swift-mode-send-region (start end)
-  "Send the current region to the inferior Javascript process.
+  "Send the current region to the inferior swift process.
 START and END define region within current buffer"
   (interactive "r")
-  (swift-mode-run-repl swift-mode-executable t)
-  (comint-send-region swift-mode-repl-buffer start end)
-  (comint-send-string swift-mode-repl-buffer "\n"))
+  (swift-mode-run-repl swift-repl-executable t)
+  (comint-send-region swift-repl-buffer start end)
+  (comint-send-string swift-repl-buffer "\n"))
 
 (defun swift-mode-send-buffer ()
   "Send the buffer to the Swift REPL process."
@@ -383,6 +381,8 @@ You can send text to the REPL process from other buffers containing source.
     swift-mode-send-region sends the current region to the REPL process,
     swift-mode-send-buffer sends the current buffer to the REPL process.
 ")
+
+;;; Mode definition
 
 ;; HACK: This syntax table is lifted directly from `rust-mode'. There may be
 ;; corner cases in the Swift syntax that are not accounted for.
