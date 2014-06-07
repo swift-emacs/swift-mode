@@ -293,6 +293,29 @@ Returns the column number as an integer."
    (list "Variables" (swift-mode--mk-regex-for-def "var") 1))
   "Value for `imenu-generic-expression' in swift-mode.")
 
+;;; Flycheck
+
+(eval-after-load 'flycheck
+  '(progn
+     (flycheck-def-option-var flycheck-swift-sdk-path nil swift
+       "A path to the targeted SDK"
+       :type '(repeat (directory :tag "iOS/MacOS SDK directory"))
+       :safe #'flycheck-string-list-p)
+
+     (flycheck-define-checker swift
+       "Flycheck plugin for for Apple's Swift programming language."
+       :command ("swift"
+                 (option-list "-sdk" flycheck-swift-sdk-path)
+                 "-parse" source)
+       :error-patterns
+       ((error line-start (file-name) ":" line ":" column ": "
+               "error: " (message) line-end)
+        (warning line-start (file-name) ":" line ":" column ": "
+                 "warning: " (message) line-end))
+       :modes swift-mode)
+
+     (add-to-list 'flycheck-checkers 'swift)))
+
 ;;; Mode definition
 
 ;; HACK: This syntax table is lifted directly from `rust-mode'. There may be
