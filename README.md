@@ -30,19 +30,37 @@ You can install a snapshot version of `swift-mode` from the [MELPA][]
 repository. The version of `swift-mode` there will always be up-to-date, but it
 might be unstable (albeit rarely).
 
-```lisp
-(add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/"))
-```
+You can add MELPA to the list of `package.el` repositories like this:
 
-```
-M-x package-install swift-mode
-M-x package-install flycheck
+```el
+(add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/"))
 ```
 
 #### MELPA Stable
 
 You can install the last stable version of `swift-mode` from the
 [MELPA Stable][] repository.
+
+You can add MELPA Stable to the list of `package.el` repositories like this:
+
+```el
+(add-to-list 'package-archives '("melpa-stable" . "http://melpa-stable.milkbox.net/packages/"))
+```
+
+***
+
+The package installation is as easy as:
+
+```
+M-x package-install swift-mode
+```
+
+If you'd like to get on-the-fly syntax checking you should install
+[flycheck][] as well:
+
+```
+M-x package-install flycheck
+```
 
 ### Manual
 
