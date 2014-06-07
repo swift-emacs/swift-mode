@@ -5,7 +5,7 @@
 
 ## Summary
 
-Major-mode for Apple's [Swift programming language][swift]. Currently provides:
+Major-mode for Apple's [Swift programming language][swift]. Provides:
 
 - syntax highlighting
 - indentation
@@ -19,14 +19,25 @@ Requires Emacs 24 or later.
 
 ## Installing
 
+`swift-mode` can be installed using Emacs' built-in package manager or from
+source. You can also install [flycheck][] if you want syntax checking.
+
 ### package.el
 
 #### MELPA
 
-You can install a snapshot version of `swift-mode` from the
-[MELPA][] repository. The version of
-`swift-mode` there will always be up-to-date, but it might be unstable
-(albeit rarely).
+You can install a snapshot version of `swift-mode` from the [MELPA][]
+repository. The version of `swift-mode` there will always be up-to-date, but it
+might be unstable (albeit rarely).
+
+```lisp
+(add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/"))
+```
+
+```
+M-x package-install swift-mode
+M-x package-install flycheck
+```
 
 #### MELPA Stable
 
@@ -35,8 +46,7 @@ You can install the last stable version of `swift-mode` from the
 
 ### Manual
 
-You will need `make` and [Cask][] to
-build the project.
+You will need `make` and [Cask][] to build the project.
 
 ```
 cd swift-mode
@@ -46,8 +56,7 @@ make && make install
 This will install `swift-mode` via `package.el` locally.
 
 You can also install `swift-mode` the old-school way by simply dropping it
-somewhere on your `load-path`. I favour the
-folder `~/.emacs.d/vendor`:
+somewhere on your `load-path`.
 
 ```el
 (add-to-list 'load-path "~/emacs.d/vendor")
@@ -60,8 +69,9 @@ Yes, please do! See [CONTRIBUTING][] for guidelines.
 
 ## Acknowledgements
 
-The indentation code is heavily based on [rust-mode][]'s
-implementation.
+The indentation code is heavily based on [rust-mode][]'s implementation.
+
+The REPL code is based on [js-comint][].
 
 Thanks to the following users for their contributions:
 
@@ -85,3 +95,4 @@ See [COPYING][]. Copyright (c) 2014 Chris Barrett.
 [melpa stable]: http://melpa-stable.milkbox.net
 [imenu]: http://www.gnu.org/software/emacs/manual/html_node/emacs/Imenu.html
 [flycheck]: http://flycheck.readthedocs.org/en/latest/
+[js-comint]: http://js-comint-el.sourceforge.net/
