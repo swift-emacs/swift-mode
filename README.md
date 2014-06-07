@@ -9,6 +9,8 @@ Major-mode for Apple's [Swift programming language][swift]. Currently provides:
 
 - syntax highlighting
 - indentation
+- code navigation with [imenu][]
+- automatic syntax checking with [flycheck][]
 
 This is currently at an early stage of development and there's plenty of work to
 do. Check the issue tracker.
@@ -80,3 +82,5 @@ See [COPYING][]. Copyright (c) 2014 Chris Barrett.
 [rust-mode]: https://github.com/mozilla/rust/tree/master/src/etc/emacs
 [melpa]: http://melpa.milkbox.net
 [melpa stable]: http://melpa-stable.milkbox.net
+[imenu]: http://www.gnu.org/software/emacs/manual/html_node/emacs/Imenu.html
+[flycheck]: http://flycheck.readthedocs.org/en/latest/
