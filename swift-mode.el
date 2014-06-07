@@ -405,11 +405,11 @@ You can send text to the REPL process from other buffers containing source.
 
 ;;;###autoload
 (defvar swift-mode-map
-  (let ((km (make-sparse-keymap)))
-    (define-key km (kbd "C-c C-z") 'swift-mode-run-repl)
-    (define-key km (kbd "C-c C-f") 'swift-mode-send-buffer)
-    (define-key km (kbd "C-c C-r") 'swift-mode-send-region)
-    (easy-menu-define swift-menu km "Swift Mode menu"
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-c C-z") 'swift-mode-run-repl)
+    (define-key map (kbd "C-c C-f") 'swift-mode-send-buffer)
+    (define-key map (kbd "C-c C-r") 'swift-mode-send-region)
+    (easy-menu-define swift-menu map "Swift Mode menu"
       `("Swift"
         :help "Swift-specific Features"
         ["Run REPL" swift-mode-run-repl
@@ -418,8 +418,8 @@ You can send text to the REPL process from other buffers containing source.
          :help "Send the current buffer's contents to the REPL"]
         ["Send region to REPL" swift-mode-send-region
          :help "Send currently selected region to the REPL"]))
-    km)
-  "Key km for swift mode.")
+    map)
+  "Key map for swift mode.")
 
 ;;;###autoload
 (define-derived-mode swift-mode prog-mode "Swift"
