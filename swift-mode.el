@@ -403,7 +403,6 @@ You can send text to the REPL process from other buffers containing source.
 
     table))
 
-;;;###autoload
 (defvar swift-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c C-z") 'swift-mode-run-repl)
