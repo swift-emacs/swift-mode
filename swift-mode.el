@@ -330,7 +330,7 @@ Returns the column number as an integer."
 ;;; REPL
 
 (defvar swift-repl-buffer nil
-  "Stores the name of the current swift repl buffer, or nil.")
+  "Stores the name of the current swift REPL buffer, or nil.")
 
 ;;;###autoload
 (defun swift-mode-run-repl (cmd &optional dont-switch-p)
@@ -344,7 +344,7 @@ is run).
 \(Type \\[describe-mode] in the process buffer for a list of commands.)"
 
   (interactive (list (if current-prefix-arg
-                         (read-string "Run swift-repl: " swift-repl-executable)
+                         (read-string "Run swift REPL: " swift-repl-executable)
                        swift-repl-executable)))
   (unless (comint-check-proc "*swift-repl*")
     (save-excursion (let ((cmdlist (split-string cmd)))
