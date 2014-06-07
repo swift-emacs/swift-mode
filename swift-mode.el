@@ -57,11 +57,6 @@
   "Path to the Swift CLI."
   :group 'swift)
 
-(defcustom swift-repl-mode-hook nil
-  "*Hook for customizing swift-repl mode."
-  :type 'hook
-  :group 'swift)
-
 ;;; Indentation
 
 (defun swift-indent--paren-level ()
