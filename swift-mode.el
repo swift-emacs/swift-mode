@@ -409,6 +409,14 @@ You can send text to the REPL process from other buffers containing source.
     table))
 
 ;;;###autoload
+(defvar swift-mode-map
+  (let ((km (make-sparse-keymap)))
+    (define-key km (kbd "C-c C-z") 'swift-mode-run-repl)
+    (define-key km (kbd "C-c C-f") 'swift-mode-send-buffer)
+    (define-key km (kbd "C-c C-r") 'swift-mode-send-region))
+  "Key km for swift mode.")
+
+;;;###autoload
 (define-derived-mode swift-mode prog-mode "Swift"
   "Major mode for Apple's Swift programming language.
 
