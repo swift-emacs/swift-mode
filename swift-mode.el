@@ -409,6 +409,15 @@ You can send text to the REPL process from other buffers containing source.
     (define-key km (kbd "C-c C-z") 'swift-mode-run-repl)
     (define-key km (kbd "C-c C-f") 'swift-mode-send-buffer)
     (define-key km (kbd "C-c C-r") 'swift-mode-send-region)
+    (easy-menu-define swift-menu km "Swift Mode menu"
+      `("Swift"
+        :help "Swift-specific Features"
+        ["Run REPL" swift-mode-run-repl
+         :help "Run Swift REPL"]
+        ["Send buffer to REPL" swift-mode-send-buffer
+         :help "Send the current buffer's contents to the REPL"]
+        ["Send region to REPL" swift-mode-send-region
+         :help "Send currently selected region to the REPL"]))
     km)
   "Key km for swift mode.")
 
