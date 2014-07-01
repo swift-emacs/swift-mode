@@ -308,11 +308,32 @@ Returns the column number as an integer."
        :type '(repeat (directory :tag "iOS/MacOS SDK directory"))
        :safe #'flycheck-string-list-p)
 
+     (flycheck-def-option-var flycheck-swift-linked-sources nil swift
+       "Source files path to link against. Can be glob, i.e. *.swift"
+       :type '(choice (const :tag "Don't use linked sources" nil)
+                      (string :tag "Linked Sources"))
+       :safe #'stringp)
+
      (flycheck-define-checker swift
        "Flycheck plugin for for Apple's Swift programming language."
        :command ("swift"
+                 "-frontend" "-parse"
                  (option-list "-sdk" flycheck-swift-sdk-path)
-                 "-parse" source)
+                 ;; Swift compiler will complain about redeclaration
+                 ;; if we will include original file along with
+                 ;; temporary source file created by flycheck.
+                 ;; We also don't want a hidden emacs interlock files.
+                 (eval
+                  (let (source file)
+                    (setq source (flycheck-substitute-argument 'source 'swift))
+                    (setq file (file-name-nondirectory source))
+                    (remove-if-not
+                     #'(lambda (path)
+                         (and
+                          (eq (string-match ".#" path) nil)
+                          (eq (string-match file path) nil)))
+                     (file-expand-wildcards flycheck-swift-linked-sources))))
+                 "-primary-file" source)
        :error-patterns
        ((error line-start (file-name) ":" line ":" column ": "
                "error: " (message) line-end)
