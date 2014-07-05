@@ -455,19 +455,7 @@ You can send text to the REPL process from other buffers containing source.
   (setq-local comment-end "")
   (setq-local tab-width swift-indent-offset)
   (setq-local indent-tabs-mode nil)
-  (setq-local indent-line-function 'swift-indent-line)
-
-  (setq-local comment-start-skip
-              (rx (or (and "//" (* "/")) (and "/*" (* "*"))) (* space)))
-
-  (setq-local paragraph-start
-              (rx-to-string `(and (* space)
-                                  (or (regex ,comment-start-skip)
-                                      (and "*" (? "/") (* space)))
-                                  eol)
-                            t))
-
-  (setq-local paragraph-separate paragraph-start))
+  (setq-local indent-line-function 'swift-indent-line))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.swift\\'" . swift-mode))
