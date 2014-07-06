@@ -59,127 +59,172 @@
 
 ;;; Indentation
 
-(defun swift-indent--paren-level ()
-  "Return the paren level at point."
-  (nth 0 (syntax-ppss)))
+(require 'smie)
 
-(defun swift-indent--in-str-or-cmnt-p ()
-  "Non-nil if point is in a string or comment."
-  (nth 8 (syntax-ppss)))
+(defconst swift-smie-grammar
+  (smie-prec2->grammar
+   (smie-merge-prec2s
+    (smie-bnf->prec2
+     '((id)
+       (type)
+       (types (type) (type "," type))
 
-(defun swift-indent--back-to-start-of-level ()
-  "Move backwards up to the start of the current indentation level."
-  (let ((current-level (swift-indent--paren-level)))
-    (back-to-indentation)
-    (while (> (swift-indent--paren-level) current-level)
-      (backward-up-list)
-      (back-to-indentation))))
+       (class-decl-exp (id) (id ":" types))
+       (decl-exp (id) (id ":" type))
+       (decl-exps (decl-exp) (decl-exp "," decl-exp))
 
-(defun swift-indent--rewind-past-str-cmnt ()
-  "Move to the start of the comment at point."
-  (goto-char (nth 8 (syntax-ppss))))
+       (assign-exp (decl-exp) (id "=" exp))
 
-(defun swift-indent--rewind-irrelevant ()
-  "Move backward past spaces and comments."
-  (let ((starting (point)))
-    (skip-chars-backward "[:space:]\n")
-    (when (looking-back "\\*/")
-      (backward-char))
-    (when (swift-indent--in-str-or-cmnt-p)
-      (swift-indent--rewind-past-str-cmnt))
-    (when (/= starting (point))
-      (swift-indent--rewind-irrelevant))))
+       (decl (decl ";" decl))
+       (decl (let-decl) (var-decl))
+       (let-decl
+        ("let" id ":" type)
+        ("let" id "=" exp)
+        ("let" id ":" type "=" exp))
+       (var-decl
+        ("var" id ":" type)
+        ("var" id "=" exp)
+        ("var" id ":" type "=" exp))
 
-(defun swift-indent--align-to-expr-after-brace ()
-  "Return the column to use for aligning an expression after a brace."
+       (top-level-sts (top-level-st) (top-level-st ";" top-level-st))
+       (top-level-st
+        ("import" type)
+        (decl)
+        ("class" class-decl-exp "{" class-level-sts "}"))
+
+       (class-level-sts (class-level-st) (class-level-st ";" class-level-st))
+       (class-level-st
+        (decl)
+        ("override" "func" func-header "{" insts "}"))
+
+       (func-header (id "(" func-params ")"))
+       (func-param (decl-exp) ("..."))
+       (func-params (func-param "," func-param))
+
+       (insts (inst) (insts ";" insts))
+       (inst (decl)
+             (in-exp)
+             (dot-exp)
+             (dot-exp "{" insts "}")
+             (method-call)
+             (method-call "{" insts "}")
+             ("enum" decl-exp "{" enum-cases "}")
+             ("switch" exp "{" switch-body "}")
+             (if-clause)
+             ("for" for-head "{" insts "}")
+             ("while" exp "{" insts "}"))
+
+       (dot-exp (exp "." exp))
+
+       (method-call (dot-exp "(" method-args ")"))
+       (method-args (method-arg) (method-arg "," method-arg))
+       (method-arg (exp "," "{" insts "}") (exp))
+
+       (exp (op-exp)
+            ("[" decl-exps "]"))
+       (in-exp (id "in" exp))
+       (guard-exp (exp "where" exp))
+       (op-exp (exp "OP" exp))
+
+       (enum-cases (assign-exp)
+                   (enum-cases "case" enum-cases))
+
+       (case-exps (guard-exp))
+       (cases (case-exps ":" insts)
+              (cases "case" cases))
+       (switch-body (cases) (cases "default" insts))
+
+       (for-head (in-exp) (op-exp) (for-head ";" for-head))
+
+       (conditional (exp) (let-decl))
+       (if-body ("if" conditional "{" insts "}"))
+       (if-else-if (if-body) (if-else-if "else" if-else-if))
+       (if-clause (if-else-if)))
+     ;; Conflicts
+     '((nonassoc "{") (assoc ",") (assoc ";") (assoc ":"))
+     '((assoc "in") (assoc "where") (assoc "OP"))
+     '((assoc "else"))
+     '((assoc "case")))
+
+    (smie-precs->prec2
+     '(
+       (right "*=" "/=" "%=" "+=" "-=" "<<=" ">>=" "&="
+              "^=" "|=" "&&=" "||=" "=")                       ;; Assignment (Right associative, precedence level 90)
+       (left "||")                                             ;; Disjunctive (Left associative, precedence level 110)
+       (left "&&")                                             ;; Conjunctive (Left associative, precedence level 120)
+       (nonassoc "<" "<=" ">" ">=" "==" "!=" "===" "!==" "~=") ;; Comparative (No associativity, precedence level 130)
+       (nonassoc "is" "as" "as?")                              ;; Cast (No associativity, precedence level 132)
+       (nonassoc ".." "...")                                   ;; Range (No associativity, precedence level 135)
+       (left "+" "-" "&+" "&-" "|" "^")                        ;; Additive (Left associative, precedence level 140)
+       (left "*" "/" "%" "&*" "&/" "&%" "&")                   ;; Multiplicative (Left associative, precedence level 150)
+       (nonassoc "<<" ">>")                                    ;; Exponentiative (No associativity, precedence level 160)
+       ))
+    )))
+
+(defun verbose-swift-smie-rules (kind token)
+  (let ((value (swift-smie-rules kind token)))
+    (message "%s '%s'; sibling-p:%s parent:%s hanging:%s == %s" kind token
+             (ignore-errors (smie-rule-sibling-p))
+             (ignore-errors smie--parent)
+             (ignore-errors (smie-rule-hanging-p))
+             value)
+    value))
+
+(defvar swift-smie--operators-regexp
+  (regexp-opt '("*=" "/=" "%=" "+=" "-=" "<<=" ">>=" "&=" "^=" "|=" "&&=" "||="
+                "<" "<=" ">" ">=" "==" "!=" "===" "!==" "~=" "||" "&&"
+                "is" "as" "as?" ".." "..."
+                "+" "-" "&+" "&-" "|" "^"
+                "*" "/" "%" "&*" "&/" "&%" "&"
+                "<<" ">>")))
+
+(defun swift-smie--implicit-semi-p ()
   (save-excursion
-    (forward-char)
-    ;; We don't want to indent out to the open bracket if the
-    ;; open bracket ends the line.
-    (when (not (looking-at "[[:blank:]]*\\(?://.*\\)?$"))
-      (when (looking-at "[[:space:]]")
-        (forward-word 1)
-        (backward-word 1))
-      (current-column))))
+    (not (or (memq (char-before) '(?\{ ?\[ ?\,))
+             (looking-back swift-smie--operators-regexp (- (point) 3) t)
+             ))))
 
-(defun swift-indent--at-enum-case-p ()
-  "Non-nil if point is at a case keyword at the top level of an enum declaration."
-  (save-excursion
-    (back-to-indentation)
-    (when (looking-at (rx bow "case" eow))
-      (backward-up-list)
-      (swift-indent--back-to-start-of-level)
-      (looking-at (rx bow "enum" eow)))))
+(defun swift-smie--forward-token ()
+  (cond
+   ((and (looking-at "\n") (swift-smie--implicit-semi-p))
+    (if (eolp) (forward-char 1) (forward-comment 1))
+    ";")
+   ((looking-at "{") (forward-char 1) "{")
+   ((looking-at "}") (forward-char 1) "}")
+   ((looking-at swift-smie--operators-regexp)
+    (goto-char (match-end 0)) "OP")
+   (t (smie-default-forward-token))))
 
-(defun swift-indent--calculate-indentation ()
-  "Calculate the indentation column to use for `swift-indent-line'.
-Returns the column number as an integer."
-  (save-excursion
-    (back-to-indentation)
-    ;; Point is now at beginning of line.
-    (let* ((level (swift-indent--paren-level))
-           ;; Our "baseline" is one level out from the indentation of the
-           ;; expression containing the innermost enclosing opening bracket.
-           ;; That way if we are within a block that has a different indentation
-           ;; than this mode would give it, we still indent the inside of it
-           ;; correctly relative to the outside.
-           (baseline
-            (if (zerop level)
-                0
-              (save-excursion
-                (backward-up-list)
-                (swift-indent--back-to-start-of-level)
-                (+ (current-column) swift-indent-offset)))))
-      (cond
-       ;; A function return type is indented to the corresponding function arguments
-       ((looking-at "->")
-        (save-excursion
-          (backward-list)
-          (or (swift-indent--align-to-expr-after-brace)
-              (+ baseline swift-indent-offset))))
+(defun swift-smie--backward-token ()
+  (let ((pos (point)))
+    (forward-comment (- (point)))
+    (cond
+     ((and (> pos (line-end-position))
+           (swift-smie--implicit-semi-p))
+      ";")
+     ((eq (char-before) ?\{) (backward-char 1) "{")
+     ((eq (char-before) ?\}) (backward-char 1) "}")
+     ((looking-back swift-smie--operators-regexp (- (point) 3) t)
+      (goto-char (match-beginning 0)) "OP")
+     (t (smie-default-backward-token)))))
 
-       ;; A closing brace is 1 level unindented
-       ((looking-at "}") (- baseline swift-indent-offset))
+(defun swift-smie-rules (kind token)
+  (pcase (cons kind token)
+    (`(:elem . basic) swift-indent-offset)
 
-       ;; Doc comments in /** style with leading * indent to line up the *s
-       ((and (nth 4 (syntax-ppss)) (looking-at "*"))
-        (+ 1 baseline))
+    (`(:after . "{")
+     (if (smie-rule-parent-p "switch")
+         (smie-rule-parent swift-indent-switch-case-offset)))
+    (`(:before . ";")
+     (if (smie-rule-parent-p "case" "default")
+         (smie-rule-parent swift-indent-offset)))
 
-       ;; If we're in any other token-tree / sexp, then:
-       (t
-        (or
-         ;; If we are inside a pair of braces, with something after the
-         ;; open brace on the same line and ending with a comma, treat
-         ;; it as fields and align them.
-         (when (> level 0)
-           (save-excursion
-             (swift-indent--rewind-irrelevant)
-             (backward-up-list)
-             ;; Point is now at the beginning of the containing set of braces
-             (swift-indent--align-to-expr-after-brace)))
-
-         (progn
-           (back-to-indentation)
-           ;; Point is now at the beginning of the current line
-           (cond
-            ((swift-indent--at-enum-case-p)
-             baseline)
-            ;; Cases are indented to the same level as the enclosing switch
-            ;; statement, plus a user-customisable offset.
-            ((looking-at (rx bow (or "case" "default") eow))
-             (+ (- baseline swift-indent-offset)
-                swift-indent-switch-case-offset))
-            (t
-             baseline)))))))))
-
-(defun swift-indent-line ()
-  "Indent the current line.  Also see `swift-indent-offset'."
-  (interactive "*")
-  (let ((indent (swift-indent--calculate-indentation)))
-    (if (<= (current-column) (current-indentation))
-        (indent-line-to indent)
-      (save-excursion
-        (indent-line-to indent)))))
+    (`(:before . "if")
+     (if (smie-rule-prev-p "else")
+         (if (smie-rule-parent-p "{")
+             swift-indent-offset
+           (smie-rule-parent))))
+    ))
 
 ;;; Font lock
 
@@ -457,7 +502,9 @@ You can send text to the REPL process from other buffers containing source.
   (setq-local indent-tabs-mode nil)
   (setq-local electric-indent-chars
               (append '(?. ?, ?: ?\) ?\] ?\}) electric-indent-chars))
-  (setq-local indent-line-function 'swift-indent-line))
+  (smie-setup swift-smie-grammar 'swift-smie-rules ;; 'verbose-swift-smie-rules
+              :forward-token 'swift-smie--forward-token
+              :backward-token 'swift-smie--backward-token))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.swift\\'" . swift-mode))
