@@ -355,9 +355,7 @@
     (remove-text-properties start end '(swift-interpolation-match-data))
     (funcall
      (syntax-propertize-rules
-      ((rx (or line-start (not (any "\\")))
-           (zero-or-more "\\\\")
-           (group "\\(" (zero-or-more any) ")"))
+      ((rx (group "\\(" (*? any) ")"))
        (0 (ignore (swift-syntax-propertize-interpolation)))))
      start end)))
 

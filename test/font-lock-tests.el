@@ -187,6 +187,8 @@ test will fail."
 (check-face class/base-type-colon-has-default-face/1 nil "class T {{:}} Base")
 
 (check-face string-interpolation/has-variable-face/1 font-lock-variable-name-face "\"foo {{\\\(bar)}}\"")
+(check-face string-interpolation/has-variable-face/2 font-lock-variable-name-face "\"{{\\\(bar)}}\"")
+(check-face string-interpolation/after-has-string-face/2 font-lock-string-face "\"(foo \\\(bar){{baz}}\")")
 
 (check-face self/has-keyword-face/1 font-lock-keyword-face "{{self}}.foo")
 (check-face super/has-keyword-face/1 font-lock-keyword-face "{{super}}.foo")
