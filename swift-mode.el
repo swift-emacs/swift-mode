@@ -249,6 +249,11 @@
     "nonmutating" "operator" "override" "postfix" "precedence" "prefix" "right"
     "set" "unowned" "unowned(safe)" "unowned(unsafe)" "weak" "willSet" "convenience"))
 
+(defvar swift-mode--attribute-keywords
+  '("assignment" "class_protocol" "exported" "final" "lazy" "noreturn"
+    "NSCopying" "NSManaged" "objc" "optional" "required" "auto_closure"
+    "IBAction" "IBDesignable" "IBInspectable" "IBOutlet"))
+
 (defvar swift-mode--keywords
   (append swift-mode--type-decl-keywords
           swift-mode--val-decl-keywords
@@ -274,6 +279,14 @@
              eow)
        t)
      1 font-lock-keyword-face)
+
+    ;; Attributes
+    ;;
+    ;; Highlight attributes with keyword face
+    (,(rx-to-string
+       `(and "@" bow (or ,@swift-mode--attribute-keywords) eow)
+       t)
+     0 font-lock-keyword-face)
 
     ;; Types
     ;;
