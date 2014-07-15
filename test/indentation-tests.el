@@ -652,6 +652,17 @@ class Foo {
 }
 ")
 
+(check-indentation indents-func-declaration/2
+                   "
+class func Foo() {
+|foo
+}
+" "
+class func Foo() {
+    |foo
+}
+")
+
 (check-indentation indents-declaration/1
   "
 var foo = bar + baz

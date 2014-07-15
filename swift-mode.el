@@ -95,7 +95,7 @@
        (class-level-sts (class-level-st) (class-level-st ";" class-level-st))
        (class-level-st
         (decl)
-        ("override" "func" func-header "{" insts "}"))
+        ("DECSPEC" "func" func-header "{" insts "}"))
 
        (func-header (id "(" func-params ")"))
        (func-param (decl-exp) ("..."))
@@ -178,6 +178,9 @@
                 "*" "/" "%" "&*" "&/" "&%" "&"
                 "<<" ">>")))
 
+(defvar swift-smie--decl-specifier-regexp
+  (regexp-opt '("class" "mutating" "override" "static" "unowned" "weak")))
+
 (defun swift-smie--implicit-semi-p ()
   (save-excursion
     (not (or (memq (char-before) '(?\{ ?\[ ?\,))
@@ -193,6 +196,8 @@
    ((looking-at "}") (forward-char 1) "}")
    ((looking-at swift-smie--operators-regexp)
     (goto-char (match-end 0)) "OP")
+   ((looking-at swift-smie--decl-specifier-regexp)
+    (goto-char (match-end 0)) "DECSPEC")
    (t (smie-default-forward-token))))
 
 (defun swift-smie--backward-token ()
@@ -206,6 +211,8 @@
      ((eq (char-before) ?\}) (backward-char 1) "}")
      ((looking-back swift-smie--operators-regexp (- (point) 3) t)
       (goto-char (match-beginning 0)) "OP")
+     ((looking-back swift-smie--decl-specifier-regexp (- (point) 8) t)
+      (goto-char (match-beginning 0)) "DECSPEC")
      (t (smie-default-backward-token)))))
 
 (defun swift-smie-rules (kind token)
