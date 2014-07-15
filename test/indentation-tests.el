@@ -159,6 +159,32 @@ if true {
 }
 ")
 
+(check-indentation indent-if-else
+  "
+if true {
+} else {
+|foo
+}
+" "
+if true {
+} else {
+    |foo
+}
+")
+
+(check-indentation indent-if-else-if
+  "
+if true {
+} else if false {
+|foo
+}
+" "
+if true {
+} else if false {
+    |foo
+}
+")
+
 (check-indentation indent-if-body--no-effect-if-already-indented
   "
 if true {
@@ -167,6 +193,21 @@ if true {
 ""
 if true {
     |x
+}
+")
+
+(check-indentation indent-if-body-nested
+  "
+if foo {
+    if true {
+|foo
+    }
+}
+" "
+if foo {
+    if true {
+        |foo
+    }
 }
 ")
 
@@ -338,6 +379,74 @@ case y:
 }
 ")
 
+(check-indentation indents-case-statements-with-destucturing/1
+  "
+switch true {
+case let(x, y):
+|foo
+}
+" "
+switch true {
+case let(x, y):
+    |foo
+}
+")
+
+(check-indentation indents-case-statements-with-destucturing/2
+  "
+switch true {
+case let .Foo(x):
+|foo
+}
+" "
+switch true {
+case let .Foo(x):
+    |foo
+}
+")
+
+(check-indentation indents-case-statements-with-guard
+  "
+switch true {
+case foo where bar:
+|foo
+}
+" "
+switch true {
+case foo where bar:
+    |foo
+}
+")
+
+(check-indentation indents-case-statements-with-multiline-guard/1
+  "
+switch true {
+case foo where bar,
+|bar where baz:
+}
+" "
+switch true {
+case foo where bar,
+     |bar where baz:
+}
+")
+
+(check-indentation indents-case-statements-with-multiline-guard/2
+  "
+switch true {
+case foo where bar,
+     bar where baz:
+|foo
+}
+" "
+switch true {
+case foo where bar,
+     bar where baz:
+    |foo
+}
+")
+
+
 (check-indentation indents-case-statements-to-user-defined-offset/1
   "
 switch true {
@@ -383,6 +492,222 @@ enum T {
 enum T {
     |case
 }
+")
+
+(check-indentation indents-case-statements-in-enum/3
+  "
+enum Foo: Bar {
+         |case
+}
+" "
+enum Foo: Bar {
+    |case
+}
+")
+
+(check-indentation indents-for-statements/1
+  "
+for index in 1..5 {
+|foo
+}
+" "
+for index in 1..5 {
+    |foo
+}
+")
+
+(check-indentation indents-for-statements/2
+  "
+for (key, value) in dict {
+|foo
+}
+" "
+for (key, value) in dict {
+    |foo
+}
+")
+
+(check-indentation indents-for-statements/3
+  "
+for var index = 0; index < 3; ++index  {
+|foo
+}
+" "
+for var index = 0; index < 3; ++index  {
+    |foo
+}
+")
+
+(check-indentation indents-while-statements
+  "
+while foo < bar{
+|foo
+}
+" "
+while foo < bar{
+    |foo
+}
+")
+
+(check-indentation indents-import-statements/1
+  "
+import Foo
+        |import Bar
+" "
+import Foo
+|import Bar
+")
+
+(check-indentation indents-class-declaration/1
+  "
+class Foo {
+          |foo
+}
+" "
+class Foo {
+    |foo
+}
+")
+
+(check-indentation indents-class-declaration/2
+  "
+class Foo: Bar {
+          |foo
+}
+" "
+class Foo: Bar {
+    |foo
+}
+")
+
+(check-indentation indents-class-declaration/3
+  "
+class Foo: Foo, Bar, Baz {
+          |foo
+}
+" "
+class Foo: Foo, Bar, Baz {
+    |foo
+}
+")
+
+(check-indentation indents-class-declaration/4
+  "
+class Foo: Bar {
+|class Baz: Bar {
+    }
+}
+" "
+class Foo: Bar {
+    |class Baz: Bar {
+    }
+}
+")
+
+(check-indentation indents-func-declaration/1
+  "
+func Foo(a: String) {
+|foo
+}
+" "
+func Foo(a: String) {
+    |foo
+}
+")
+
+(check-indentation indents-func-declaration/2
+  "
+override func Foo() {
+|foo
+}
+" "
+override func Foo() {
+    |foo
+}
+")
+
+(check-indentation indents-func-declaration/3
+  "
+func Foo(b: Double...) -> Bool {
+|foo
+}
+" "
+func Foo(b: Double...) -> Bool {
+    |foo
+}
+")
+
+(check-indentation indents-func-declaration/4
+  "
+class Foo {
+    override func Foo(b: Double...) -> Bool {
+|foo
+    }
+}
+" "
+class Foo {
+    override func Foo(b: Double...) -> Bool {
+        |foo
+    }
+}
+")
+
+(check-indentation indents-declaration/1
+  "
+var foo = bar + baz
+          |
+" "
+var foo = bar + baz
+|
+")
+
+(check-indentation indents-declaration/2
+  "
+let foo = bar +
+|baz
+" "
+let foo = bar +
+          |baz
+")
+
+(check-indentation indents-declaration/3
+  "
+let foo = [foo: bar, bar: baz]
+          |
+" "
+let foo = [foo: bar, bar: baz]
+|
+")
+
+(check-indentation indents-declaration/4
+  "
+let foo = [
+|bar: baz
+    ]
+" "
+let foo = [
+        |bar: baz
+    ]
+")
+
+(check-indentation indents-declaration/5
+  "
+let foo = [foo, bar]
+          |
+" "
+let foo = [foo, bar]
+|
+")
+
+(check-indentation indents-declaration/6
+  "
+let foo = [
+|bar
+    ]
+" "
+let foo = [
+        |bar
+    ]
 ")
 
 (provide 'indentation-tests)
