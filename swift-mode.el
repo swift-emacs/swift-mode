@@ -324,7 +324,43 @@
     ;; consistency with C modes.
     (,(rx bow "import" eow (+ space) (group (+ word)))
      1 font-lock-string-face)
+
+    ;; String interpolation
+    ;;
+    ;; Highlight interpolation expression as identifier.
+    (swift-match-interpolation 0 font-lock-variable-name-face t)
     ))
+
+(defun swift-syntax-propertize-function (start end)
+  "Syntactic keywords for Swift mode."
+  (let (case-fold-search)
+    (goto-char start)
+    (remove-text-properties start end '(swift-interpolation-match-data))
+    (funcall
+     (syntax-propertize-rules
+      ((rx (or line-start (not (any "\\")))
+           (zero-or-more "\\\\")
+           (group "\\(" (zero-or-more any) ")"))
+       (0 (ignore (swift-syntax-propertize-interpolation)))))
+     start end)))
+
+(defun swift-syntax-propertize-interpolation ()
+  (let* ((beg (match-beginning 0))
+         (context (save-excursion (save-match-data (syntax-ppss beg)))))
+    (put-text-property beg (1+ beg) 'swift-interpolation-match-data
+                       (cons (nth 3 context) (match-data)))))
+
+(defun swift-match-interpolation (limit)
+  (let ((pos (next-single-char-property-change (point) 'swift-interpolation-match-data
+                                               nil limit)))
+    (when (and pos (> pos (point)))
+      (goto-char pos)
+      (let ((value (get-text-property pos 'swift-interpolation-match-data)))
+        (if (eq (car value) ?\")
+            (progn
+              (set-match-data (cdr value))
+              t)
+          (swift-match-interpolation limit))))))
 
 ;;; Imenu
 
@@ -495,6 +531,7 @@ You can send text to the REPL process from other buffers containing source.
   :group 'swift
   :syntax-table swift-mode-syntax-table
   (setq font-lock-defaults '((swift-font-lock-keywords) nil nil))
+  (setq-local syntax-propertize-function #'swift-syntax-propertize-function)
 
   (setq-local imenu-generic-expression swift-mode--imenu-generic-expression)
 
