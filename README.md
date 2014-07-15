@@ -87,8 +87,6 @@ Yes, please do! See [CONTRIBUTING][] for guidelines.
 
 ## Acknowledgements
 
-The indentation code is heavily based on [rust-mode][]'s implementation.
-
 The REPL code is based on [js-comint][].
 
 Thanks to the following users for their contributions:
