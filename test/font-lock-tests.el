@@ -188,6 +188,9 @@ test will fail."
 
 (check-face string-interpolation/has-variable-face/1 font-lock-variable-name-face "\"foo {{\\\(bar)}}\"")
 
+(check-face self/has-keyword-face/1 font-lock-keyword-face "{{self}}.foo")
+(check-face super/has-keyword-face/1 font-lock-keyword-face "{{super}}.foo")
+
 (check-face attributes/has-keyword-face/1 font-lock-keyword-face "{{@IBAction}} func")
 
 (provide 'font-lock-tests)

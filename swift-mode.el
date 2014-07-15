@@ -234,6 +234,9 @@
 (defvar swift-mode--val-decl-keywords
   '("let" "var"))
 
+(defvar swift-mode--context-variables-keywords
+  '("self" "super"))
+
 (defvar swift-mode--fn-decl-keywords
   '("deinit" "func" "init"))
 
@@ -257,6 +260,7 @@
 (defvar swift-mode--keywords
   (append swift-mode--type-decl-keywords
           swift-mode--val-decl-keywords
+          swift-mode--context-variables-keywords
           swift-mode--fn-decl-keywords
           swift-mode--misc-keywords
           swift-mode--statement-keywords
