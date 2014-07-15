@@ -186,6 +186,8 @@ test will fail."
 (check-face class/base-type-has-type-face/4 font-lock-type-face "class T<U> : {{Base}}")
 (check-face class/base-type-colon-has-default-face/1 nil "class T {{:}} Base")
 
+(check-face string-interpolation/has-variable-face/1 font-lock-variable-name-face "\"foo {{\\\(bar)}}\"")
+
 (provide 'font-lock-tests)
 
 ;;; font-lock-tests.el ends here
