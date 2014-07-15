@@ -126,6 +126,8 @@ test will fail."
 (check-face let-bind/has-variable-face/1 font-lock-variable-name-face "let {{x}} = y")
 (check-face let-bind/has-variable-face/2 font-lock-variable-name-face "let {{foo}} = y")
 (check-face let-bind/has-variable-face/3 font-lock-variable-name-face "let {{x}}: T = y")
+(check-face let-bind/has-variable-face/4 font-lock-variable-name-face "let ({{foo}}, bar) = y")
+(check-face let-bind/has-variable-face/5 font-lock-variable-name-face "let (foo, {{bar}}) = y")
 (check-face let-bind-type-ann/has-type-face/1 font-lock-type-face "let x: {{T}} = y")
 (check-face let-bind-type-ann/has-type-face/2 font-lock-type-face "let x: {{Type}} = y")
 
