@@ -741,6 +741,24 @@ Foo.bar([
 ])
 ")
 
+(check-indentation indents-multiline-expressions/2
+                   "
+Foo.bar(bar!,
+|baz)
+" "
+Foo.bar(bar!,
+        |baz)
+")
+
+(check-indentation indents-multiline-expressions/3
+                   "
+Foo.bar(bar?,
+|baz)
+" "
+Foo.bar(bar?,
+        |baz)
+")
+
 (check-indentation indents-type-annotations/1
                    "
 typealias Foo = Bar<Foo.Baz, Foo>
