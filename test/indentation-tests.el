@@ -505,6 +505,21 @@ enum Foo: Bar {
 }
 ")
 
+(check-indentation indents-declaration-statements-in-enum/1
+                   "
+enum Foo: Bar {
+    case foo
+    case bar
+         |var foo
+}
+" "
+enum Foo: Bar {
+    case foo
+    case bar
+    |var foo
+}
+")
+
 (check-indentation indents-for-statements/1
   "
 for index in 1..5 {
@@ -652,6 +667,17 @@ class Foo {
 }
 ")
 
+(check-indentation indents-func-declaration/2
+                   "
+class func Foo() {
+|foo
+}
+" "
+class func Foo() {
+    |foo
+}
+")
+
 (check-indentation indents-declaration/1
   "
 var foo = bar + baz
@@ -683,11 +709,11 @@ let foo = [foo: bar, bar: baz]
   "
 let foo = [
 |bar: baz
-    ]
+]
 " "
 let foo = [
-        |bar: baz
-    ]
+    |bar: baz
+]
 ")
 
 (check-indentation indents-declaration/5
@@ -703,11 +729,89 @@ let foo = [foo, bar]
   "
 let foo = [
 |bar
-    ]
+]
 " "
 let foo = [
-        |bar
-    ]
+    |bar
+]
+")
+
+(check-indentation indents-declaration/7
+                   "
+var result = Dictionary<String, V>()
+    |foo
+" "
+var result = Dictionary<String, V>()
+|foo
+")
+
+(check-indentation indents-multiline-expressions/1
+"
+Foo.bar([foo: bar,
+|bar: baz
+])
+" "
+Foo.bar([foo: bar,
+         |bar: baz
+])
+")
+
+(check-indentation indents-multiline-expressions/2
+                   "
+Foo.bar(bar!,
+|baz)
+" "
+Foo.bar(bar!,
+        |baz)
+")
+
+(check-indentation indents-multiline-expressions/3
+                   "
+Foo.bar(bar?,
+|baz)
+" "
+Foo.bar(bar?,
+        |baz)
+")
+
+(check-indentation indents-type-annotations/1
+                   "
+typealias Foo = Bar<Foo.Baz, Foo>
+    |foo
+" "
+typealias Foo = Bar<Foo.Baz, Foo>
+|foo
+")
+
+(check-indentation indents-type-annotations/2
+                   "
+typealias Foo = Bar<Foo.Baz,
+|Foo>
+" "
+typealias Foo = Bar<Foo.Baz,
+                    |Foo>
+")
+
+(check-indentation indents-type-works-with-less-operator/1
+                   "
+typealias Foo = Bar<Foo.Baz, Foo>
+let foo = bar <
+|baz
+" "
+typealias Foo = Bar<Foo.Baz, Foo>
+let foo = bar <
+          |baz
+")
+
+(check-indentation indents-type-works-with-less-operator/2
+                   "
+typealias Foo = Bar<Foo.Baz, Foo>
+let foo = bar >
+|baz
+" "
+typealias Foo = Bar<Foo.Baz, Foo>
+let foo = bar >
+          |baz
 ")
 
 (provide 'indentation-tests)
