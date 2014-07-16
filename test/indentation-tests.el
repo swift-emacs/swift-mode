@@ -721,6 +721,55 @@ let foo = [
     ]
 ")
 
+(check-indentation indents-declaration/7
+                   "
+var result = Dictionary<String, V>()
+    |foo
+" "
+var result = Dictionary<String, V>()
+|foo
+")
+
+(check-indentation indents-type-annotations/1
+                   "
+typealias Foo = Bar<Foo.Baz, Foo>
+    |foo
+" "
+typealias Foo = Bar<Foo.Baz, Foo>
+|foo
+")
+
+(check-indentation indents-type-annotations/2
+                   "
+typealias Foo = Bar<Foo.Baz,
+|Foo>
+" "
+typealias Foo = Bar<Foo.Baz,
+                    |Foo>
+")
+
+(check-indentation indents-type-works-with-less-operator/1
+                   "
+typealias Foo = Bar<Foo.Baz, Foo>
+let foo = bar <
+|baz
+" "
+typealias Foo = Bar<Foo.Baz, Foo>
+let foo = bar <
+          |baz
+")
+
+(check-indentation indents-type-works-with-less-operator/2
+                   "
+typealias Foo = Bar<Foo.Baz, Foo>
+let foo = bar >
+|baz
+" "
+typealias Foo = Bar<Foo.Baz, Foo>
+let foo = bar >
+          |baz
+")
+
 (provide 'indentation-tests)
 
 ;;; indentation-tests.el ends here

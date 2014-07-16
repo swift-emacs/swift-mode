@@ -66,7 +66,7 @@
    (smie-merge-prec2s
     (smie-bnf->prec2
      '((id)
-       (type)
+       (type (type) (type "<T" types "T>"))
        (types (type) (type "," type))
 
        (class-decl-exp (id) (id ":" types))
@@ -194,6 +194,10 @@
     ";")
    ((looking-at "{") (forward-char 1) "{")
    ((looking-at "}") (forward-char 1) "}")
+   ((looking-at "<") (forward-char 1)
+    (if (looking-at "[[:upper:]]") "<T" "OP"))
+   ((looking-at ">") (forward-char 1)
+    (if (looking-back "[[:space:]]>" 2 t) "OP" "T>"))
    ((looking-at swift-smie--operators-regexp)
     (goto-char (match-end 0)) "OP")
    ((looking-at swift-smie--decl-specifier-regexp)
@@ -209,6 +213,10 @@
       ";")
      ((eq (char-before) ?\{) (backward-char 1) "{")
      ((eq (char-before) ?\}) (backward-char 1) "}")
+     ((eq (char-before) ?<) (backward-char 1)
+      (if (looking-at "<[[:upper:]]") "<T" "OP"))
+     ((eq (char-before) ?>) (backward-char 1)
+      (if (looking-back "[[:space:]]" 1 t) "OP" "T>"))
      ((looking-back swift-smie--operators-regexp (- (point) 3) t)
       (goto-char (match-beginning 0)) "OP")
      ((looking-back swift-smie--decl-specifier-regexp (- (point) 8) t)
