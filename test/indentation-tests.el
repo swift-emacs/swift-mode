@@ -747,12 +747,12 @@ var result = Dictionary<String, V>()
 
 (check-indentation indents-multiline-expressions/1
 "
-Foo.bar([
+Foo.bar([foo: bar,
 |bar: baz
 ])
 " "
-Foo.bar([
-    |bar: baz
+Foo.bar([foo: bar,
+         |bar: baz
 ])
 ")
 
