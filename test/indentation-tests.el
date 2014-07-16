@@ -505,6 +505,21 @@ enum Foo: Bar {
 }
 ")
 
+(check-indentation indents-declaration-statements-in-enum/1
+                   "
+enum Foo: Bar {
+    case foo
+    case bar
+         |var foo
+}
+" "
+enum Foo: Bar {
+    case foo
+    case bar
+    |var foo
+}
+")
+
 (check-indentation indents-for-statements/1
   "
 for index in 1..5 {

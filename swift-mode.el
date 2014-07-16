@@ -108,7 +108,7 @@
              (dot-exp "{" insts "}")
              (method-call)
              (method-call "{" insts "}")
-             ("enum" decl-exp "{" enum-cases "}")
+             ("enum" decl-exp "{" enum-body "}")
              ("switch" exp "{" switch-body "}")
              (if-clause)
              ("for" for-head "{" insts "}")
@@ -127,7 +127,8 @@
        (op-exp (exp "OP" exp))
 
        (enum-cases (assign-exp)
-                   (enum-cases "case" enum-cases))
+                   (enum-cases ";" "ecase" enum-cases))
+       (enum-body (enum-cases) (insts))
 
        (case-exps (guard-exp))
        (cases (case-exps ":" insts)
@@ -144,6 +145,7 @@
      '((nonassoc "{") (assoc ",") (assoc ";") (assoc ":"))
      '((assoc "in") (assoc "where") (assoc "OP"))
      '((assoc "else"))
+     '((assoc ";") (assoc "ecase"))
      '((assoc "case")))
 
     (smie-precs->prec2
@@ -192,18 +194,31 @@
    ((and (looking-at "\n") (swift-smie--implicit-semi-p))
     (if (eolp) (forward-char 1) (forward-comment 1))
     ";")
+
    ((looking-at "{") (forward-char 1) "{")
    ((looking-at "}") (forward-char 1) "}")
+
    ((looking-at ",") (forward-char 1) ",")
+
    ((looking-at "<") (forward-char 1)
     (if (looking-at "[[:upper:]]") "<T" "OP"))
    ((looking-at ">") (forward-char 1)
     (if (looking-back "[[:space:]]>" 2 t) "OP" "T>"))
+
    ((looking-at swift-smie--operators-regexp)
     (goto-char (match-end 0)) "OP")
+
    ((looking-at swift-smie--decl-specifier-regexp)
     (goto-char (match-end 0)) "DECSPEC")
-   (t (smie-default-forward-token))))
+
+   (t (let ((tok (smie-default-forward-token)))
+        (cond
+         ((equal tok "case")
+          (if (looking-at ".+\\(,\\|:\\)")
+              "case"
+            "ecase"))
+         (t tok))))
+   ))
 
 (defun swift-smie--backward-token ()
   (let ((pos (point)))
@@ -212,18 +227,31 @@
      ((and (> pos (line-end-position))
            (swift-smie--implicit-semi-p))
       ";")
+
      ((eq (char-before) ?\{) (backward-char 1) "{")
      ((eq (char-before) ?\}) (backward-char 1) "}")
+
      ((eq (char-before) ?,) (backward-char 1) ",")
+
      ((eq (char-before) ?<) (backward-char 1)
       (if (looking-at "<[[:upper:]]") "<T" "OP"))
      ((eq (char-before) ?>) (backward-char 1)
       (if (looking-back "[[:space:]]" 1 t) "OP" "T>"))
+
      ((looking-back swift-smie--operators-regexp (- (point) 3) t)
       (goto-char (match-beginning 0)) "OP")
+
      ((looking-back swift-smie--decl-specifier-regexp (- (point) 8) t)
       (goto-char (match-beginning 0)) "DECSPEC")
-     (t (smie-default-backward-token)))))
+
+     (t (let ((tok (smie-default-backward-token)))
+          (cond
+           ((equal tok "case")
+            (if (looking-at ".+\\(,\\|:\\)")
+                "case"
+              "ecase"))
+           (t tok))))
+     )))
 
 (defun swift-smie-rules (kind token)
   (pcase (cons kind token)
