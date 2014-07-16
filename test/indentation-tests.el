@@ -694,11 +694,11 @@ let foo = [foo: bar, bar: baz]
   "
 let foo = [
 |bar: baz
-    ]
+]
 " "
 let foo = [
-        |bar: baz
-    ]
+    |bar: baz
+]
 ")
 
 (check-indentation indents-declaration/5
@@ -714,11 +714,11 @@ let foo = [foo, bar]
   "
 let foo = [
 |bar
-    ]
+]
 " "
 let foo = [
-        |bar
-    ]
+    |bar
+]
 ")
 
 (check-indentation indents-declaration/7
@@ -728,6 +728,17 @@ var result = Dictionary<String, V>()
 " "
 var result = Dictionary<String, V>()
 |foo
+")
+
+(check-indentation indents-multiline-expressions/1
+"
+Foo.bar([
+|bar: baz
+])
+" "
+Foo.bar([
+    |bar: baz
+])
 ")
 
 (check-indentation indents-type-annotations/1

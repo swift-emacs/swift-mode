@@ -239,6 +239,10 @@
          (if (smie-rule-parent-p "{")
              swift-indent-offset
            (smie-rule-parent))))
+
+    (`(:before . "(")
+     (if (smie-rule-next-p "[") (smie-rule-parent)))
+    (`(:before . "[") (smie-rule-parent))
     ))
 
 ;;; Font lock
