@@ -546,27 +546,33 @@ You can send text to the REPL process from other buffers containing source.
 
 ;;; Mode definition
 
-;; HACK: This syntax table is lifted directly from `rust-mode'. There may be
-;; corner cases in the Swift syntax that are not accounted for.
 (defvar swift-mode-syntax-table
   (let ((table (make-syntax-table)))
 
     ;; Operators
-    (dolist (i '(?+ ?- ?* ?/ ?& ?| ?^ ?! ?< ?> ?~ ?@))
+    (dolist (i '(?+ ?- ?* ?/ ?& ?| ?^ ?! ?< ?> ?~))
       (modify-syntax-entry i "." table))
 
     ;; Strings
     (modify-syntax-entry ?\" "\"" table)
     (modify-syntax-entry ?\\ "\\" table)
 
-    ;; _ is a word-char
-    (modify-syntax-entry ?_ "w" table)
+    ;; Additional symbols
+    (modify-syntax-entry ?_ "-" table)
+    (modify-syntax-entry ?: "_" table)
 
     ;; Comments
     (modify-syntax-entry ?/  ". 124b" table)
     (modify-syntax-entry ?*  ". 23"   table)
     (modify-syntax-entry ?\n "> b"    table)
-    (modify-syntax-entry ?\^m "> b"   table)
+
+    ;; Parenthesis, braces and brackets
+    (modify-syntax-entry ?\( "()" table)
+    (modify-syntax-entry ?\) ")(" table)
+    (modify-syntax-entry ?\{ "(}" table)
+    (modify-syntax-entry ?\} "){" table)
+    (modify-syntax-entry ?\[ "(]" table)
+    (modify-syntax-entry ?\] ")[" table)
 
     table))
 
