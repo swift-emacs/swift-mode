@@ -3,7 +3,7 @@
 ;; Copyright (C) 2014 Chris Barrett
 
 ;; Author: Chris Barrett <chris.d.barrett@me.com>
-;; Version: 0.2.0
+;; Version: 0.3.0-cvs
 ;; Package-Requires: ((emacs "24.1"))
 
 ;; This file is not part of GNU Emacs.
