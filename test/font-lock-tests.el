@@ -195,6 +195,8 @@ test will fail."
 
 (check-face attributes/has-keyword-face/1 font-lock-keyword-face "{{@IBAction}} func")
 
+(check-face comments/nested-multiline-comments-has-comments-face/1 font-lock-comment-face "/*/* text */{{*/}}")
+
 (provide 'font-lock-tests)
 
 ;;; font-lock-tests.el ends here
