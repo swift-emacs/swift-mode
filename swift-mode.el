@@ -563,8 +563,8 @@ You can send text to the REPL process from other buffers containing source.
     (modify-syntax-entry ?: "_" table)
 
     ;; Comments
-    (modify-syntax-entry ?/  ". 124b" table)
-    (modify-syntax-entry ?*  ". 23"   table)
+    (modify-syntax-entry ?/  ". 124b"  table)
+    (modify-syntax-entry ?*  ". 23n" table)
     (modify-syntax-entry ?\n "> b"    table)
 
     ;; Parenthesis, braces and brackets
