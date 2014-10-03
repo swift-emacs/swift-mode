@@ -188,6 +188,8 @@ test will fail."
 
 (check-face string-interpolation/has-variable-face/1 font-lock-variable-name-face "\"foo {{\\\(bar)}}\"")
 (check-face string-interpolation/has-variable-face/2 font-lock-variable-name-face "\"{{\\\(bar)}}\"")
+(check-face string-interpolation/has-variable-face/3 font-lock-variable-name-face "\"\\\(bar\(1\){{\)}}\"")
+(check-face string-interpolation/has-variable-face/4 font-lock-variable-name-face "\"\\\(bar\(1\){{ + baz\(2\)\)}}\"")
 (check-face string-interpolation/after-has-string-face/2 font-lock-string-face "\"(foo \\\(bar){{baz}}\")")
 
 (check-face self/has-keyword-face/1 font-lock-keyword-face "{{self}}.foo")
