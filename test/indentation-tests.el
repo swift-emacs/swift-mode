@@ -792,6 +792,24 @@ let json_ary = NSJSONSerialization
                |.JSONObjectWithData(data, options: nil, error: &json_err) as NSArray
 ")
 
+(check-indentation indents-multiline-expressions/6
+                   "
+let json_ary = NSJSONSerialization.
+               |JSONObjectWithData(data, options: nil, error: &json_err) as NSArray
+" "
+let json_ary = NSJSONSerialization.
+               |JSONObjectWithData(data, options: nil, error: &json_err) as NSArray
+")
+
+(check-indentation indents-multiline-expressions/7
+                   "
+let json_ary = NSJSONSerialization
+               |.JSONObjectWithData(data, options: nil, error: &json_err) as NSArray
+" "
+let json_ary = NSJSONSerialization
+               |.JSONObjectWithData(data, options: nil, error: &json_err) as NSArray
+")
+
 (check-indentation indents-type-annotations/1
                    "
 typealias Foo = Bar<Foo.Baz, Foo>
