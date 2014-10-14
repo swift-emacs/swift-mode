@@ -774,6 +774,24 @@ Foo.bar(bar?,
         |baz)
 ")
 
+(check-indentation indents-multiline-expressions/4
+                   "
+let json_ary = NSJSONSerialization.
+|JSONObjectWithData(data, options: nil, error: &json_err) as NSArray
+" "
+let json_ary = NSJSONSerialization.
+               |JSONObjectWithData(data, options: nil, error: &json_err) as NSArray
+")
+
+(check-indentation indents-multiline-expressions/5
+                   "
+let json_ary = NSJSONSerialization
+|.JSONObjectWithData(data, options: nil, error: &json_err) as NSArray
+" "
+let json_ary = NSJSONSerialization
+               |.JSONObjectWithData(data, options: nil, error: &json_err) as NSArray
+")
+
 (check-indentation indents-type-annotations/1
                    "
 typealias Foo = Bar<Foo.Baz, Foo>
