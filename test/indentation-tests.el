@@ -811,6 +811,15 @@ let json_ary = NSJSONSerialization
                |.JSONObjectWithData(data, options: nil, error: &json_err) as NSArray
 ")
 
+(check-indentation indents-multiline-expressions/8
+                   "
+let options = NSRegularExpressionOptions.CaseInsensitive &
+|NSRegularExpressionOptions.DotMatchesLineSeparators
+" "
+let options = NSRegularExpressionOptions.CaseInsensitive &
+              |NSRegularExpressionOptions.DotMatchesLineSeparators
+")
+
 (check-indentation indents-multiline-expressions-to-user-defined-offset/1
                    "
 NSNotificationCenter.defaultCenter().

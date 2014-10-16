@@ -121,7 +121,7 @@
              ("for" for-head "{" insts "}")
              ("while" exp "{" insts "}"))
 
-       (dot-exp (exp "." exp))
+       (dot-exp (id "." id))
 
        (method-call (dot-exp "(" method-args ")"))
        (method-args (method-arg) (method-arg "," method-arg))
