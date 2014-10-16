@@ -58,7 +58,7 @@ values of customisable variables."
               ;; Bind customisable vars to default values for tests.
               (swift-indent-offset 4)
               (swift-indent-switch-case-offset 0)
-              (swift-indent-multiline-dot-offset 2)
+              (swift-indent-multiline-statement-offset 2)
               ,@var-bindings)
          (with-temp-buffer
            (insert ,before)
@@ -819,7 +819,7 @@ NSNotificationCenter.defaultCenter().
 NSNotificationCenter.defaultCenter().
     |postNotificationName(foo, object: nil)
 "
-((swift-indent-multiline-dot-offset 4)))
+((swift-indent-multiline-statement-offset 4)))
 
 (check-indentation indents-multiline-expressions-to-user-defined-offset/2
                    "
@@ -829,7 +829,7 @@ NSNotificationCenter.defaultCenter()
 NSNotificationCenter.defaultCenter()
     |.postNotificationName(foo, object: nil)
 "
-((swift-indent-multiline-dot-offset 4)))
+((swift-indent-multiline-statement-offset 4)))
 
 (check-indentation indents-multiline-expressions-to-user-defined-offset/3
                    "
@@ -839,7 +839,7 @@ let json_ary = NSJSONSerialization
 let json_ary = NSJSONSerialization
                  |.JSONObjectWithData(data, options: nil, error: &json_err) as NSArray
 "
-((swift-indent-multiline-dot-offset 4)))
+((swift-indent-multiline-statement-offset 4)))
 
 (check-indentation indents-type-annotations/1
                    "
