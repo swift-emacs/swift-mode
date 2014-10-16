@@ -53,6 +53,12 @@
   :group 'swift
   :type 'integerp)
 
+(defcustom swift-indent-multiline-dot-offset 2
+  "Defines the indentation offset for for multiline dot statement."
+  :group 'swift
+  :type 'integerp
+  :package-version '(swift-mode "0.3.0"))
+
 (defcustom swift-repl-executable
   "xcrun swift"
   "Path to the Swift CLI."
@@ -265,6 +271,14 @@
     (`(:before . ";")
      (if (smie-rule-parent-p "case" "default")
          (smie-rule-parent swift-indent-offset)))
+
+    ;; Apply swift-indent-multiline-dot-offset only if
+    ;; - dot is followed by newline, or
+    ;; - have at least one whitespace character before dot
+    (`(:before . ".")
+     (if (or (looking-at "[.][\n]")
+             (looking-back "[ \t\n]" 1 t))
+         (smie-rule-parent swift-indent-multiline-dot-offset)))
 
     (`(:before . "if")
      (if (smie-rule-prev-p "else")
