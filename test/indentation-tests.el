@@ -850,6 +850,16 @@ let json_ary = NSJSONSerialization
 "
 ((swift-indent-multiline-statement-offset 4)))
 
+(check-indentation indents-multiline-expressions-to-user-defined-offset/4
+                   "
+let options = NSRegularExpressionOptions.CaseInsensitive &
+|NSRegularExpressionOptions.DotMatchesLineSeparators
+" "
+let options = NSRegularExpressionOptions.CaseInsensitive &
+                |NSRegularExpressionOptions.DotMatchesLineSeparators
+"
+((swift-indent-multiline-statement-offset 4)))
+
 (check-indentation indents-type-annotations/1
                    "
 typealias Foo = Bar<Foo.Baz, Foo>

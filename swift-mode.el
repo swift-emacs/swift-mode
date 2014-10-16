@@ -280,6 +280,12 @@
              (looking-back "[ \t\n]" 1 t))
          (smie-rule-parent swift-indent-multiline-statement-offset)))
 
+    ;; Apply swift-indent-multiline-statement-offset if
+    ;; operator is the last symbol on the line
+    (`(:before . "OP")
+     (if (looking-at ".[\n]")
+         (smie-rule-parent swift-indent-multiline-statement-offset)))
+
     (`(:before . "if")
      (if (smie-rule-prev-p "else")
          (if (smie-rule-parent-p "{")
