@@ -274,10 +274,10 @@
 
     ;; Apply swift-indent-multiline-statement-offset only if
     ;; - dot is followed by newline, or
-    ;; - have at least one whitespace character before dot
+    ;; - if dot is a first token on the line
     (`(:before . ".")
      (if (or (looking-at "[.][\n]")
-             (looking-back "[ \t\n]" 1 t))
+             (smie-rule-bolp))
          (smie-rule-parent swift-indent-multiline-statement-offset)))
 
     ;; Apply swift-indent-multiline-statement-offset if
