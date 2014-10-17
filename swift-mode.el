@@ -140,7 +140,7 @@
        (case-exps (guard-exp))
        (cases (case-exps ":" insts)
               (cases "case" cases))
-       (switch-body (cases) (cases "default" insts))
+       (switch-body (cases) (cases "default:" insts))
 
        (for-head (in-exp) (op-exp) (for-head ";" for-head))
 
@@ -269,7 +269,7 @@
      (if (smie-rule-parent-p "switch")
          (smie-rule-parent swift-indent-switch-case-offset)))
     (`(:before . ";")
-     (if (smie-rule-parent-p "case" "default")
+     (if (smie-rule-parent-p "case" "default:")
          (smie-rule-parent swift-indent-offset)))
 
     ;; Apply swift-indent-multiline-statement-offset only if
