@@ -354,13 +354,17 @@ case y:
   "
 {
     switch true {
-|default
+    case y:
+        x
+|default:
     }
 }
 " "
 {
     switch true {
-    |default
+    case y:
+        x
+    |default:
     }
 }
 ")
@@ -369,13 +373,17 @@ case y:
   "
 {
     switch true {
-              |default
+    case y:
+        x
+              |default:
     }
 }
 " "
 {
     switch true {
-    |default
+    case y:
+        x
+    |default:
     }
 }
 ")
