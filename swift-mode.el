@@ -426,7 +426,7 @@
     (remove-text-properties start end '(swift-interpolation-match-data))
     (funcall
      (syntax-propertize-rules
-      ((rx (group "\\(" (* (any alnum " " "(" ")" "+" "-" "*" "/" "_" ".")) ")"))
+      ((rx (group "\\(" (* (any alnum " ()+-._/*[]!?<>&~!:|^%")) ")"))
        (0 (ignore (swift-syntax-propertize-interpolation)))))
      start end)))
 
