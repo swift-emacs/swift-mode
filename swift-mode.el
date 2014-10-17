@@ -188,7 +188,8 @@
                 "<<" ">>")))
 
 (defvar swift-smie--decl-specifier-regexp
-  (regexp-opt '("class" "mutating" "override" "static" "unowned" "weak")))
+  (rx (? (or "class" "mutating" "override" "static" "unowned" "weak"))
+      (* space) "func"))
 
 (defun swift-smie--implicit-semi-p ()
   (save-excursion
@@ -285,6 +286,12 @@
     (`(:before . "OP")
      (if (looking-at ".[\n]")
          (smie-rule-parent swift-indent-multiline-statement-offset)))
+
+    ;; Indent second line of the multi-line class
+    ;; definitions with swift-indent-offset
+    (`(:before . ",")
+     (if (smie-rule-parent-p "class")
+       swift-indent-offset))
 
     (`(:before . "if")
      (if (smie-rule-prev-p "else")

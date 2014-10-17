@@ -628,6 +628,17 @@ class Foo: Bar {
 }
 ")
 
+(check-indentation indents-class-declaration/5
+                   "
+class Foo: Foo, Bar,
+|Baz {
+}
+" "
+class Foo: Foo, Bar,
+    |Baz {
+}
+")
+
 (check-indentation indents-func-declaration/1
   "
 func Foo(a: String) {
