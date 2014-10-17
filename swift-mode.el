@@ -188,7 +188,8 @@
                 "<<" ">>")))
 
 (defvar swift-smie--decl-specifier-regexp
-  (regexp-opt '("class" "mutating" "override" "static" "unowned" "weak")))
+  (rx (? (or "class" "mutating" "override" "static" "unowned" "weak"))
+      (* space) "func"))
 
 (defun swift-smie--implicit-semi-p ()
   (save-excursion
