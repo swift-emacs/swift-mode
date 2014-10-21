@@ -480,8 +480,9 @@
   '(progn
      (flycheck-def-option-var flycheck-swift-sdk-path nil swift
        "A path to the targeted SDK"
-       :type '(repeat (directory :tag "iOS/MacOS SDK directory"))
-       :safe #'flycheck-string-list-p)
+       :type '(choice (const :tag "Don't link against sdk" nil)
+                      (string :tag "Targeted SDK path"))
+       :safe #'stringp)
 
      (flycheck-def-option-var flycheck-swift-linked-sources nil swift
        "Source files path to link against. Can be glob, i.e. *.swift"
@@ -493,7 +494,7 @@
        "Flycheck plugin for for Apple's Swift programming language."
        :command ("swift"
                  "-frontend" "-parse"
-                 (option-list "-sdk" flycheck-swift-sdk-path)
+                 (option "-sdk" flycheck-swift-sdk-path)
                  ;; Swift compiler will complain about redeclaration
                  ;; if we will include original file along with
                  ;; temporary source file created by flycheck.
