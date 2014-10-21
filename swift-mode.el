@@ -516,9 +516,7 @@
                "error: " (message) line-end)
         (warning line-start (file-name) ":" line ":" column ": "
                  "warning: " (message) line-end))
-       :modes swift-mode)
-
-     (add-to-list 'flycheck-checkers 'swift)))
+       :modes swift-mode)))
 
 ;;; REPL
 
