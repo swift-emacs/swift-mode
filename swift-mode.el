@@ -503,7 +503,7 @@
                   (let (source file)
                     (setq source (flycheck-substitute-argument 'source 'swift))
                     (setq file (file-name-nondirectory source))
-                    (remove-if-not
+                    (cl-remove-if-not
                      #'(lambda (path)
                          (and
                           (eq (string-match ".#" path) nil)
