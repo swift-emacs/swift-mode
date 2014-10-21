@@ -501,7 +501,7 @@
                  ;; We also don't want a hidden emacs interlock files.
                  (eval
                   (let (source file)
-                    (setq source (flycheck-substitute-argument 'source 'swift))
+                    (setq source (car (flycheck-substitute-argument 'source 'swift)))
                     (setq file (file-name-nondirectory source))
                     (cl-remove-if-not
                      #'(lambda (path)
