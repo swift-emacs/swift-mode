@@ -501,14 +501,15 @@
                  ;; We also don't want a hidden emacs interlock files.
                  (eval
                   (let (source file)
-                    (setq source (car (flycheck-substitute-argument 'source 'swift)))
-                    (setq file (file-name-nondirectory source))
-                    (cl-remove-if-not
-                     #'(lambda (path)
-                         (and
-                          (eq (string-match ".#" path) nil)
-                          (eq (string-match file path) nil)))
-                     (file-expand-wildcards flycheck-swift-linked-sources))))
+                    (when flycheck-swift-linked-sources
+                      (setq source (car (flycheck-substitute-argument 'source 'swift)))
+                      (setq file (file-name-nondirectory source))
+                      (cl-remove-if-not
+                       #'(lambda (path)
+                           (and
+                            (eq (string-match ".#" path) nil)
+                            (eq (string-match file path) nil)))
+                       (file-expand-wildcards flycheck-swift-linked-sources)))))
                  "-primary-file" source)
        :error-patterns
        ((error line-start (file-name) ":" line ":" column ": "
