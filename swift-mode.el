@@ -480,8 +480,9 @@
   '(progn
      (flycheck-def-option-var flycheck-swift-sdk-path nil swift
        "A path to the targeted SDK"
-       :type '(repeat (directory :tag "iOS/MacOS SDK directory"))
-       :safe #'flycheck-string-list-p)
+       :type '(choice (const :tag "Don't link against sdk" nil)
+                      (string :tag "Targeted SDK path"))
+       :safe #'stringp)
 
      (flycheck-def-option-var flycheck-swift-linked-sources nil swift
        "Source files path to link against. Can be glob, i.e. *.swift"
@@ -493,30 +494,29 @@
        "Flycheck plugin for for Apple's Swift programming language."
        :command ("swift"
                  "-frontend" "-parse"
-                 (option-list "-sdk" flycheck-swift-sdk-path)
+                 (option "-sdk" flycheck-swift-sdk-path)
                  ;; Swift compiler will complain about redeclaration
                  ;; if we will include original file along with
                  ;; temporary source file created by flycheck.
                  ;; We also don't want a hidden emacs interlock files.
                  (eval
                   (let (source file)
-                    (setq source (flycheck-substitute-argument 'source 'swift))
-                    (setq file (file-name-nondirectory source))
-                    (remove-if-not
-                     #'(lambda (path)
-                         (and
-                          (eq (string-match ".#" path) nil)
-                          (eq (string-match file path) nil)))
-                     (file-expand-wildcards flycheck-swift-linked-sources))))
+                    (when flycheck-swift-linked-sources
+                      (setq source (car (flycheck-substitute-argument 'source 'swift)))
+                      (setq file (file-name-nondirectory source))
+                      (cl-remove-if-not
+                       #'(lambda (path)
+                           (and
+                            (eq (string-match ".#" path) nil)
+                            (eq (string-match file path) nil)))
+                       (file-expand-wildcards flycheck-swift-linked-sources)))))
                  "-primary-file" source)
        :error-patterns
        ((error line-start (file-name) ":" line ":" column ": "
                "error: " (message) line-end)
         (warning line-start (file-name) ":" line ":" column ": "
                  "warning: " (message) line-end))
-       :modes swift-mode)
-
-     (add-to-list 'flycheck-checkers 'swift)))
+       :modes swift-mode)))
 
 ;;; REPL
 

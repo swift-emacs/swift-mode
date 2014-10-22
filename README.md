@@ -10,7 +10,7 @@ Major-mode for Apple's [Swift programming language][swift]. Provides:
 - syntax highlighting
 - indentation
 - code navigation with [imenu][]
-- automatic syntax checking with [flycheck][]
+- automatic syntax checking with [flycheck][] (disabled by default)
 
 This is currently at an early stage of development and there's plenty of work to
 do. Check the issue tracker.
@@ -60,6 +60,12 @@ If you'd like to get on-the-fly syntax checking you should install
 
 ```
 M-x package-install flycheck
+```
+
+And enable `flycheck` checker for `swift`:
+
+```
+(add-to-list 'flycheck-checkers 'swift)
 ```
 
 ### Manual
