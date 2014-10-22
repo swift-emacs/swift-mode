@@ -5,7 +5,7 @@
 ;; Authors: Chris Barrett <chris.d.barrett@me.com>
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Arthur Evstifeev <lod@pisem.net>
-;; Version: 0.3.0-cvs
+;; Version: 0.3.0
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: languages swift
 
