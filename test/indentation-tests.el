@@ -919,6 +919,19 @@ let foo = bar >
           |baz
 ")
 
+(check-indentation indents-multiline-operators-only-once
+                   "
+1 +
+    2 + 5 *
+|3
+" "
+1 +
+    2 + 5 *
+    |3
+"
+)
+
+
 (provide 'indentation-tests)
 
 ;;; indentation-tests.el ends here
