@@ -99,6 +99,7 @@ Thanks to the following users for their contributions:
 
 - [@ap4y](https://github.com/ap4y) (Arthur Evstifeev)
 - [@bbatsov](https://github.com/bbatsov) (Bozhidar Batsov)
+- [@ckruse](https://github.com/ckruse) (Christian Kruse)
 - [@syohex](https://github.com/syohex) (Syohei Yoshida)
 
 ## License
