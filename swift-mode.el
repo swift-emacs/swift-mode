@@ -591,7 +591,7 @@ You can send text to the REPL process from other buffers containing source.
     (modify-syntax-entry ?\\ "\\" table)
 
     ;; Additional symbols
-    (modify-syntax-entry ?_ "_" table)
+    (modify-syntax-entry ?_ "w" table)
     (modify-syntax-entry ?: "_" table)
 
     ;; Comments
