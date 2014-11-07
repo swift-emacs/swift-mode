@@ -331,11 +331,12 @@
 (defvar swift-mode--contextual-keywords
   '("associativity" "didSet" "get" "infix" "inout" "left" "mutating" "none"
     "nonmutating" "operator" "override" "postfix" "precedence" "prefix" "right"
-    "set" "unowned" "unowned(safe)" "unowned(unsafe)" "weak" "willSet" "convenience"))
+    "set" "unowned" "unowned(safe)" "unowned(unsafe)" "weak" "willSet" "convenience"
+    "required" "dynamic" "final" "lazy" "optional"))
 
 (defvar swift-mode--attribute-keywords
-  '("assignment" "class_protocol" "exported" "final" "lazy" "noreturn"
-    "NSCopying" "NSManaged" "objc" "optional" "required" "auto_closure"
+  '("class_protocol" "exported" "noreturn"
+    "NSCopying" "NSManaged" "objc" "auto_closure"
     "IBAction" "IBDesignable" "IBInspectable" "IBOutlet"))
 
 (defvar swift-mode--keywords
