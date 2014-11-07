@@ -187,7 +187,7 @@
                 "is" "as" "as?" ".." "..."
                 "+" "-" "&+" "&-" "|" "^"
                 "*" "/" "%" "&*" "&/" "&%" "&"
-                "<<" ">>")))
+                "<<" ">>" "?" ":")))
 
 (defvar swift-smie--decl-specifier-regexp
   (rx (? (or "class" "mutating" "override" "static" "unowned" "weak"))
