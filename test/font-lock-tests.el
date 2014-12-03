@@ -148,6 +148,9 @@ test will fail."
 (check-face func-name/has-function-name-face/4 font-lock-function-name-face "func {{foo}}<T>")
 (check-face func-name/has-function-name-face/6 font-lock-function-name-face
   "func {{foo}}<T>(param: T) -> U {}")
+(check-face func-access-control/has-keyword-face/1 font-lock-keyword-face "{{private}} func foo() {}")
+(check-face func-access-control/has-keyword-face/2 font-lock-keyword-face "{{public}} func foo() {}")
+(check-face func-access-control/has-keyword-face/3 font-lock-keyword-face "{{internal}} func foo() {}")
 
 (check-face func-return-type/has-type-face/1 font-lock-type-face "func foo() -> {{U}} {}")
 (check-face func-return-type/arrow-has-default-face/1 nil "func foo() {{->}} U {}")
