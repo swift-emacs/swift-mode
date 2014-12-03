@@ -332,7 +332,7 @@
   '("associativity" "didSet" "get" "infix" "inout" "left" "mutating" "none"
     "nonmutating" "operator" "override" "postfix" "precedence" "prefix" "right"
     "set" "unowned" "unowned(safe)" "unowned(unsafe)" "weak" "willSet" "convenience"
-    "required" "dynamic" "final" "lazy" "optional"))
+    "required" "dynamic" "final" "lazy" "optional" "private" "public" "internal"))
 
 (defvar swift-mode--attribute-keywords
   '("class_protocol" "exported" "noreturn"
