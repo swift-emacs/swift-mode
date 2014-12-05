@@ -481,8 +481,8 @@
 ;;; Flycheck
 
 (eval-after-load 'flycheck
-  '(progn
-     (flycheck-def-option-var flycheck-swift-sdk-path nil swift
+  (lambda ()
+    (flycheck-def-option-var flycheck-swift-sdk-path nil swift
        "A path to the targeted SDK"
        :type '(choice (const :tag "Don't link against sdk" nil)
                       (string :tag "Targeted SDK path"))
