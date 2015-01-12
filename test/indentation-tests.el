@@ -149,6 +149,17 @@ x
 }
 ")
 
+(check-indentation block-inside-parenthesis/3
+  "
+\({
+|a
+})
+" "
+\({
+     |a
+})
+")
+
 (check-indentation indent-if-body
   "
 if true {
@@ -183,6 +194,52 @@ if true {
 if true {
 } else if false {
     |foo
+}
+")
+
+(check-indentation indent-long-if-else-if/1
+  "
+if a {
+    a
+} else if a {
+    a
+} else if a {
+    |a
+} else {
+    a
+}
+" "
+if a {
+    a
+} else if a {
+    a
+} else if a {
+    |a
+} else {
+    a
+}
+")
+
+(check-indentation indent-long-if-else-if/2
+  "
+if a {
+    a
+} else if a {
+    a
+} else if a {
+    a
+|} else {
+    a
+}
+" "
+if a {
+    a
+} else if a {
+    a
+} else if a {
+    a
+|} else {
+    a
 }
 ")
 
@@ -456,6 +513,32 @@ case foo where bar,
 ")
 
 
+(check-indentation indents-case-statements-after-case-label/1
+  "
+switch true {
+case
+|foo:
+    bar
+}
+" "
+switch true {
+case
+  |foo:
+    bar
+}
+")
+
+
+(check-indentation indents-case-statements-after-switch/1
+  "
+switch
+|foo
+" "
+switch
+  |foo
+")
+
+
 (check-indentation indents-case-statements-to-user-defined-offset/1
   "
 switch true {
@@ -639,6 +722,57 @@ class Foo: Foo, Bar,
 }
 ")
 
+(check-indentation indents-class-declaration/6
+                   "
+class Foo:
+|Foo, Bar, Baz {
+}
+" "
+class Foo:
+    |Foo, Bar, Baz {
+}
+")
+
+(check-indentation indents-class-declaration/7
+                   "
+class Foo: Bar<(A, B),
+|[C]>
+" "
+class Foo: Bar<(A, B),
+               |[C]>
+")
+
+(check-indentation indents-class-declaration/8
+                   "
+class Foo: Bar<A, B,
+|[C]>
+" "
+class Foo: Bar<A, B,
+               |[C]>
+")
+
+(check-indentation indents-public-class-declaration/1
+                   "
+public class Foo: Foo, Bar,
+|Baz {
+}
+" "
+public class Foo: Foo, Bar,
+    |Baz {
+}
+")
+
+(check-indentation indents-public-class-declaration/2
+  "
+public class Foo {
+          |foo
+}
+" "
+public class Foo {
+    |foo
+}
+")
+
 (check-indentation indents-func-declaration/1
   "
 func Foo(a: String) {
@@ -687,7 +821,7 @@ class Foo {
 }
 ")
 
-(check-indentation indents-func-declaration/2
+(check-indentation indents-func-declaration/5
                    "
 class func Foo() {
 |foo
@@ -695,6 +829,96 @@ class func Foo() {
 " "
 class func Foo() {
     |foo
+}
+")
+
+(check-indentation indents-func-declaration/6
+                   "
+func Foo(aaaaaaaaa:
+         |AAAAAAAAA) {
+}
+" "
+func Foo(aaaaaaaaa:
+           |AAAAAAAAA) {
+}
+")
+
+(check-indentation indents-func-declaration/7
+  "
+func foo() ->
+|Foo
+" "
+func foo() ->
+  |Foo
+")
+
+(check-indentation indents-func-declaration/8
+  "
+func foo() ->
+|(A, B)
+" "
+func foo() ->
+  |(A, B)
+")
+
+(check-indentation indents-func-declaration/9
+  "
+func foo() ->
+|[A]
+" "
+func foo() ->
+  |[A]
+")
+
+(check-indentation indents-protocol-declaration/1
+                   "
+protocol Foo {
+  func foo()
+|func bar()
+}
+" "
+protocol Foo {
+  func foo()
+  |func bar()
+}
+")
+
+(check-indentation indents-protocol-declaration/2
+                   "
+protocol Foo {
+  func foo() -> Foo
+|func bar() -> Bar
+}
+" "
+protocol Foo {
+  func foo() -> Foo
+  |func bar() -> Bar
+}
+")
+
+(check-indentation indents-protocol-declaration/3
+                   "
+protocol Foo {
+  func foo() -> Foo<A>
+|func bar() -> Bar<A>
+}
+" "
+protocol Foo {
+  func foo() -> Foo<A>
+  |func bar() -> Bar<A>
+}
+")
+
+(check-indentation indents-protocol-declaration/3
+                   "
+protocol Foo {
+  func foo() -> [A]
+|func bar() -> [A]
+}
+" "
+protocol Foo {
+  func foo() -> [A]
+  |func bar() -> [A]
 }
 ")
 
@@ -763,6 +987,64 @@ var result = Dictionary<String, V>()
 " "
 var result = Dictionary<String, V>()
 |foo
+")
+
+(check-indentation indents-declaration/8
+  "
+let foo =
+|bar
+" "
+let foo =
+  |bar
+")
+
+(check-indentation indents-declaration/9
+  "
+let foo: Foo? =
+|bar
+" "
+let foo: Foo? =
+  |bar
+")
+
+(check-indentation indents-declaration/10
+  "
+let foo: Foo<A> =
+|bar
+" "
+let foo: Foo<A> =
+  |bar
+")
+
+(check-indentation indents-declaration/11
+  "
+let foo = [
+    foo:
+|bar
+]
+" "
+let foo = [
+    foo:
+      |bar
+]
+")
+
+(check-indentation indents-declaration/12
+  "
+let foo = [
+|[
+" "
+let foo = [
+    |[
+")
+
+(check-indentation indents-declaration/12
+  "
+let foo = {
+|[
+" "
+let foo = {
+    |[
 ")
 
 (check-indentation indents-multiline-expressions/1
@@ -837,6 +1119,136 @@ let options = NSRegularExpressionOptions.CaseInsensitive &
 " "
 let options = NSRegularExpressionOptions.CaseInsensitive &
               |NSRegularExpressionOptions.DotMatchesLineSeparators
+")
+
+(check-indentation indents-multiline-expressions/9
+                   "
+foo?[bar] +
+|a
+" "
+foo?[bar] +
+  |a
+")
+
+(check-indentation indents-multiline-expressions/10
+                   "
+foo?(bar) +
+|a
+" "
+foo?(bar) +
+  |a
+")
+
+(check-indentation indents-multiline-expressions/11
+                   "
+func a () {
+    a +
+|a
+" "
+func a () {
+    a +
+      |a
+")
+
+(check-indentation indents-multiline-expressions/12
+                   "
+func a () {
+    a
+|.a()
+" "
+func a () {
+    a
+      |.a()
+")
+
+(check-indentation indents-multiline-expressions/13
+                   "
+if (a
+|.b)
+" "
+if (a
+      |.b)
+")
+
+(check-indentation indents-multiline-expressions/14
+                   "
+a ??
+|b
+" "
+a ??
+  |b
+")
+
+(check-indentation indents-multiline-expressions/15
+                   "
+a as
+|b
+" "
+a as
+  |b
+")
+
+(check-indentation indents-multiline-expressions/16
+                   "
+a as?
+|b
+" "
+a as?
+  |b
+")
+
+(check-indentation indents-multiline-expressions/17
+                   "
+a is
+|b
+" "
+a is
+  |b
+")
+
+(check-indentation indents-multiline-expressions/18
+                   "
+CGPoint(x: aaaaaaaaaaaaaaa.x +
+|bbbbbbbbbbbbbbbb,
+        y: aaaaaaaaaaaaaaa.y +
+           bbbbbbbbbbbbbbbb)
+" "
+CGPoint(x: aaaaaaaaaaaaaaa.x +
+           |bbbbbbbbbbbbbbbb,
+        y: aaaaaaaaaaaaaaa.y +
+           bbbbbbbbbbbbbbbb)
+")
+
+(check-indentation indents-long-parameters/1
+                   "
+func foo() {
+    timer = NSTimer.scheduledTimerWithTimeInterval(
+|1.0,
+      target: self,
+      selector: Selector(\"onTimer\"),
+      userInfo: nil,
+      repeats: true)
+}
+" "
+func foo() {
+    timer = NSTimer.scheduledTimerWithTimeInterval(
+      |1.0,
+      target: self,
+      selector: Selector(\"onTimer\"),
+      userInfo: nil,
+      repeats: true)
+}
+")
+
+(check-indentation indents-long-parameters/2
+                   "
+aaaaaa.aaaaaaaaaaaaaaaaaaaaa(
+  |aaaaaaaaaaaaaaaaaaaaa
+)
+" "
+aaaaaa.aaaaaaaaaaaaaaaaaaaaa(
+  |aaaaaaaaaaaaaaaaaaaaa
+)
 ")
 
 (check-indentation indents-multiline-expressions-to-user-defined-offset/1
@@ -930,6 +1342,116 @@ let foo = bar >
     |3
 "
 )
+
+
+(check-indentation anonymous-function-as-a-argument/1
+                   "
+UIView.animateWithDuration(1.0,
+                           animations: {
+|}
+" "
+UIView.animateWithDuration(1.0,
+                           animations: {
+                           |}
+")
+
+(check-indentation anonymous-function-as-a-argument/2
+                   "
+UIView.animateWithDuration(
+  1.0,
+  animations: {
+|}
+" "
+UIView.animateWithDuration(
+  1.0,
+  animations: {
+  |}
+")
+
+(check-indentation conditional-operator/1
+                   "
+let a = a
+        |? a +
+          1
+        : a +
+          1
+" "
+let a = a
+        |? a +
+          1
+        : a +
+          1
+")
+
+(check-indentation conditional-operator/2
+                   "
+let a = a
+        ? a +
+          |1
+        : a +
+          1
+" "
+let a = a
+        ? a +
+          |1
+        : a +
+          1
+")
+
+(check-indentation conditional-operator/3
+                   "
+let a = a
+        ? a +
+          1
+        |: a +
+          1
+" "
+let a = a
+        ? a +
+          1
+        |: a +
+          1
+")
+
+(check-indentation conditional-operator/4
+                   "
+let a = a
+        ? a +
+          1
+        : a +
+          |1
+" "
+let a = a
+        ? a +
+          1
+        : a +
+          |1
+")
+
+(check-indentation conditional-operator/5
+                   "
+let a = a ?
+|a : a
+" "
+let a = a ?
+        |a : a
+")
+
+(check-indentation blank-line/1
+                   "
+func foo() {
+    let a = 1
+
+|let b = 1
+}
+" "
+func foo() {
+    let a = 1
+
+    |let b = 1
+}
+")
+
 
 
 (provide 'indentation-tests)
