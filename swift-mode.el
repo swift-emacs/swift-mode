@@ -166,7 +166,7 @@ class Foo:
 (defvar swift-smie--operators-regexp "\\`[-.!#$%&=^~\\|@+:*<>?]+\\'")
 
 (defun swift-smie--implicit-semi-p ()
-  "returns t if the cursor is at the end of a statement"
+  "Return t if the cursor is at the end of a statement."
   (save-excursion
     (or
      ;; inserts implicit semicolon just after a ">" token of a type parameter
@@ -211,7 +211,7 @@ class Foo:
              (member (smie-default-forward-token) '("as" "is"))))))))
 
 (defun swift-smie--is-type-colon ()
-  "returns t if a colon at the cursor is the colon for supertype declaration or type declaration of let or var."
+  "Return t if a colon at the cursor is the colon for supertype declaration or type declaration of let or var."
   (save-excursion
     (or (equal (smie-default-backward-token) ">")
         (member (smie-default-backward-token) '("class" "let" "var")))))
@@ -328,7 +328,7 @@ class Foo:
                                          &optional
                                          stop-at-bol-parent-tokens
                                          stop-at-bol-self-tokens)
-  "backwards sexps until one of given tokens.
+  "Backward sexps until one of given tokens.
 When this function returns, the cursor is at just after one of given tokens.
 The form of return values are same as one of `smie-backward-sexp`.
 
@@ -371,17 +371,16 @@ Typically, this is a list of list element starter tokens (e.g. 'case' of switch 
     parent))
 
 (defun swift-smie--align-with (parent &optional offset)
-  "aligns with given parent token with optional offset."
+  "Align with given parent token with optional offset."
   (save-excursion
     (goto-char (nth 1 parent))
     (cons 'column (+ (or offset 0) (smie-indent-virtual)))))
 
 (defun swift-smie--indent-keyword (parents &optional offset)
-  "indents based on outer open-paren or previous statement/declaration.
+  "Indent based on outer open-paren or previous statement/declaration.
 
 PARENTS is a list of parent tokens (i.e. open-paren or statement separator).
-OFFSET is a offset from parent tokens, or 0 if omitted.
-"
+OFFSET is a offset from parent tokens, or 0 if omitted."
   (save-excursion
     (let* ((pos (point))
            (parent (swift-smie--backward-sexps-until parents)))
@@ -391,11 +390,11 @@ OFFSET is a offset from parent tokens, or 0 if omitted.
 
 (defvar swift-smie--statement-parent-tokens
   '("IMP;" ";" "{" "(" "[")
-  "parent tokens for statements")
+  "Parent tokens for statements.")
 
 (defvar swift-smie--expression-parent-tokens
   (append swift-smie--statement-parent-tokens '("," "<T"))
-  "parent tokens for expressions")
+  "Parent tokens for expressions.")
 
 (defun swift-smie-rules (kind token)
   (pcase (cons kind token)
@@ -553,8 +552,8 @@ OFFSET is a offset from parent tokens, or 0 if omitted.
     ))
 
 (defun swift-smie--backward-for-head ()
-  "backwards the head of a for-statement (i.e. 'for foo; bar; buz') and returns
-the column of the \"for\" token.
+  "Backward the head of a for-statement (i.e. 'for foo; bar; buz') and
+returns the column of the \"for\" token.
 If the cursor is not at a head of a for-statement, keeps cursor position as is
 and returns nil"
   (save-excursion
@@ -575,22 +574,22 @@ and returns nil"
             (current-column)))))))
 
 (defun swift-smie--rule-for ()
-  "special rule for 'for' statement"
+  "Special rule for 'for' statement."
   (let ((column (swift-smie--backward-for-head)))
     (when column (cons 'column column))))
 
 (defun swift-smie--op-parent-tokens (&optional ignore-question)
-  "returns parent tokens for operators"
+  "Return parent tokens for operators."
   (append swift-smie--expression-parent-tokens
           (list "=" (if ignore-question ":" "?") ":")))
 
 (defun swift-smie--goto-op-parent (&optional ignore-question)
-  "goes to the parent of the current operator token"
+  "Go to the parent of the current operator token."
   (swift-smie--backward-sexps-until
    (swift-smie--op-parent-tokens ignore-question)))
 
 (defun swift-smie--op-offset (parent &optional ignore-question offset)
-  "returns the offset after operator tokens"
+  "Return the offset after operator tokens."
   (- (or offset swift-indent-multiline-statement-offset)
      ;; Special handling for assignment and conditional operators:
      ;;
