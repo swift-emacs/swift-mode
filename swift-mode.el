@@ -245,10 +245,12 @@ class Foo:
       "T>")
 
      (t (let
-            ((tok (smie-default-forward-token)))
+            ((pos-after-comment (point))
+             (tok (smie-default-forward-token)))
           (cond
-           ((equal tok ">:") ; e.g. class Foo<A>:
-            (backward-char 1)
+           ((string-match-p ">+:" tok) ; e.g. class Foo<A: B<C>>:
+            (goto-char pos-after-comment)
+            (forward-char 1)
             ">")
            ((equal tok ":")
             (save-excursion
@@ -300,10 +302,12 @@ class Foo:
       "T>")
 
      (t (let
-            ((tok (smie-default-backward-token)))
+            ((pos-before-comment (point))
+             (tok (smie-default-backward-token)))
           (cond
-           ((equal tok ">:") ; e.g. class Foo<A>:
-            (forward-char 1)
+           ((string-match-p ">+:" tok) ; e.g. class Foo<A: B<C>>:
+            (goto-char pos-before-comment)
+            (backward-char 1)
             "TYPE:")
            ((equal tok ":")
             (if (swift-smie--is-type-colon) "TYPE:" ":"))

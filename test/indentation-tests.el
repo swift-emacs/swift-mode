@@ -751,6 +751,15 @@ class Foo: Bar<A, B,
                |[C]>
 ")
 
+(check-indentation indents-class-declaration/9
+                   "
+class Foo<A: B<C>>:
+                   |Bar
+" "
+class Foo<A: B<C>>:
+    |Bar
+")
+
 (check-indentation indents-public-class-declaration/1
                    "
 public class Foo: Foo, Bar,
