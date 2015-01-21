@@ -195,9 +195,9 @@ class Foo:
            (save-excursion
              (goto-char (line-beginning-position))
              (< (line-end-position) (progn (forward-comment (point-max)) (point))))
-           ;; supresses implicit semicolon after operator or keyword
-           (looking-back "[-.({[,!#$%&=^~\\|@+:*<>?]" (- (point) 1) t)
            ;; supresses implicit semicolon after operator
+           (looking-back "[-.({[,!#$%&=^~\\|@+:*<>?]" (- (point) 1) t)
+           ;; supresses implicit semicolon after keyword
            ;; Note that "as?" is already handled by preceeding conditions.
            (save-excursion
              (member (smie-default-backward-token) '("as" "is" "class" "deinit" "enum" "extension" "func" "import" "init" "internal" "let" "operator" "private" "protocol" "public" "static" "struct" "subscript" "typealias" "var" "case" "for" "if" "switch" "where" "while" "associativity" "convenience" "dynamic" "didSet" "final" "get" "infix" "inout" "lazy" "mutating" "nonmutating" "optional" "override" "postfix" "precedence" "prefix" "required" "set" "unowned" "weak" "willSet")))
@@ -205,7 +205,7 @@ class Foo:
            (progn
              (forward-comment (point-max))
              (looking-at "[-.{,!#$%&=^~\\|+:*<>?]"))
-           ;; supresses implicit semicolon before operator
+           ;; supresses implicit semicolon before keyword
            (save-excursion
              ;; note that comments are already skipped by previous condition
              (member (smie-default-forward-token) '("as" "is"))))))))
