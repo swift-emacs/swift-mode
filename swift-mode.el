@@ -281,14 +281,14 @@
     (`(:before . ".")
      (if (or (looking-at "[.][\n]")
              (smie-rule-bolp))
-         (smie-rule-parent swift-indent-multiline-statement-offset)))
+         swift-indent-multiline-statement-offset))
 
     ;; Apply swift-indent-multiline-statement-offset if
     ;; operator is the last symbol on the line
     (`(:before . "OP")
      (if (and (looking-at ".[\n]")
               (not (smie-rule-sibling-p)))
-         (smie-rule-parent swift-indent-multiline-statement-offset)))
+         swift-indent-multiline-statement-offset))
 
     ;; Indent second line of the multi-line class
     ;; definitions with swift-indent-offset
