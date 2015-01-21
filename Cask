@@ -1,4 +1,5 @@
 (source melpa)
+(source gnu)
 (source org)
 
 (package-file "swift-mode.el")
