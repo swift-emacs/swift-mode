@@ -212,6 +212,7 @@
    ((looking-at "}") (forward-char 1) "}")
 
    ((looking-at ",") (forward-char 1) ",")
+   ((looking-at ":") (forward-char 1) ":")
 
    ((looking-at "<") (forward-char 1)
     (if (looking-at "[[:upper:]]") "<T" "OP"))
@@ -245,6 +246,7 @@
      ((eq (char-before) ?\}) (backward-char 1) "}")
 
      ((eq (char-before) ?,) (backward-char 1) ",")
+     ((eq (char-before) ?:) (backward-char 1) ":")
 
      ((eq (char-before) ?<) (backward-char 1)
       (if (looking-at "<[[:upper:]]") "<T" "OP"))
