@@ -197,8 +197,8 @@
 
 (defun swift-smie--implicit-semi-p ()
   (save-excursion
-    (not (or (memq (char-before) '(?\{ ?\[ ?, ?.))
-             (looking-at "[ \n\t]+[.]")
+    (not (or (memq (char-before) '(?\{ ?\[ ?, ?. ?\? ?\:))
+             (looking-at "[ \n\t]+[.?:]")
              (looking-back swift-smie--operators-regexp (- (point) 3) t)
              ))))
 
