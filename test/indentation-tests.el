@@ -391,12 +391,12 @@ case y:
 (check-indentation indents-case-statements-with-destucturing/1
   "
 switch true {
-case let(x, y):
+case let(x, y) where x < y:
 |foo
 }
 " "
 switch true {
-case let(x, y):
+case let(x, y) where x < y:
     |foo
 }
 ")
@@ -404,12 +404,12 @@ case let(x, y):
 (check-indentation indents-case-statements-with-destucturing/2
   "
 switch true {
-case let .Foo(x):
+case let .Foo(x) where x > 0:
 |foo
 }
 " "
 switch true {
-case let .Foo(x):
+case let .Foo(x) where x > 0:
     |foo
 }
 ")
@@ -931,6 +931,111 @@ let foo = bar >
 "
 )
 
+(check-indentation conditional-operator/1
+                   "
+let a = a
+        |? a +
+          1
+        : a +
+          1
+" "
+let a = a
+        |? a +
+          1
+        : a +
+          1
+")
+
+(check-indentation conditional-operator/2
+                   "
+let a = a
+        ? a +
+          |1
+        : a +
+          1
+" "
+let a = a
+        ? a +
+          |1
+        : a +
+          1
+")
+
+(check-indentation conditional-operator/3
+                   "
+let a = a
+        ? a +
+          1
+        |: a +
+          1
+" "
+let a = a
+        ? a +
+          1
+        |: a +
+          1
+")
+
+(check-indentation conditional-operator/4
+                   "
+let a = a
+        ? a +
+          1
+        : a +
+          |1
+" "
+let a = a
+        ? a +
+          1
+        : a +
+          |1
+")
+
+(check-indentation conditional-operator/5
+                   "
+let a = a ?
+|a : a
+" "
+let a = a ?
+        |a : a
+")
+
+(check-indentation conditional-operator/6
+                   "
+let a = a ?
+      |b :
+        c
+" "
+let a = a ?
+        |b :
+        c
+")
+
+(check-indentation conditional-operator/7
+                   "
+let a = a ?
+        b :
+      |c
+" "
+let a = a ?
+        b :
+        |c
+")
+
+(check-indentation blank-line/1
+                   "
+func foo() {
+    let a = 1
+
+|let b = 1
+}
+" "
+func foo() {
+    let a = 1
+
+    |let b = 1
+}
+")
 
 (provide 'indentation-tests)
 

@@ -272,6 +272,16 @@
   (pcase (cons kind token)
     (`(:elem . basic) swift-indent-offset)
 
+    (`(:after . ":") 0)
+    (`(:before . ":")
+     (cond
+      ;; Rule for ternary operator in
+      ;; assignment expression.
+      ;; Static indentation relatively to =
+      ((smie-rule-parent-p "=") 2)
+      ;; Rule for the case statement.
+      ((smie-rule-parent-p "case") swift-indent-offset)))
+
     (`(:after . "{")
      (if (smie-rule-parent-p "switch")
          (smie-rule-parent swift-indent-switch-case-offset)))
