@@ -141,7 +141,7 @@
                    (enum-cases ";" "ecase" enum-cases))
        (enum-body (enum-cases) (insts))
 
-       (case-exps (guard-exp))
+       (case-exps (exp) (guard-exp))
        (cases (case-exps ":" insts)
               (cases "case" cases))
        (switch-body (cases) (cases "default:" insts))
