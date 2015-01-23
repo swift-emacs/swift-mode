@@ -112,6 +112,7 @@
 
        (insts (inst) (insts ";" insts))
        (inst (decl)
+             (tern-exp)
              (in-exp)
              (dot-exp)
              (dot-exp "{" insts "}")
@@ -134,6 +135,7 @@
        (in-exp (id "in" exp))
        (guard-exp (exp "where" exp))
        (op-exp (exp "OP" exp))
+       (tern-exp (op-exp "?" exp ":" exp))
 
        (enum-cases (assign-exp)
                    (enum-cases ";" "ecase" enum-cases))
