@@ -56,7 +56,7 @@
   :type 'integerp)
 
 (defcustom swift-indent-multiline-statement-offset 2
-  "Defines the indentation offset for for multiline statements."
+  "Defines the indentation offset for multiline statements."
   :group 'swift
   :type 'integerp
   :package-version '(swift-mode "0.3.0"))
