@@ -795,6 +795,59 @@ func foo() ->
 func foo() ->
     |[A] {}
 ")
+
+(check-indentation indents-protocol-declaration/1
+                   "
+protocol Foo {
+    func foo()
+|func bar()
+}
+" "
+protocol Foo {
+    func foo()
+    |func bar()
+}
+")
+
+(check-indentation indents-protocol-declaration/2
+                   "
+protocol Foo {
+    func foo() -> Foo
+|func bar() -> Bar
+}
+" "
+protocol Foo {
+    func foo() -> Foo
+    |func bar() -> Bar
+}
+")
+
+(check-indentation indents-protocol-declaration/3
+                   "
+protocol Foo {
+    func foo() -> Foo<A>
+|func bar() -> Bar<A>
+}
+" "
+protocol Foo {
+    func foo() -> Foo<A>
+    |func bar() -> Bar<A>
+}
+")
+
+(check-indentation indents-protocol-declaration/4
+                   "
+protocol Foo {
+    func foo() -> [A]
+|func bar() -> [A]
+}
+" "
+protocol Foo {
+    func foo() -> [A]
+    |func bar() -> [A]
+}
+")
+
 (check-indentation indents-declaration/1
   "
 var foo = bar + baz

@@ -99,10 +99,16 @@
        (top-level-st
         ("import" type)
         (decl)
-        ("ACCESSMOD" "class" class-decl-exp "{" class-level-sts "}"))
+        ("ACCESSMOD" "class" class-decl-exp "{" class-level-sts "}")
+        ("ACCESSMOD" "protocol" class-decl-exp "{" protocol-level-sts "}"))
 
        (class-level-sts (class-level-st) (class-level-st ";" class-level-st))
        (class-level-st
+        (decl)
+        (func))
+
+       (protocol-level-sts (protocol-level-st) (protocol-level-st ";" protocol-level-st))
+       (protocol-level-st
         (decl)
         (func))
 
@@ -340,6 +346,9 @@
      (if (smie-rule-prev-p "->") swift-indent-offset
        (smie-rule-parent)))
     (`(:after . "->") swift-indent-offset)
+
+    ;; Normalize behaviour with and without declaration specifier
+    (`(:before . "DECSPEC") swift-indent-offset)
     ))
 
 ;;; Font lock
