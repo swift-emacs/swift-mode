@@ -747,7 +747,7 @@ class Foo {
 }
 ")
 
-(check-indentation indents-func-declaration/2
+(check-indentation indents-func-declaration/5
                    "
 class func Foo() {
 |foo
@@ -758,6 +758,43 @@ class func Foo() {
 }
 ")
 
+(check-indentation indents-func-declaration/6
+                   "
+func Foo(aaaaaaaaa:
+         |AAAAAAAAA) {
+}
+" "
+func Foo(aaaaaaaaa:
+         |AAAAAAAAA) {
+}
+")
+
+(check-indentation indents-func-declaration/7
+  "
+func foo() ->
+|Foo
+" "
+func foo() ->
+    |Foo
+")
+
+(check-indentation indents-func-declaration/8
+  "
+func foo() ->
+|(A, B) {}
+" "
+func foo() ->
+    |(A, B) {}
+")
+
+(check-indentation indents-func-declaration/9
+  "
+func foo() ->
+|[A] {}
+" "
+func foo() ->
+    |[A] {}
+")
 (check-indentation indents-declaration/1
   "
 var foo = bar + baz
