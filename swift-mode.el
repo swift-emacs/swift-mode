@@ -289,7 +289,9 @@
       ;; Static indentation relatively to =
       ((smie-rule-parent-p "=") 2)
       ;; Rule for the case statement.
-      ((smie-rule-parent-p "case") swift-indent-offset)))
+      ((smie-rule-parent-p "case") swift-indent-offset)
+      ;; Rule for the class definition.
+      ((smie-rule-parent-p "class") (smie-rule-parent swift-indent-offset))))
 
     (`(:after . "{")
      (if (smie-rule-parent-p "switch")
@@ -317,7 +319,7 @@
     ;; definitions with swift-indent-offset
     (`(:before . ",")
      (if (smie-rule-parent-p "class")
-       swift-indent-offset))
+       (smie-rule-parent swift-indent-offset)))
 
     (`(:before . "if")
      (if (smie-rule-prev-p "else")

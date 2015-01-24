@@ -639,6 +639,66 @@ class Foo: Foo, Bar,
 }
 ")
 
+(check-indentation indents-class-declaration/6
+                   "
+class Foo:
+|Foo, Bar, Baz {
+}
+" "
+class Foo:
+    |Foo, Bar, Baz {
+}
+")
+
+(check-indentation indents-class-declaration/7
+                   "
+class Foo: Bar<A, B,
+|C>
+" "
+class Foo: Bar<A, B,
+               |C>
+")
+
+(check-indentation indents-class-declaration/8
+                   "
+class Foo: Bar<A, B,
+|[C]>
+" "
+class Foo: Bar<A, B,
+               |[C]>
+")
+
+(check-indentation indents-class-declaration/9
+                   "
+class Foo<A: B<C>>:
+                   |Bar
+" "
+class Foo<A: B<C>>:
+    |Bar
+")
+
+(check-indentation indents-public-class-declaration/1
+                   "
+public class Foo: Foo, Bar,
+|Baz {
+}
+" "
+public class Foo: Foo, Bar,
+    |Baz {
+}
+")
+
+(check-indentation indents-public-class-declaration/2
+  "
+public class Foo {
+          |foo
+}
+" "
+public class Foo {
+    |foo
+}
+")
+
 (check-indentation indents-func-declaration/1
   "
 func Foo(a: String) {
@@ -1034,6 +1094,63 @@ func foo() {
     let a = 1
 
     |let b = 1
+}
+")
+
+(check-indentation block-inside-parenthesis/3
+  "
+\({
+|a
+})
+" "
+\({
+     |a
+})
+")
+
+(check-indentation indent-long-if-else-if/1
+  "
+if a {
+    a
+} else if a {
+    a
+} else if a {
+    |a
+} else {
+    a
+}
+" "
+if a {
+    a
+} else if a {
+    a
+} else if a {
+    |a
+} else {
+    a
+}
+")
+
+(check-indentation indent-long-if-else-if/2
+  "
+if a {
+    a
+} else if a {
+    a
+} else if a {
+    a
+|} else {
+    a
+}
+" "
+if a {
+    a
+} else if a {
+    a
+} else if a {
+    a
+|} else {
+    a
 }
 ")
 
