@@ -99,7 +99,7 @@
        (top-level-st
         ("import" type)
         (decl)
-        ("class" class-decl-exp "{" class-level-sts "}"))
+        ("ACCESSMOD" "class" class-decl-exp "{" class-level-sts "}"))
 
        (class-level-sts (class-level-st) (class-level-st ";" class-level-st))
        (class-level-st
@@ -195,6 +195,9 @@
   (rx (? (or "class" "mutating" "override" "static" "unowned" "weak"))
       (* space) "func"))
 
+(defvar swift-smie--access-modifier-regexp
+  (regexp-opt '("private" "public" "internal")))
+
 (defun swift-smie--implicit-semi-p ()
   (save-excursion
     (not (or (memq (char-before) '(?\{ ?\[ ?, ?. ?\? ?\:))
@@ -224,6 +227,9 @@
 
    ((looking-at swift-smie--decl-specifier-regexp)
     (goto-char (match-end 0)) "DECSPEC")
+
+   ((looking-at swift-smie--access-modifier-regexp)
+    (goto-char (match-end 0)) "ACCESSMOD")
 
    (t (let ((tok (smie-default-forward-token)))
         (cond
@@ -258,6 +264,9 @@
 
      ((looking-back swift-smie--decl-specifier-regexp (- (point) 8) t)
       (goto-char (match-beginning 0)) "DECSPEC")
+
+     ((looking-back swift-smie--access-modifier-regexp (- (point) 8) t)
+      (goto-char (match-beginning 0)) "ACCESSMOD")
 
      (t (let ((tok (smie-default-backward-token)))
           (cond
