@@ -104,9 +104,10 @@
        (class-level-sts (class-level-st) (class-level-st ";" class-level-st))
        (class-level-st
         (decl)
-        ("DECSPEC" "func" func-header "{" insts "}"))
+        (func))
 
-       (func-header (id "(" func-params ")"))
+       (func ("DECSPEC" "func" func-header) (func "{" insts "}"))
+       (func-header (id "(" func-params ")") (func-header "->" type))
        (func-param (decl-exp) ("..."))
        (func-params (func-param "," func-param))
 
