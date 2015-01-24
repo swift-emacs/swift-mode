@@ -113,6 +113,7 @@
 
        (insts (inst) (insts ";" insts))
        (inst (decl)
+             (exp "=" exp)
              (tern-exp)
              (in-exp)
              (dot-exp)
@@ -154,7 +155,7 @@
        (if-else-if (if-body) (if-else-if "else" if-else-if))
        (if-clause (if-else-if)))
      ;; Conflicts
-     '((nonassoc "{") (assoc ",") (assoc ";") (assoc ":"))
+     '((nonassoc "{") (assoc ",") (assoc ";") (assoc ":") (right "="))
      '((assoc "in") (assoc "where") (assoc "OP"))
      '((assoc "else"))
      '((assoc ";") (assoc "ecase"))
@@ -201,7 +202,7 @@
 
 (defun swift-smie--implicit-semi-p ()
   (save-excursion
-    (not (or (memq (char-before) '(?\{ ?\[ ?, ?. ?\? ?\:))
+    (not (or (memq (char-before) '(?\{ ?\[ ?, ?. ?\? ?\: ?=))
              (looking-at "[ \n\t]+[.?:]")
              (looking-back swift-smie--operators-regexp (- (point) 3) t)
              ))))
