@@ -75,7 +75,7 @@
    (smie-merge-prec2s
     (smie-bnf->prec2
      '((id)
-       (type (type) (type "<T" types "T>"))
+       (type (type) (type "<T" types "T>") ("[" type "]"))
        (types (type) (type "," type))
 
        (class-decl-exp (id) (id ":" types))
