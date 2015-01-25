@@ -1037,6 +1037,39 @@ let options = NSRegularExpressionOptions.CaseInsensitive &
               |NSRegularExpressionOptions.DotMatchesLineSeparators
 ")
 
+
+(check-indentation indents-long-parameters/1
+                   "
+func foo() {
+    timer = NSTimer.scheduledTimerWithTimeInterval(
+            |1.0,
+                target: self,
+                selector: Selector(\"onTimer\"),
+                userInfo: nil,
+                repeats: true)
+}
+" "
+func foo() {
+    timer = NSTimer.scheduledTimerWithTimeInterval(
+                |1.0,
+                target: self,
+                selector: Selector(\"onTimer\"),
+                userInfo: nil,
+                repeats: true)
+}
+")
+
+(check-indentation indents-long-parameters/2
+                   "
+aaaaaa.aaaaaaaaaaaaaaaaaaaaa(
+  |aaaaaaaaaaaaaaaaaaaaa
+)
+" "
+aaaaaa.aaaaaaaaaaaaaaaaaaaaa(
+    |aaaaaaaaaaaaaaaaaaaaa
+)
+")
+
 (check-indentation indents-multiline-expressions-to-user-defined-offset/1
                    "
 NSNotificationCenter.defaultCenter().
