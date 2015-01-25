@@ -110,10 +110,12 @@
        (protocol-level-sts (protocol-level-st) (protocol-level-st ";" protocol-level-st))
        (protocol-level-st
         (decl)
-        (func))
+        (func-decl))
 
-       (func ("DECSPEC" "func" func-header) (func "{" insts "}"))
-       (func-header (id "(" func-params ")") (func-header "->" type))
+       (func (func-decl "{" insts "}"))
+       (func-decl ("DECSPEC" "func" func-header)
+                  (func-decl "->" type))
+       (func-header (id "(" func-params ")"))
        (func-param (decl-exp) ("..."))
        (func-params (func-param "," func-param))
 
