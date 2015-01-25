@@ -1325,6 +1325,30 @@ if a {
 }
 ")
 
+(check-indentation anonymous-function-as-a-argument/1
+                   "
+UIView.animateWithDuration(1.0,
+                           animations: {
+|})
+" "
+UIView.animateWithDuration(1.0,
+                           animations: {
+|})
+")
+
+(check-indentation anonymous-function-as-a-argument/2
+                   "
+UIView.animateWithDuration(
+    1.0,
+    animations: {
+|})
+" "
+UIView.animateWithDuration(
+    1.0,
+    animations: {
+|})
+")
+
 (provide 'indentation-tests)
 
 ;;; indentation-tests.el ends here

@@ -356,6 +356,8 @@
       ((smie-rule-parent-p "[") swift-indent-offset)
       (t (smie-rule-parent))))
     (`(:after . "->") (smie-rule-parent swift-indent-offset))
+
+    (`(:close-all . "}") (if (smie-rule-parent-p "(") 't))
     ))
 
 ;;; Font lock
