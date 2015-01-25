@@ -212,7 +212,9 @@
   (save-excursion
     (not (or (memq (char-before) '(?\{ ?\[ ?, ?. ?\? ?\: ?=))
              (looking-at "[ \n\t]+[.?:]")
-             (looking-back swift-smie--operators-regexp (- (point) 3) t)
+             (and (looking-back swift-smie--operators-regexp (- (point) 3) t)
+                  ;; Not a generic type
+                  (not (looking-back "[[:upper:]]>" (- (point) 2) t)))
              ))))
 
 (defun swift-smie--forward-token ()
