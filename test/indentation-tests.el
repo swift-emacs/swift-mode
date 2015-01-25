@@ -1349,6 +1349,15 @@ UIView.animateWithDuration(
 |})
 ")
 
+(check-indentation indents-expression-with-optional-type/1
+                   "
+var object: JsonObject?
+    |var object: JsonObject
+" "
+var object: JsonObject?
+|var object: JsonObject
+")
+
 (provide 'indentation-tests)
 
 ;;; indentation-tests.el ends here

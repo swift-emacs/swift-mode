@@ -210,7 +210,14 @@
 
 (defun swift-smie--implicit-semi-p ()
   (save-excursion
-    (not (or (memq (char-before) '(?\{ ?\[ ?, ?. ?\? ?: ?= ?\())
+    (not (or (memq (char-before) '(?\{ ?\[ ?, ?. ?: ?= ?\())
+             ;; Checking for operators form for "?" and "!",
+             ;; they can be a part of the type.
+             ;; Special case: is? and as? are operators.
+             (looking-back "[[:space:]][?!]" (- (point) 2) t)
+             ;; is? and as? are operators
+             (looking-back "as[?]\\|is[?]" (- (point) 3) t)
+             ;; Leding character in multi-line expression
              (looking-at "[ \n\t]+[.?:]")
              (and (looking-back swift-smie--operators-regexp (- (point) 3) t)
                   ;; Not a generic type
