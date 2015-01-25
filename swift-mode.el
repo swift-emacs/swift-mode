@@ -210,7 +210,7 @@
 
 (defun swift-smie--implicit-semi-p ()
   (save-excursion
-    (not (or (memq (char-before) '(?\{ ?\[ ?, ?. ?\? ?\: ?=))
+    (not (or (memq (char-before) '(?\{ ?\[ ?, ?. ?\? ?: ?= ?\())
              (looking-at "[ \n\t]+[.?:]")
              (and (looking-back swift-smie--operators-regexp (- (point) 3) t)
                   ;; Not a generic type
