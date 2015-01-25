@@ -914,6 +914,54 @@ var result = Dictionary<String, V>()
 var result = Dictionary<String, V>()
 |foo
 ")
+(check-indentation indents-declaration/8
+  "
+let foo =
+|bar
+" "
+let foo =
+    |bar
+")
+
+(check-indentation indents-declaration/9
+  "
+let foo: Foo? =
+|bar
+" "
+let foo: Foo? =
+    |bar
+")
+
+(check-indentation indents-declaration/10
+  "
+let foo: Foo<A> =
+|bar
+" "
+let foo: Foo<A> =
+    |bar
+")
+
+(check-indentation indents-declaration/11
+  "
+let foo = [
+    foo:
+|bar
+]
+" "
+let foo = [
+    foo:
+    |bar
+]
+")
+
+(check-indentation indents-declaration/12
+  "
+let foo = [
+|[
+" "
+let foo = [
+    |[
+")
 
 (check-indentation indents-multiline-expressions/1
 "

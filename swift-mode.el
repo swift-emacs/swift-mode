@@ -343,8 +343,10 @@
     (`(:before . "(")
      (if (smie-rule-next-p "[") (smie-rule-parent)))
     (`(:before . "[")
-     (if (smie-rule-prev-p "->") swift-indent-offset
-       (smie-rule-parent)))
+     (cond
+      ((smie-rule-prev-p "->") swift-indent-offset)
+      ((smie-rule-parent-p "[") swift-indent-offset)
+      (t (smie-rule-parent))))
     (`(:after . "->") swift-indent-offset)
 
     ;; Normalize behaviour with and without declaration specifier
