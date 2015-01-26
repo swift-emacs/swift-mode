@@ -1058,6 +1058,103 @@ let options = NSRegularExpressionOptions.CaseInsensitive &
               |NSRegularExpressionOptions.DotMatchesLineSeparators
 ")
 
+(check-indentation indents-multiline-expressions/9
+                   "
+foo?[bar] +
+     |a
+" "
+foo?[bar] +
+     |a
+")
+
+(check-indentation indents-multiline-expressions/10
+                   "
+foo?(bar) +
+     |a
+" "
+foo?(bar) +
+     |a
+")
+
+(check-indentation indents-multiline-expressions/11
+                   "
+func a () {
+    a +
+|a
+" "
+func a () {
+    a +
+      |a
+")
+
+(check-indentation indents-multiline-expressions/12
+                   "
+func a () {
+    a
+|.a()
+" "
+func a () {
+    a
+      |.a()
+")
+
+(check-indentation indents-multiline-expressions/13
+                   "
+if (a
+|.b)
+" "
+if (a
+     |.b)
+")
+
+(check-indentation indents-multiline-expressions/14
+                   "
+a ??
+|b
+" "
+a ??
+  |b
+")
+
+(check-indentation indents-multiline-expressions/15
+                   "
+a as
+|b
+" "
+a as
+  |b
+")
+
+(check-indentation indents-multiline-expressions/16
+                   "
+a as?
+|b
+" "
+a as?
+  |b
+")
+
+(check-indentation indents-multiline-expressions/17
+                   "
+a is
+|b
+" "
+a is
+  |b
+")
+
+(check-indentation indents-multiline-expressions/18
+                   "
+CGPoint(x: aaaaaaaaaaaaaaa.x +
+|bbbbbbbbbbbbbbbb,
+        y: aaaaaaaaaaaaaaa.y +
+           bbbbbbbbbbbbbbbb)
+" "
+CGPoint(x: aaaaaaaaaaaaaaa.x +
+           |bbbbbbbbbbbbbbbb,
+        y: aaaaaaaaaaaaaaa.y +
+           bbbbbbbbbbbbbbbb)
+")
 
 (check-indentation indents-long-parameters/1
                    "
@@ -1093,16 +1190,6 @@ aaaaaa.aaaaaaaaaaaaaaaaaaaaa(
 
 (check-indentation indents-multiline-expressions-to-user-defined-offset/1
                    "
-NSNotificationCenter.defaultCenter().
-|postNotificationName(foo, object: nil)
-" "
-NSNotificationCenter.defaultCenter().
-    |postNotificationName(foo, object: nil)
-"
-((swift-indent-multiline-statement-offset 4)))
-
-(check-indentation indents-multiline-expressions-to-user-defined-offset/2
-                   "
 NSNotificationCenter.defaultCenter()
 |.postNotificationName(foo, object: nil)
 " "
@@ -1111,7 +1198,7 @@ NSNotificationCenter.defaultCenter()
 "
 ((swift-indent-multiline-statement-offset 4)))
 
-(check-indentation indents-multiline-expressions-to-user-defined-offset/3
+(check-indentation indents-multiline-expressions-to-user-defined-offset/2
                    "
 let json_ary = NSJSONSerialization
                |.JSONObjectWithData(data, options: nil, error: &json_err) as NSArray
@@ -1121,7 +1208,7 @@ let json_ary = NSJSONSerialization
 "
 ((swift-indent-multiline-statement-offset 4)))
 
-(check-indentation indents-multiline-expressions-to-user-defined-offset/4
+(check-indentation indents-multiline-expressions-to-user-defined-offset/3
                    "
 let options = NSRegularExpressionOptions.CaseInsensitive &
 |NSRegularExpressionOptions.DotMatchesLineSeparators
@@ -1174,12 +1261,12 @@ let foo = bar >
 (check-indentation indents-multiline-operators-only-once
                    "
 1 +
-    2 + 5 *
+  2 + 5 *
 |3
 " "
 1 +
-    2 + 5 *
-    |3
+  2 + 5 *
+      |3
 "
 )
 

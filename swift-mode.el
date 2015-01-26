@@ -330,18 +330,20 @@
          (smie-rule-parent swift-indent-offset)))
 
     ;; Apply swift-indent-multiline-statement-offset only if
-    ;; - dot is followed by newline, or
-    ;; - if dot is a first token on the line
+    ;; - if is a first token on the line
     (`(:before . ".")
-     (if (or (smie-rule-hanging-p)
-             (smie-rule-bolp))
-         swift-indent-multiline-statement-offset))
+     (when (smie-rule-bolp)
+       (if (smie-rule-parent-p "{")
+           (+ swift-indent-offset swift-indent-multiline-statement-offset)
+         swift-indent-multiline-statement-offset)))
 
     ;; Apply swift-indent-multiline-statement-offset if
     ;; operator is the last symbol on the line
     (`(:before . "OP")
-     (if (smie-rule-hanging-p)
-         swift-indent-multiline-statement-offset))
+     (when (smie-rule-hanging-p)
+       (if (smie-rule-parent-p "{")
+           (+ swift-indent-offset swift-indent-multiline-statement-offset)
+          swift-indent-multiline-statement-offset)))
 
     ;; Indent second line of the multi-line class
     ;; definitions with swift-indent-offset
