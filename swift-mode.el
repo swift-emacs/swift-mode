@@ -147,8 +147,9 @@
        (op-exp (exp "OP" exp))
        (tern-exp (op-exp "?" exp ":" exp))
 
-       (enum-cases (assign-exp)
-                   (enum-cases ";" "ecase" enum-cases))
+       (enum-case ("ecase" assign-exp)
+                  ("ecase" "(" type ")"))
+       (enum-cases (enum-case) (enum-case ";" enum-case))
        (enum-body (enum-cases) (insts))
 
        (case-exps (exp) (guard-exp))
@@ -257,7 +258,7 @@
    (t (let ((tok (smie-default-forward-token)))
         (cond
          ((equal tok "case")
-          (if (looking-at ".+\\(,\\|:\\)")
+          (if (looking-at ".+\\(where.*[,]\\|:\\)")
               "case"
             "ecase"))
          (t tok))))
@@ -300,7 +301,7 @@
      (t (let ((tok (smie-default-backward-token)))
           (cond
            ((equal tok "case")
-            (if (looking-at ".+\\(,\\|:\\)")
+            (if (looking-at ".+\\(where.*[,]\\|:\\)")
                 "case"
               "ecase"))
            (t tok))))
