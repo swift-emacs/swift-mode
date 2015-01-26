@@ -388,6 +388,27 @@ case y:
 }
 ")
 
+(check-indentation indents-statements-under-default-case/1
+  "
+{
+    switch true {
+    case y:
+        x
+    default:
+    |z
+    }
+}
+" "
+{
+    switch true {
+    case y:
+        x
+    default:
+        |z
+    }
+}
+")
+
 (check-indentation indents-case-statements-with-destucturing/1
   "
 switch true {

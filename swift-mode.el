@@ -152,9 +152,8 @@
        (enum-body (enum-cases) (insts))
 
        (case-exps (exp) (guard-exp))
-       (cases (case-exps ":" insts)
-              (cases "case" cases))
-       (switch-body (cases) (cases "default:" insts))
+       (case (case-exps ":" insts))
+       (switch-body (case) (case "case" case))
 
        (for-head (in-exp) (op-exp) (for-head ";" for-head))
 
@@ -252,6 +251,9 @@
    ((looking-at swift-smie--access-modifier-regexp)
     (goto-char (match-end 0)) "ACCESSMOD")
 
+   ((looking-at "default")
+    (goto-char (match-end 0)) "case")
+
    (t (let ((tok (smie-default-forward-token)))
         (cond
          ((equal tok "case")
@@ -292,6 +294,9 @@
      ((looking-back swift-smie--access-modifier-regexp (- (point) 8) t)
       (goto-char (match-beginning 0)) "ACCESSMOD")
 
+     ((looking-back "default" (- (point) 7) t)
+      (goto-char (match-beginning 0)) "case")
+
      (t (let ((tok (smie-default-backward-token)))
           (cond
            ((equal tok "case")
@@ -321,7 +326,7 @@
      (if (smie-rule-parent-p "switch")
          (smie-rule-parent swift-indent-switch-case-offset)))
     (`(:before . ";")
-     (if (smie-rule-parent-p "case" "default:")
+     (if (smie-rule-parent-p "case")
          (smie-rule-parent swift-indent-offset)))
 
     ;; Apply swift-indent-multiline-statement-offset only if
