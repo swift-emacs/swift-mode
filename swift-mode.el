@@ -112,7 +112,8 @@
         (decl)
         (func-decl))
 
-       (func (func-decl "{" insts "}"))
+       (func-body (insts) ("return" exp))
+       (func (func-decl "{" func-body "}"))
        (func-decl ("DECSPEC" "func" func-header)
                   (func-decl "->" type))
        (func-header (id "(" func-params ")"))
@@ -344,7 +345,7 @@
      (when (smie-rule-hanging-p)
        (if (smie-rule-parent-p "{")
            (+ swift-indent-offset swift-indent-multiline-statement-offset)
-          swift-indent-multiline-statement-offset)))
+         swift-indent-multiline-statement-offset)))
 
     ;; Indent second line of the multi-line class
     ;; definitions with swift-indent-offset

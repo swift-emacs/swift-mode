@@ -1361,6 +1361,36 @@ let a = a ?
         |c
 ")
 
+(check-indentation conditional-operator/8
+                   "
+func foo() {
+    return order!.deliver ?
+         |OrderViewTableDeliveryCells.lastCellIndex.rawValue :
+           OrderViewTableTakeAwayCells.lastCellIndex.rawValue
+}
+" "
+func foo() {
+    return order!.deliver ?
+           |OrderViewTableDeliveryCells.lastCellIndex.rawValue :
+           OrderViewTableTakeAwayCells.lastCellIndex.rawValue
+}
+")
+
+(check-indentation conditional-operator/9
+                   "
+func foo() {
+    return order!.deliver ?
+           OrderViewTableDeliveryCells.lastCellIndex.rawValue :
+         |OrderViewTableTakeAwayCells.lastCellIndex.rawValue
+}
+" "
+func foo() {
+    return order!.deliver ?
+           OrderViewTableDeliveryCells.lastCellIndex.rawValue :
+           |OrderViewTableTakeAwayCells.lastCellIndex.rawValue
+}
+")
+
 (check-indentation blank-line/1
                    "
 func foo() {
