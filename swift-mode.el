@@ -48,17 +48,17 @@
 (defcustom swift-indent-offset 4
   "Defines the indentation offset for Swift code."
   :group 'swift
-  :type 'integerp)
+  :type 'integer)
 
 (defcustom swift-indent-switch-case-offset 0
   "Defines the indentation offset for cases in a switch statement."
   :group 'swift
-  :type 'integerp)
+  :type 'integer)
 
 (defcustom swift-indent-multiline-statement-offset 2
   "Defines the indentation offset for for multiline statements."
   :group 'swift
-  :type 'integerp
+  :type 'integer
   :package-version '(swift-mode "0.3.0"))
 
 (defcustom swift-repl-executable
