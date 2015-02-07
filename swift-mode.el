@@ -344,7 +344,8 @@
     ;; Apply swift-indent-multiline-statement-offset if
     ;; operator is the last symbol on the line
     (`(:before . "OP")
-     (when (smie-rule-hanging-p)
+     (when (and (smie-rule-hanging-p)
+                (not (smie-rule-parent-p "OP")))
        (if (smie-rule-parent-p "{")
            (+ swift-indent-offset swift-indent-multiline-statement-offset)
          swift-indent-multiline-statement-offset)))

@@ -1174,6 +1174,32 @@ let x = foo ??
         |bar
 ")
 
+(check-indentation indents-multiline-expressions/21
+                   "
+let foo = a +
+          b +
+            |c +
+          d
+" "
+let foo = a +
+          b +
+          |c +
+          d
+")
+
+(check-indentation indents-multiline-expressions/22
+                   "
+let foo = a +
+          b +
+          c +
+              |d
+" "
+let foo = a +
+          b +
+          c +
+          |d
+")
+
 (check-indentation indents-long-parameters/1
                    "
 func foo() {
