@@ -203,8 +203,7 @@
                 "<<" ">>" "??")))
 
 (defvar swift-smie--decl-specifier-regexp
-  (rx (? (or "class" "mutating" "override" "static" "unowned" "weak"))
-      "(?=[[:space:]]*func)"))
+  "\\(?1:class\\|mutating\\|override\\|static\\|unowned\\|weak\\)\\(?:[[:space:]]*func\\)")
 
 (defvar swift-smie--access-modifier-regexp
   (regexp-opt '("private" "public" "internal")))
@@ -250,7 +249,7 @@
     (goto-char (match-end 0)) "OP")
 
    ((looking-at swift-smie--decl-specifier-regexp)
-    (goto-char (match-end 0)) "DECSPEC")
+    (goto-char (match-end 1)) "DECSPEC")
 
    ((looking-at swift-smie--access-modifier-regexp)
     (goto-char (match-end 0)) "ACCESSMOD")
@@ -293,7 +292,7 @@
       (goto-char (match-beginning 0)) "OP")
 
      ((looking-back swift-smie--decl-specifier-regexp (- (point) 8) t)
-      (goto-char (match-beginning 0)) "DECSPEC")
+      (goto-char (match-beginning 1)) "DECSPEC")
 
      ((looking-back swift-smie--access-modifier-regexp (- (point) 8) t)
       (goto-char (match-beginning 0)) "ACCESSMOD")
