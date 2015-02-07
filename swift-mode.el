@@ -218,8 +218,10 @@
              (looking-back "[[:space:]][?!]" (- (point) 2) t)
              ;; ??, is? and as? are operators
              (looking-back "[?][?]\\|as[?]\\|is[?]" (- (point) 3) t)
-             ;; Leding character in multi-line expression
+             ;; Characters placed on the second line in multi-line expression
              (looking-at "[ \n\t]+[.?:]")
+             ;; Operators placed on the second line in multi-line expression
+             (looking-at (concat "[ \n\t]+" swift-smie--operators-regexp))
              (and (looking-back swift-smie--operators-regexp (- (point) 3) t)
                   ;; Not a generic type
                   (not (looking-back "[[:upper:]]>" (- (point) 2) t)))

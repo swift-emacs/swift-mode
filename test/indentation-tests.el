@@ -1156,6 +1156,15 @@ CGPoint(x: aaaaaaaaaaaaaaa.x +
            bbbbbbbbbbbbbbbb)
 ")
 
+(check-indentation indents-multiline-expressions/19
+                   "
+let x = 1
+|+ 1
+" "
+let x = 1
+        |+ 1
+")
+
 (check-indentation indents-multiline-expressions/20
                    "
 let x = foo ??
@@ -1275,7 +1284,7 @@ let foo = bar >
 " "
 1 +
   2 + 5 *
-      |3
+  |3
 "
 )
 
