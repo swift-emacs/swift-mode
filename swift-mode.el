@@ -142,7 +142,7 @@
        (case-exps (guard-exp))
        (cases (case-exps ":" insts)
               (cases "case" cases))
-       (switch-body (cases) (cases "default:" insts))
+       (switch-body (cases) (cases "default" insts))
 
        (for-head (in-exp) (op-exp) (for-head ";" for-head))
 
@@ -187,7 +187,7 @@
                 "is" "as" "as?" ".." "..."
                 "+" "-" "&+" "&-" "|" "^"
                 "*" "/" "%" "&*" "&/" "&%" "&"
-                "<<" ">>")))
+                "<<" ">>" "?" ":")))
 
 (defvar swift-smie--decl-specifier-regexp
   (rx (? (or "class" "mutating" "override" "static" "unowned" "weak"))
@@ -592,7 +592,6 @@ You can send text to the REPL process from other buffers containing source.
 
     ;; Additional symbols
     (modify-syntax-entry ?_ "w" table)
-    (modify-syntax-entry ?: "_" table)
 
     ;; Comments
     (modify-syntax-entry ?/  ". 124b" table)
