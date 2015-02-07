@@ -402,7 +402,7 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
   "Parent tokens for statements.")
 
 (defvar swift-smie--expression-parent-tokens
-  (append swift-smie--statement-parent-tokens '("," "<T"))
+  (append swift-smie--statement-parent-tokens '("," "<T" "for"))
   "Parent tokens for expressions.")
 
 (defun swift-smie-rules (kind token)

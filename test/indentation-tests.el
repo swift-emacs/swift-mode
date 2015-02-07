@@ -841,6 +841,38 @@ for
 }
 ")
 
+
+(check-indentation indents-for-statements/15
+  "
+for i
+|= 0;
+    i < 10;
+    i++ {
+}
+" "
+for i
+      |= 0;
+    i < 10;
+    i++ {
+}
+")
+
+(check-indentation indents-for-statements/16
+  "
+for i = 0,
+|j = 0;
+    i < 10;
+    i++ {
+}
+" "
+for i = 0,
+    |j = 0;
+    i < 10;
+    i++ {
+}
+")
+
+
 (check-indentation indents-after-for-statements/1
   "
 for
