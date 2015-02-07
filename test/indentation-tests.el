@@ -645,6 +645,274 @@ for var index = 0; index < 3; ++index  {
 }
 ")
 
+(check-indentation indents-for-statements/4
+  "
+for
+  var index = 0;
+  index < 3;
+  ++index  {
+|foo
+}
+" "
+for
+  var index = 0;
+  index < 3;
+  ++index  {
+    |foo
+}
+")
+
+(check-indentation indents-for-statements/5
+  "
+for
+|var index = 0;
+  index < 3;
+  ++index  {
+    foo
+}
+" "
+for
+  |var index = 0;
+  index < 3;
+  ++index  {
+    foo
+}
+")
+
+(check-indentation indents-for-statements/5
+  "
+for
+  var index = 0;
+|index < 3;
+  ++index  {
+    foo
+}
+" "
+for
+  var index = 0;
+  |index < 3;
+  ++index  {
+    foo
+}
+")
+
+(check-indentation indents-for-statements/6
+  "
+for
+  var index = 0;
+  index < 3;
+|++index  {
+    foo
+}
+" "
+for
+  var index = 0;
+  index < 3;
+  |++index  {
+    foo
+}
+")
+
+(check-indentation indents-for-statements/7
+  "
+for
+  x
+  in
+  xs  {
+    |foo
+}
+" "
+for
+  x
+  in
+  xs  {
+    |foo
+}
+")
+
+(check-indentation indents-for-statements/8
+  "
+for
+|x
+  in
+  xs  {
+    foo
+}
+" "
+for
+  |x
+  in
+  xs  {
+    foo
+}
+")
+
+(check-indentation indents-for-statements/9
+  "
+for
+  x
+|in
+  xs  {
+    foo
+}
+" "
+for
+  x
+  |in
+  xs  {
+    foo
+}
+")
+
+(check-indentation indents-for-statements/10
+  "
+for
+  x
+  in
+|xs  {
+    foo
+}
+" "
+for
+  x
+  in
+  |xs  {
+    foo
+}
+")
+
+(check-indentation indents-for-statements/11
+  "
+for
+|x in
+  xs  {
+    foo
+}
+" "
+for
+  |x in
+  xs  {
+    foo
+}
+")
+
+(check-indentation indents-for-statements/12
+  "
+for
+  x in
+|xs  {
+    foo
+}
+" "
+for
+  x in
+  |xs  {
+    foo
+}
+")
+
+(check-indentation indents-for-statements/13
+  "
+for
+|x
+  in xs  {
+    foo
+}
+" "
+for
+  |x
+  in xs  {
+    foo
+}
+")
+
+(check-indentation indents-for-statements/14
+  "
+for
+  x
+|in xs  {
+    foo
+}
+" "
+for
+  x
+  |in xs  {
+    foo
+}
+")
+
+(check-indentation indents-after-for-statements/1
+  "
+for
+  var index = 0;
+  index < 3;
+  ++index  {
+    foo
+}
+  |foo()
+" "
+for
+  var index = 0;
+  index < 3;
+  ++index  {
+    foo
+}
+|foo()
+")
+
+(check-indentation indents-after-for-statements/2
+  "
+for
+  x
+  in
+  xs  {
+    foo
+}
+  |foo()
+" "
+for
+  x
+  in
+  xs  {
+    foo
+}
+|foo()
+")
+
+(check-indentation indents-after-for-statements/3
+  "
+for
+  x in
+  xs  {
+    foo
+}
+  |foo()
+" "
+for
+  x in
+  xs  {
+    foo
+}
+|foo()
+")
+
+(check-indentation indents-after-for-statements/4
+  "
+for
+  x
+  in xs  {
+    foo
+}
+  |foo()
+" "
+for
+  x
+  in xs  {
+    foo
+}
+|foo()
+")
+
 (check-indentation indents-while-statements
   "
 while foo < bar{
@@ -1459,6 +1727,15 @@ func foo() {
 
     |let b = 1
 }
+")
+
+(check-indentation after-return
+                   "
+return
+|1
+" "
+return
+  |1
 ")
 
 

@@ -94,6 +94,7 @@ class Foo:
       (switch)
       (case)
       (default)
+      (for)
       (insts ";" insts)
       (insts "IMP;" insts))
      ;; expressions.
@@ -119,6 +120,8 @@ class Foo:
      ;; case label.
      (case (id "case" id ":" id))
      (default (id "default" id ":" id))
+     ;; for statement.
+     (for (id "for" expr ";" expr ";" expr) (id "for" expr "in" expr))
      ;; block.
      (block ("{" insts "}"))
      ;; types.
@@ -186,25 +189,27 @@ class Foo:
      ;; let foo: Foo<A> ← not inserts ";" here
      ;;   = new Foo<A>()
      ;;
-     (and (looking-back "[[:upper:]][\])>]*>" (- (point) 32) nil) ; see comment for T> in swift-smie--forward-token
+     (and (looking-back "[[:alnum:]_][\])>]*>" (- (point) 32) nil) ; see comment for T> in swift-smie--forward-token
              (save-excursion
                (forward-comment (point-max))
                (not (looking-at "[:(=]"))))
+     ;; sentinel
+     (= (point) (point-min))
      (not (or
            ;; supresses implicit semicolon on empty line
            (save-excursion
              (goto-char (line-beginning-position))
              (< (line-end-position) (progn (forward-comment (point-max)) (point))))
            ;; supresses implicit semicolon after operator
-           (looking-back "[-.({[,!#$%&=^~\\|@+:*<>?]" (- (point) 1) t)
+           (looking-back "[-.({[,!#$%&=^~\\|@+:*<>?;]" (- (point) 1) t)
            ;; supresses implicit semicolon after keyword
            ;; Note that "as?" is already handled by preceeding conditions.
            (save-excursion
-             (member (smie-default-backward-token) '("as" "is" "class" "deinit" "enum" "extension" "func" "import" "init" "internal" "let" "operator" "private" "protocol" "public" "static" "struct" "subscript" "typealias" "var" "case" "for" "if" "switch" "where" "while" "associativity" "convenience" "dynamic" "didSet" "final" "get" "infix" "inout" "lazy" "mutating" "nonmutating" "optional" "override" "postfix" "precedence" "prefix" "required" "set" "unowned" "weak" "willSet")))
+             (member (smie-default-backward-token) '("as" "is" "class" "deinit" "enum" "extension" "func" "import" "init" "internal" "let" "operator" "private" "protocol" "public" "static" "struct" "subscript" "typealias" "var" "case" "for" "if" "return" "switch" "where" "while" "associativity" "convenience" "dynamic" "didSet" "final" "get" "infix" "inout" "lazy" "mutating" "nonmutating" "optional" "override" "postfix" "precedence" "prefix" "required" "set" "unowned" "weak" "willSet")))
            ;; supresses implicit semicolon before operator
            (progn
              (forward-comment (point-max))
-             (looking-at "[-.{,!#$%&=^~\\|+:*<>?]"))
+             (looking-at "[-.,!#$%&=^~\\|+:*<>?]"))
            ;; supresses implicit semicolon before keyword
            (save-excursion
              ;; note that comments are already skipped by previous condition
@@ -240,7 +245,7 @@ class Foo:
 
      ;; close angle bracket for type parameters.
      ((and (eq (char-after) ?>)
-           (looking-back "[[:upper:]][\])>]*" (- (point) 32) nil))
+           (looking-back "[[:alnum:]_][\])>]*" (- (point) 32) nil))
       (forward-char 1)
       "T>")
 
@@ -297,7 +302,7 @@ class Foo:
 
      ;; close angle bracket for type parameters.
      ((and (eq (char-before) ?>)
-           (looking-back "[[:upper:]][\])>]*" (- (point) 32) nil))
+           (looking-back "[[:alnum:]_][\])>]*" (- (point) 32) nil))
       (backward-char 1)
       "T>")
 
@@ -487,12 +492,12 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
        (cons
         'column
         (if (equal (nth 2 parent) "TYPE:")
-            ;; class Foo: Bar
+            ;; class Foo: Bar,
             ;;     Buz
             ;;
             ;; rather than
             ;;
-            ;; class Foo: Bar
+            ;; class Foo: Bar,
             ;;            Buz
             ;;
             ;; If you prefer latter indentation, replace this if-expression
@@ -502,31 +507,34 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
               (+ (smie-indent-virtual) swift-indent-supertype-offset))
           (current-column)))))
 
-    (`(:before . ,(or "IMP;" ";"))
-     ;; aligns with the first statement or a preceeding sibling that is at the
-     ;; beginning of a line unless that is a case label.
-     ;;
-     ;; indents with `swift-indent-offset` after case label.
-     (let
-         ((pos (point))
-          (parent (swift-smie--backward-sexps-until
-                   '("{" "(" "[" ":")
-                   '("IMP;" ";"))))
-       (cons 'column
-             (cond
-              ((equal (nth 2 parent) ":")
-               (setq parent (swift-smie--backward-sexps-until
-                             '("{" "(" "[" "case" "default")
-                             '("IMP;" ";")))
-               (if (member (nth 2 parent) '("case" "default"))
-                   (progn
-                     (goto-char (nth 1 parent))
-                     (+ (current-column) swift-indent-offset))
-                 (current-column)))
-              (t
-               (current-column))))))
+    (`(:before . "IMP;")
+     (or
+      ;; special handling for for-in statement:
+      ;;
+      ;; for x in
+      ;;     xs
+      (save-excursion
+        (and
+         (save-excursion (equal (swift-smie--backward-token) "in"))
+         (progn (forward-char 1)
+                (swift-smie--backward-for-head))
+         (progn
+           (swift-smie--forward-token)
+           (swift-smie--forward-token)
+           (swift-smie--backward-token)
+           (cons 'column (current-column)))))
+      (swift-smie--rule-before-semicolon t)))
 
-    (`(:after . ,(or "class" "func" "enum" "switch" "case"))
+    (`(:before . ";")
+     (swift-smie--rule-before-semicolon nil))
+
+    (`(:before . "in")
+     (when (swift-smie--backward-for-head)
+       (swift-smie--forward-token)
+       (swift-smie--forward-token)
+       (swift-smie--backward-token)
+       (cons 'column (current-column))))
+    (`(:after . ,(or "class" "func" "enum" "switch" "case" "for"))
      ;; i.e.
      ;;
      ;; switch
@@ -555,27 +563,106 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
         (t nil))))
     ))
 
+(defun swift-smie--rule-before-semicolon (implicit)
+  ;; aligns with the first statement or a preceeding sibling that is at the
+  ;; beginning of a line unless that is a case label.
+  ;;
+  ;; indents with `swift-indent-offset` after case label.
+  (or
+   (swift-smie--rule-for)
+   (let
+       ((pos (point))
+        (parent (swift-smie--backward-sexps-until
+                 (list "{" "(" "[" ":" (if implicit ":" "for"))
+                 '("IMP;" ";"))))
+     (cons 'column
+           (cond
+            ((equal (nth 2 parent) ":")
+             (setq parent (swift-smie--backward-sexps-until
+                           '("{" "(" "[" "case" "default")
+                           '("IMP;" ";")))
+             (if (member (nth 2 parent) '("case" "default"))
+                 (progn
+                   (goto-char (nth 1 parent))
+                   (+ (current-column) swift-indent-offset))
+               (current-column)))
+            (t
+             (current-column)))))))
+
 (defun swift-smie--backward-for-head ()
-  "Backward the head of a for-statement (i.e. 'for foo; bar; buz') and
-returns the column of the \"for\" token.
+  "Backward the head of a for-statement (i.e. 'for foo; bar; buz' or
+'for x in xs') and returns the column of the \"for\" token.
 If the cursor is not at a head of a for-statement, keeps cursor position as is
 and returns nil"
-  (save-excursion
-    (let*
-        ((parent (swift-smie--backward-sexps-until
-                  swift-smie--statement-parent-tokens))
-         (token (nth 2 parent)))
-      (when (equal token ";")
-        (goto-char (nth 1 parent))
-        (setq parent (swift-smie--backward-sexps-until
-                      swift-smie--statement-parent-tokens))
-        (setq token (nth 2 parent))
-        (when  (equal token ";")
+  (let*
+      ((pos (point))
+       (parent (swift-smie--backward-sexps-until
+                swift-smie--statement-parent-tokens))
+       (token (nth 2 parent))
+       (result-column
+        (cond
+         ;; 'for foo; bar; |buz' where '|' represents the cursor
+         ((equal token ";")
           (goto-char (nth 1 parent))
-          (swift-smie--backward-sexps-until swift-smie--statement-parent-tokens)
-          (when (equal (swift-smie--forward-token) "for")
-            (swift-smie--backward-token)
+          (setq parent (swift-smie--backward-sexps-until
+                        swift-smie--statement-parent-tokens))
+          (setq token (nth 2 parent))
+          (when  (equal token ";")
+            (goto-char (nth 1 parent))
+            (swift-smie--backward-sexps-until
+             swift-smie--statement-parent-tokens)
+            (when (equal (swift-smie--forward-token) "for")
+              (swift-smie--backward-token)
+              (current-column))))
+         ((equal token "IMP;")
+          ;; four cases:
+          ;;
+          ;; 1.
+          ;;   for x
+          ;;       in
+          ;;       |xs
+          ;;
+          ;; 2.
+          ;;   for x in
+          ;;       |xs
+          ;;
+          ;; 3.
+          ;;   for x
+          ;;       |in xs
+          ;; 4.
+          ;;   |for x in xs
+          (cond
+           ;; case 1 or 2
+           ((save-excursion (swift-smie--backward-token)
+                            (equal (swift-smie--backward-token) "in"))
+            (goto-char (nth 1 parent))
+            (swift-smie--backward-token) ; "in"
+            (swift-smie--backward-token) ; "IMP;" or "x"
+            (swift-smie--backward-sexps-until
+             swift-smie--statement-parent-tokens)
+            (when (equal (swift-smie--forward-token) "for")
+              (swift-smie--backward-token)
+              (current-column)))
+           ;; case 3
+           ((save-excursion (equal (swift-smie--forward-token) "in"))
+            (goto-char (nth 1 parent))
+            (swift-smie--backward-sexps-until
+             swift-smie--statement-parent-tokens)
+            (when (equal (swift-smie--forward-token) "for")
+              (swift-smie--backward-token)
+              (current-column)))
+           ;; case 4
+           ((save-excursion
+              (and (equal (swift-smie--forward-token) "for")
+                   (progn
+                     (goto-char pos)
+                     (equal
+                      (nth 2 (swift-smie--backward-sexps-until '("IMP;" "in")))
+                      "in"))))
             (current-column)))))))
+    (when (not result-column)
+      (goto-char pos))
+    result-column))
 
 (defun swift-smie--rule-for ()
   "Special rule for 'for' statement."
@@ -640,7 +727,7 @@ and returns nil"
   (swift-smie--op-offset (swift-smie--goto-op-parent) ignore-question offset))
 
 (defun swift-smie--rule-before-op (&optional ignore-question offset)
-  ;; When the token is not at the beginning of the line (i.e. not called from
+  ;; When the token is at the beginning of the line (i.e. not called from
   ;; smie-indent-virtual) and if the previous line is indented manually,
   ;; aligns with it.
   ;; When the token is not at the beginning of the line, and if the current
