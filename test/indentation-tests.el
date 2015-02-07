@@ -1156,6 +1156,15 @@ CGPoint(x: aaaaaaaaaaaaaaa.x +
            bbbbbbbbbbbbbbbb)
 ")
 
+(check-indentation indents-multiline-expressions/20
+                   "
+let x = foo ??
+            |bar
+" "
+let x = foo ??
+        |bar
+")
+
 (check-indentation indents-long-parameters/1
                    "
 func foo() {
