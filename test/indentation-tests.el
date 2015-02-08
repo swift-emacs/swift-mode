@@ -1200,6 +1200,17 @@ let foo = a +
           |d
 ")
 
+(check-indentation indents-multiline-expressions/23
+                   "
+let x = bar
+        .buz() ??
+|defaultValue
+" "
+let x = bar
+        .buz() ??
+        |defaultValue
+")
+
 (check-indentation indents-long-parameters/1
                    "
 func foo() {

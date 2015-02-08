@@ -254,7 +254,7 @@
    ((looking-at swift-smie--access-modifier-regexp)
     (goto-char (match-end 0)) "ACCESSMOD")
 
-   ((looking-at "default")
+   ((looking-at "\\<default\\>")
     (goto-char (match-end 0)) "case")
 
    (t (let ((tok (smie-default-forward-token)))
@@ -297,7 +297,7 @@
      ((looking-back swift-smie--access-modifier-regexp (- (point) 8) t)
       (goto-char (match-beginning 0)) "ACCESSMOD")
 
-     ((looking-back "default" (- (point) 7) t)
+     ((looking-back "\\<default\\>" (- (point) 9) t)
       (goto-char (match-beginning 0)) "case")
 
      (t (let ((tok (smie-default-backward-token)))
