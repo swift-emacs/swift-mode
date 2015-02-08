@@ -1232,6 +1232,36 @@ aaaaaa.aaaaaaaaaaaaaaaaaaaaa(
 )
 ")
 
+(check-indentation indents-long-parameters/3
+                   "
+public func tableView(
+|tableView: UITableView,
+    commitEditingStyle editingStyle: UITableViewCellEditingStyle,
+    forRowAtIndexPath indexPath: NSIndexPath) {
+}
+" "
+public func tableView(
+    |tableView: UITableView,
+    commitEditingStyle editingStyle: UITableViewCellEditingStyle,
+    forRowAtIndexPath indexPath: NSIndexPath) {
+}
+")
+
+(check-indentation indents-long-parameters/4
+                   "
+func a(
+        |a: a,
+    a: a,
+    a: a) {
+}
+" "
+func a(
+    |a: a,
+    a: a,
+    a: a) {
+}
+")
+
 (check-indentation indents-multiline-expressions-to-user-defined-offset/1
                    "
 NSNotificationCenter.defaultCenter()

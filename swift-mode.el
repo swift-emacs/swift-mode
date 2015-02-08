@@ -361,6 +361,10 @@
              swift-indent-offset
            (smie-rule-parent))))
 
+    ;; Disable unnecessary default indentation for
+    ;; "func" and "class" keywords
+    (`(:after . ,(or `"func" `"class")) (smie-rule-parent 0))
+
     (`(:after . "(") (smie-rule-parent swift-indent-offset))
     (`(:before . "(")
      (cond
