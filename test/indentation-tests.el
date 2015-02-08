@@ -264,6 +264,35 @@ switch true {
 }
 ")
 
+(check-indentation indents-case-statements-to-same-level-as-enclosing-switch/5
+                   "
+switch {
+    |case foo,
+     bar, buz:
+    foo
+}
+" "
+switch {
+|case foo,
+     bar, buz:
+    foo
+}
+")
+
+(check-indentation indents-case-statements-to-same-level-as-enclosing-switch/6
+                   "
+switch {
+    |case
+    foo, bar, buz:
+    foo
+}
+" "
+switch {
+|case
+    foo, bar, buz:
+    foo
+}
+")
 
 (check-indentation indents-case-statement-bodies/1
 "
