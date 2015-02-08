@@ -366,10 +366,12 @@
     (`(:after . ,(or `"func" `"class")) (smie-rule-parent 0))
 
     (`(:after . "(") (smie-rule-parent swift-indent-offset))
+
     (`(:before . "(")
      (cond
       ((smie-rule-next-p "[") (smie-rule-parent))
-      ((smie-rule-parent-p ".") 0)))
+      ;; Custom indentation for method arguments
+      ((smie-rule-parent-p "." "func") (smie-rule-parent 0))))
 
     (`(:before . "[")
      (cond
@@ -377,8 +379,6 @@
       ((smie-rule-parent-p "[") swift-indent-offset)
       (t (smie-rule-parent))))
     (`(:after . "->") (smie-rule-parent swift-indent-offset))
-
-    (`(:close-all . "}") (if (smie-rule-parent-p "(") 't))
     ))
 
 ;;; Font lock
