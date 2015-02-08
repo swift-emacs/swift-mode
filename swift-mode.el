@@ -676,10 +676,22 @@ You can send text to the REPL process from other buffers containing source.
     ;; Parenthesis, braces and brackets
     (modify-syntax-entry ?\( "()" table)
     (modify-syntax-entry ?\) ")(" table)
-    (modify-syntax-entry ?\{ "(}" table)
-    (modify-syntax-entry ?\} "){" table)
     (modify-syntax-entry ?\[ "(]" table)
     (modify-syntax-entry ?\] ")[" table)
+
+    ;; HACK: This is not a correct syntax table definition
+    ;; for the braces, but it allows us disable smie indentation
+    ;; based on  syntax-table. Default behaviour doesn't work with
+    ;; closures in method arguments. For example:
+    ;;
+    ;; foo.bar(10,
+    ;;         closure: {
+    ;;         })
+    ;;
+    ;; With enabled syntax table, smie doesn't respect closing brace, so
+    ;; it's impossible to provide custom indentation rules
+    (modify-syntax-entry ?\{ "w" table)
+    (modify-syntax-entry ?\} "w" table)
 
     table))
 

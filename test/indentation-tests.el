@@ -1568,7 +1568,7 @@ UIView.animateWithDuration(1.0,
 " "
 UIView.animateWithDuration(1.0,
                            animations: {
-|})
+                           |})
 ")
 
 (check-indentation anonymous-function-as-a-argument/2
@@ -1581,7 +1581,49 @@ UIView.animateWithDuration(
 UIView.animateWithDuration(
     1.0,
     animations: {
-|})
+    |})
+")
+
+(check-indentation anonymous-function-as-a-argument/3
+                   "
+func foo() {
+    UIView.animateWithDuration(1.0,
+                               animations: {
+                                   |}
+    ) {
+        completed in
+    }
+}
+" "
+func foo() {
+    UIView.animateWithDuration(1.0,
+                               animations: {
+                               |}
+    ) {
+        completed in
+    }
+}
+")
+
+(check-indentation anonymous-function-as-a-argument/4
+                   "
+func foo() {
+    UIView.animateWithDuration(1.0,
+                               animations: {
+                               }
+|) {
+        completed in
+    }
+}
+" "
+func foo() {
+    UIView.animateWithDuration(1.0,
+                               animations: {
+                               }
+    |) {
+        completed in
+    }
+}
 ")
 
 (check-indentation indents-expression-with-optional-type/1
