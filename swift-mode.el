@@ -117,7 +117,7 @@
        (func-decl ("DECSPEC" "func" func-header)
                   (func-decl "->" type))
        (func-header (id "(" func-params ")"))
-       (func-param (decl-exp) ("..."))
+       (func-param (decl-exp) (decl-exp "=" id) ("..."))
        (func-params (func-param "," func-param))
 
        (insts (inst) (insts ";" insts))

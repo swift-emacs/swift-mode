@@ -846,6 +846,15 @@ func foo() ->
     |[A] {}
 ")
 
+(check-indentation indents-func-declaration/10
+                   "
+func a(a: NSString = 1,
+                     |b: NSString = 2) {}
+" "
+func a(a: NSString = 1,
+       |b: NSString = 2) {}
+")
+
 (check-indentation indents-protocol-declaration/1
                    "
 protocol Foo {
