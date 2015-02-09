@@ -376,7 +376,7 @@
     (`(:before . "[")
      (cond
       ((smie-rule-prev-p "->") swift-indent-offset)
-      ((smie-rule-parent-p "[") swift-indent-offset)
+      ((smie-rule-parent-p "[") (smie-rule-parent swift-indent-offset))
       (t (smie-rule-parent))))
     (`(:after . "->") (smie-rule-parent swift-indent-offset))
     ))

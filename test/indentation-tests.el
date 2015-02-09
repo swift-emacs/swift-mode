@@ -709,15 +709,6 @@ class Foo: Bar<A, B,
                |C>
 ")
 
-(check-indentation indents-class-declaration/8
-                   "
-class Foo: Bar<A, B,
-|[C]>
-" "
-class Foo: Bar<A, B,
-               |[C]>
-")
-
 (check-indentation indents-class-declaration/9
                    "
 class Foo<A: B<C>>:
@@ -1020,6 +1011,51 @@ let foo = [
 " "
 let foo = [
     |[
+")
+
+(check-indentation indents-declaration/13
+                   "
+let foo = [
+|[
+        bar: baz
+    ]
+]
+" "
+let foo = [
+    |[
+        bar: baz
+    ]
+]
+")
+
+(check-indentation indents-declaration/14
+                   "
+let foo = [
+    [
+    |bar: baz
+    ]
+]
+" "
+let foo = [
+    [
+        |bar: baz
+    ]
+]
+")
+
+(check-indentation indents-declaration/15
+                   "
+let foo = [
+    [
+        bar: baz
+|]
+]
+" "
+let foo = [
+    [
+        bar: baz
+    |]
+]
 ")
 
 (check-indentation indents-multiline-expressions/1
