@@ -1058,6 +1058,38 @@ let foo = [
 ]
 ")
 
+(check-indentation indents-expressions/1
+                   "
+class Foo {
+    func a() {
+    |[a]
+    }
+}
+" "
+class Foo {
+    func a() {
+        |[a]
+    }
+}
+")
+
+(check-indentation indents-expressions/2
+                   "
+class Foo {
+    func a() {
+        a
+    |[a]
+    }
+}
+" "
+class Foo {
+    func a() {
+        a
+        |[a]
+    }
+}
+")
+
 (check-indentation indents-multiline-expressions/1
 "
 Foo.bar([foo: bar,
