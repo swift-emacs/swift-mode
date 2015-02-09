@@ -1752,6 +1752,33 @@ var object: JsonObject?
 |var object: JsonObject
 ")
 
+(check-indentation indents-expression-with-optional-type/2
+                   "
+var object: JsonObject<Foo>?
+    |var object: JsonObject
+" "
+var object: JsonObject<Foo>?
+|var object: JsonObject
+")
+
+(check-indentation indents-expression-with-implicit-unwrapped-type/1
+                   "
+var object: JsonObject!
+    |var object: JsonObject
+" "
+var object: JsonObject!
+|var object: JsonObject
+")
+
+(check-indentation indents-expression-with-implicit-unwrapped-type/2
+                   "
+var object: JsonObject<Foo>!
+    |var object: JsonObject
+" "
+var object: JsonObject<Foo>!
+|var object: JsonObject
+")
+
 (provide 'indentation-tests)
 
 ;;; indentation-tests.el ends here

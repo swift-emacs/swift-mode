@@ -285,7 +285,8 @@
 
      ((eq (char-before) ?<) (backward-char 1)
       (if (looking-at "<[[:upper:]]") "<T" "OP"))
-     ((eq (char-before) ?>) (backward-char 1)
+     ((looking-back ">[?!]?" (- (point) 2) t)
+      (goto-char (match-beginning 0))
       (if (looking-back "[[:space:]]" 1 t) "OP" "T>"))
 
      ((looking-back swift-smie--operators-regexp (- (point) 3) t)
