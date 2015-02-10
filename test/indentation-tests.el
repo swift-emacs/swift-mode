@@ -1869,6 +1869,56 @@ foo.bar(10,
 )
 ")
 
+(check-indentation anonymous-function-as-a-argument/9
+                   "
+foo.bar(10,
+        completionHandler: { complete in
+
+            if foo {
+                bar
+            } else {
+            |bar
+            }
+        }
+)
+" "
+foo.bar(10,
+        completionHandler: { complete in
+
+            if foo {
+                bar
+            } else {
+                |bar
+            }
+        }
+)
+")
+
+(check-indentation anonymous-function-as-a-argument/10
+                   "
+foo.bar(10,
+        completionHandler: { complete in
+
+            if foo {
+                bar
+            } else {
+                bar
+        |}
+        }
+)
+" "
+foo.bar(10,
+        completionHandler: { complete in
+
+            if foo {
+                bar
+            } else {
+                bar
+            |}
+        }
+)
+")
+
 (check-indentation indents-expression-with-optional-type/1
                    "
 var object: JsonObject?

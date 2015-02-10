@@ -161,9 +161,11 @@
 
        (if-conditional (exp) (let-decl))
        (if-body ("if" if-conditional "{" insts "}"))
-       (if-clause (if-body) (if-body "else" if-body))
+       (if-clause (if-body)
+                  (if-body "elseif" if-conditional "{" insts "}")
+                  (if-body "else" "{" insts "}"))
 
-       (closure (insts) (id "in" insts) (id "->" id "in" insts)))
+       (closure (insts) (exp "in" insts) (exp "->" id "in" insts)))
      ;; Conflicts
      '((nonassoc "{") (assoc "in") (assoc ",") (assoc ";") (assoc ":") (right "="))
      '((assoc "in") (assoc "where") (assoc "OP"))
@@ -259,6 +261,9 @@
    ((looking-at "\\<default\\>")
     (goto-char (match-end 0)) "case")
 
+   ((looking-at "else if")
+    (goto-char (match-end 0)) "elseif")
+
    (t (let ((tok (smie-default-forward-token)))
         (cond
          ((equal tok "case")
@@ -302,6 +307,9 @@
 
      ((looking-back "\\<default\\>" (- (point) 9) t)
       (goto-char (match-beginning 0)) "case")
+
+     ((looking-back "else if" (- (point) 7) t)
+      (goto-char (match-beginning 0)) "elseif")
 
      (t (let ((tok (smie-default-backward-token)))
           (cond
@@ -357,12 +365,6 @@
     (`(:before . ",")
      (if (smie-rule-parent-p "class")
        (smie-rule-parent swift-indent-offset)))
-
-    (`(:before . "if")
-     (if (smie-rule-prev-p "else")
-         (if (smie-rule-parent-p "{")
-             (smie-rule-parent swift-indent-offset)
-           (smie-rule-parent))))
 
     ;; Disable unnecessary default indentation for
     ;; "func" and "class" keywords
