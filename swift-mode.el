@@ -159,14 +159,12 @@
 
        (for-head (in-exp) (op-exp) (for-head ";" for-head))
 
-       (conditional (exp) (let-decl))
-       (if-body ("if" conditional "{" insts "}"))
-       (if-else-if (if-body) (if-else-if "else" if-else-if))
-       (if-clause (if-else-if)))
+       (if-conditional (exp) (let-decl))
+       (if-body ("if" if-conditional "{" insts "}"))
+       (if-clause (if-body) (if-body "else" if-body)))
      ;; Conflicts
      '((nonassoc "{") (assoc ",") (assoc ";") (assoc ":") (right "="))
      '((assoc "in") (assoc "where") (assoc "OP"))
-     '((assoc "else"))
      '((assoc ";") (assoc "ecase"))
      '((assoc "case")))
 
@@ -359,7 +357,7 @@
     (`(:before . "if")
      (if (smie-rule-prev-p "else")
          (if (smie-rule-parent-p "{")
-             swift-indent-offset
+             (smie-rule-parent swift-indent-offset)
            (smie-rule-parent))))
 
     ;; Disable unnecessary default indentation for

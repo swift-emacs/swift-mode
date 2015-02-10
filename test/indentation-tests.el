@@ -1677,6 +1677,68 @@ if a {
 }
 ")
 
+(check-indentation indent-long-if-else-if/3
+  "
+class Foo {
+    func a() {
+        if a {
+            a
+        } else if b {
+        |a
+        } else if a {
+            a
+        } else {
+            a
+        }
+    }
+}
+" "
+class Foo {
+    func a() {
+        if a {
+            a
+        } else if b {
+            |a
+        } else if a {
+            a
+        } else {
+            a
+        }
+    }
+}
+")
+
+(check-indentation indent-long-if-else-if/4
+  "
+class Foo {
+    func a() {
+        if a {
+            a
+        } else if b {
+            a
+    |} else if a {
+            a
+        } else {
+            a
+        }
+    }
+}
+" "
+class Foo {
+    func a() {
+        if a {
+            a
+        } else if b {
+            a
+        |} else if a {
+            a
+        } else {
+            a
+        }
+    }
+}
+")
+
 (check-indentation anonymous-function-as-a-argument/1
                    "
 UIView.animateWithDuration(1.0,
