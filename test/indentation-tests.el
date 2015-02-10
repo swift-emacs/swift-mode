@@ -1805,6 +1805,70 @@ func foo() {
 }
 ")
 
+(check-indentation anonymous-function-as-a-argument/5
+                   "
+foo.bar(10,
+        completionHandler: { complete in
+        |foo
+        }
+)
+" "
+foo.bar(10,
+        completionHandler: { complete in
+            |foo
+        }
+)
+")
+
+(check-indentation anonymous-function-as-a-argument/6
+                   "
+foo.bar(10,
+        completionHandler: {
+            complete in
+        |foo
+        }
+)
+" "
+foo.bar(10,
+        completionHandler: {
+            complete in
+            |foo
+        }
+)
+")
+
+(check-indentation anonymous-function-as-a-argument/7
+                   "
+foo.bar(10,
+        completionHandler: { (
+        |bar, baz) in
+            foo
+        }
+)
+" "
+foo.bar(10,
+        completionHandler: { (
+            |bar, baz) in
+            foo
+        }
+)
+")
+
+(check-indentation anonymous-function-as-a-argument/8
+                   "
+foo.bar(10,
+        completionHandler: { (bar, baz) -> Void in
+        |foo
+        }
+)
+" "
+foo.bar(10,
+        completionHandler: { (bar, baz) -> Void in
+            |foo
+        }
+)
+")
+
 (check-indentation indents-expression-with-optional-type/1
                    "
 var object: JsonObject?

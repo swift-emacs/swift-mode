@@ -126,9 +126,9 @@
              (tern-exp)
              (in-exp)
              (dot-exp)
-             (dot-exp "{" insts "}")
+             (dot-exp "{" closure "}")
              (method-call)
-             (method-call "{" insts "}")
+             (method-call "{" closure "}")
              ("enum" decl-exp "{" enum-body "}")
              ("switch" exp "{" switch-body "}")
              (if-clause)
@@ -139,7 +139,7 @@
 
        (method-call (dot-exp "(" method-args ")"))
        (method-args (method-arg) (method-arg "," method-arg))
-       (method-arg (exp "," "{" insts "}") (exp))
+       (method-arg (exp "," "{" closure "}") (exp))
 
        (exp (op-exp)
             ("[" decl-exps "]"))
@@ -161,9 +161,11 @@
 
        (if-conditional (exp) (let-decl))
        (if-body ("if" if-conditional "{" insts "}"))
-       (if-clause (if-body) (if-body "else" if-body)))
+       (if-clause (if-body) (if-body "else" if-body))
+
+       (closure (insts) (id "in" insts) (id "->" id "in" insts)))
      ;; Conflicts
-     '((nonassoc "{") (assoc ",") (assoc ";") (assoc ":") (right "="))
+     '((nonassoc "{") (assoc "in") (assoc ",") (assoc ";") (assoc ":") (right "="))
      '((assoc "in") (assoc "where") (assoc "OP"))
      '((assoc ";") (assoc "ecase"))
      '((assoc "case")))
@@ -215,6 +217,8 @@
              (looking-back "[[:space:]][?!]" (- (point) 2) t)
              ;; ??, is? and as? are operators
              (looking-back "[?][?]\\|as[?]\\|is[?]" (- (point) 3) t)
+             ;; "in" operator in closure
+             (looking-back "in" (- (point) 2) t)
              ;; Characters placed on the second line in multi-line expression
              (looking-at "[ \n\t]+[.?:]")
              ;; Operators placed on the second line in multi-line expression
@@ -362,15 +366,21 @@
 
     ;; Disable unnecessary default indentation for
     ;; "func" and "class" keywords
-    (`(:after . ,(or `"func" `"class")) (smie-rule-parent 0))
+    (`(:after . ,(or `"func" `"class")) (smie-rule-parent))
 
-    (`(:after . "(") (smie-rule-parent swift-indent-offset))
+    ;; "in" token in closure
+    (`(:after . "in")
+     (if (smie-rule-parent-p "{")
+         (smie-rule-parent swift-indent-offset)))
 
+    (`(:after . "(")
+     (if (smie-rule-parent-p "(") 0
+       (smie-rule-parent swift-indent-offset)))
     (`(:before . "(")
      (cond
       ((smie-rule-next-p "[") (smie-rule-parent))
       ;; Custom indentation for method arguments
-      ((smie-rule-parent-p "." "func") (smie-rule-parent 0))))
+      ((smie-rule-parent-p "." "func") (smie-rule-parent))))
 
     (`(:before . "[")
      (cond
