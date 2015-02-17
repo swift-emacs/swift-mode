@@ -698,6 +698,36 @@ class func Foo() {
 }
 ")
 
+(check-indentation indents-class-func-declaration/2/1
+  "
+class Foo: Bar {
+    func Foo() {
+|foo
+    }
+}
+" "
+class Foo: Bar {
+    func Foo() {
+        |foo
+    }
+}
+")
+
+(check-indentation indents-class-func-declaration/2/2
+  "
+class Foo: Bar {
+    override func Foo() {
+|foo
+    }
+}
+" "
+class Foo: Bar {
+    override func Foo() {
+        |foo
+    }
+}
+")
+
 (check-indentation indents-declaration/1
   "
 var foo = bar + baz
