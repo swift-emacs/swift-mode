@@ -846,6 +846,36 @@ func a(a: NSString = 1,
        |b: NSString = 2) {}
 ")
 
+(check-indentation indents-func-declaration/11
+                   "
+class Foo: Bar {
+    func Foo() {
+|foo
+    }
+}
+" "
+class Foo: Bar {
+    func Foo() {
+        |foo
+    }
+}
+")
+
+(check-indentation indents-func-declaration/12
+                   "
+class Foo: Bar {
+    override func Foo() {
+|foo
+    }
+}
+" "
+class Foo: Bar {
+    override func Foo() {
+        |foo
+    }
+}
+")
+
 (check-indentation indents-protocol-declaration/1
                    "
 protocol Foo {
