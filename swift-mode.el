@@ -6,7 +6,7 @@
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Arthur Evstifeev <lod@pisem.net>
 ;; Version: 0.4.0-cvs
-;; Package-Requires: ((emacs "24.1"))
+;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: languages swift
 
 ;; This file is not part of GNU Emacs.

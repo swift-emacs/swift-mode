@@ -1890,13 +1890,11 @@ foo.bar(10,
         completionHandler: { (bar, baz) -> Void in
         |foo
         }
-)
 " "
 foo.bar(10,
         completionHandler: { (bar, baz) -> Void in
             |foo
         }
-)
 ")
 
 (check-indentation anonymous-function-as-a-argument/9
