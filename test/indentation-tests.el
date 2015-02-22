@@ -1955,6 +1955,32 @@ var object: JsonObject<Foo>!
 |var object: JsonObject
 ")
 
+(check-indentation indents-expression-with-comment/1
+                   "
+func foo() {
+    foo() // foo
+       |foo()
+}
+" "
+func foo() {
+    foo() // foo
+    |foo()
+}
+")
+
+(check-indentation indents-expression-with-comment/2
+                   "
+func foo() {
+    let x = 1 // foo
+    |/ 1
+}
+" "
+func foo() {
+    let x = 1 // foo
+            |/ 1
+}
+")
+
 (provide 'indentation-tests)
 
 ;;; indentation-tests.el ends here

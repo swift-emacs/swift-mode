@@ -224,15 +224,17 @@
              ;; Characters placed on the second line in multi-line expression
              (looking-at "[ \n\t]+[.?:]")
              ;; Operators placed on the second line in multi-line expression
-             (looking-at (concat "[ \n\t]+" swift-smie--operators-regexp))
+             ;; Should respect here possible comments strict before the linebreak
+             (looking-at (concat "\\(\/\/.*\\)?\n[[:space:]]*" swift-smie--operators-regexp))
              (and (looking-back swift-smie--operators-regexp (- (point) 3) t)
                   ;; Not a generic type
                   (not (looking-back "[[:upper:]]>" (- (point) 2) t)))
              ))))
 
 (defun swift-smie--forward-token ()
+  (skip-chars-forward " \t")
   (cond
-   ((and (looking-at "\n") (swift-smie--implicit-semi-p))
+   ((and (looking-at "\n\\|\/\/") (swift-smie--implicit-semi-p))
     (if (eolp) (forward-char 1) (forward-comment 1))
     ";")
 
