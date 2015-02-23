@@ -6,7 +6,7 @@
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Arthur Evstifeev <lod@pisem.net>
 ;; Version: 0.4.0-cvs
-;; Package-Requires: ((emacs "24.1"))
+;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: languages swift
 
 ;; This file is not part of GNU Emacs.
@@ -56,7 +56,7 @@
   :type 'integer)
 
 (defcustom swift-indent-multiline-statement-offset 2
-  "Defines the indentation offset for for multiline statements."
+  "Defines the indentation offset for multiline statements."
   :group 'swift
   :type 'integer
   :package-version '(swift-mode "0.3.0"))
@@ -75,7 +75,7 @@
    (smie-merge-prec2s
     (smie-bnf->prec2
      '((id)
-       (type (type) (type "<T" types "T>"))
+       (type (type) (type "<T" types "T>") ("[" type "]"))
        (types (type) (type "," type))
 
        (class-decl-exp (id) (id ":" types))
@@ -99,24 +99,36 @@
        (top-level-st
         ("import" type)
         (decl)
-        ("class" class-decl-exp "{" class-level-sts "}"))
+        ("ACCESSMOD" "class" class-decl-exp "{" class-level-sts "}")
+        ("ACCESSMOD" "protocol" class-decl-exp "{" protocol-level-sts "}"))
 
        (class-level-sts (class-level-st) (class-level-st ";" class-level-st))
        (class-level-st
         (decl)
-        ("DECSPEC" "func" func-header "{" insts "}"))
+        (func))
 
+       (protocol-level-sts (protocol-level-st) (protocol-level-st ";" protocol-level-st))
+       (protocol-level-st
+        (decl)
+        (func-decl))
+
+       (func-body (insts) ("return" exp))
+       (func (func-decl "{" func-body "}"))
+       (func-decl ("DECSPEC" "func" func-header)
+                  (func-decl "->" type))
        (func-header (id "(" func-params ")"))
-       (func-param (decl-exp) ("..."))
+       (func-param (decl-exp) (decl-exp "=" id) ("..."))
        (func-params (func-param "," func-param))
 
        (insts (inst) (insts ";" insts))
        (inst (decl)
+             (exp "=" exp)
+             (tern-exp)
              (in-exp)
              (dot-exp)
-             (dot-exp "{" insts "}")
+             (dot-exp "{" closure "}")
              (method-call)
-             (method-call "{" insts "}")
+             (method-call "{" closure "}")
              ("enum" decl-exp "{" enum-body "}")
              ("switch" exp "{" switch-body "}")
              (if-clause)
@@ -127,33 +139,36 @@
 
        (method-call (dot-exp "(" method-args ")"))
        (method-args (method-arg) (method-arg "," method-arg))
-       (method-arg (exp "," "{" insts "}") (exp))
+       (method-arg (exp "," "{" closure "}") (exp))
 
        (exp (op-exp)
             ("[" decl-exps "]"))
        (in-exp (id "in" exp))
        (guard-exp (exp "where" exp))
        (op-exp (exp "OP" exp))
+       (tern-exp (op-exp "?" exp ":" exp))
 
-       (enum-cases (assign-exp)
-                   (enum-cases ";" "ecase" enum-cases))
+       (enum-case ("ecase" assign-exp)
+                  ("ecase" "(" type ")"))
+       (enum-cases (enum-case) (enum-case ";" enum-case))
        (enum-body (enum-cases) (insts))
 
-       (case-exps (guard-exp))
-       (cases (case-exps ":" insts)
-              (cases "case" cases))
-       (switch-body (cases) (cases "default:" insts))
+       (case-exps (exp) (guard-exp))
+       (case (case-exps ":" insts))
+       (switch-body (case) (case "case" case))
 
        (for-head (in-exp) (op-exp) (for-head ";" for-head))
 
-       (conditional (exp) (let-decl))
-       (if-body ("if" conditional "{" insts "}"))
-       (if-else-if (if-body) (if-else-if "else" if-else-if))
-       (if-clause (if-else-if)))
+       (if-conditional (exp) (let-decl))
+       (if-body ("if" if-conditional "{" insts "}"))
+       (if-clause (if-body)
+                  (if-body "elseif" if-conditional "{" insts "}")
+                  (if-body "else" "{" insts "}"))
+
+       (closure (insts) (exp "in" insts) (exp "->" id "in" insts)))
      ;; Conflicts
-     '((nonassoc "{") (assoc ",") (assoc ";") (assoc ":"))
+     '((nonassoc "{") (assoc "in") (assoc ",") (assoc ";") (assoc ":") (right "="))
      '((assoc "in") (assoc "where") (assoc "OP"))
-     '((assoc "else"))
      '((assoc ";") (assoc "ecase"))
      '((assoc "case")))
 
@@ -187,22 +202,39 @@
                 "is" "as" "as?" ".." "..."
                 "+" "-" "&+" "&-" "|" "^"
                 "*" "/" "%" "&*" "&/" "&%" "&"
-                "<<" ">>")))
+                "<<" ">>" "??")))
 
 (defvar swift-smie--decl-specifier-regexp
-  (rx (? (or "class" "mutating" "override" "static" "unowned" "weak"))
-      (* space) "func"))
+  "\\(?1:class\\|mutating\\|override\\|static\\|unowned\\|weak\\)\\(?:[[:space:]]*func\\)")
+
+(defvar swift-smie--access-modifier-regexp
+  (regexp-opt '("private" "public" "internal")))
 
 (defun swift-smie--implicit-semi-p ()
   (save-excursion
-    (not (or (memq (char-before) '(?\{ ?\[ ?, ?.))
-             (looking-at "[ \n\t]+[.]")
-             (looking-back swift-smie--operators-regexp (- (point) 3) t)
+    (not (or (memq (char-before) '(?\{ ?\[ ?, ?. ?: ?= ?\())
+             ;; Checking for operators form for "?" and "!",
+             ;; they can be a part of the type.
+             ;; Special case: is? and as? are operators.
+             (looking-back "[[:space:]][?!]" (- (point) 2) t)
+             ;; ??, is? and as? are operators
+             (looking-back "[?][?]\\|as[?]\\|is[?]" (- (point) 3) t)
+             ;; "in" operator in closure
+             (looking-back "in" (- (point) 2) t)
+             ;; Characters placed on the second line in multi-line expression
+             (looking-at "[ \n\t]+[.?:]")
+             ;; Operators placed on the second line in multi-line expression
+             ;; Should respect here possible comments strict before the linebreak
+             (looking-at (concat "\\(\/\/.*\\)?\n[[:space:]]*" swift-smie--operators-regexp))
+             (and (looking-back swift-smie--operators-regexp (- (point) 3) t)
+                  ;; Not a generic type
+                  (not (looking-back "[[:upper:]]>" (- (point) 2) t)))
              ))))
 
 (defun swift-smie--forward-token ()
+  (skip-chars-forward " \t")
   (cond
-   ((and (looking-at "\n") (swift-smie--implicit-semi-p))
+   ((and (looking-at "\n\\|\/\/") (swift-smie--implicit-semi-p))
     (if (eolp) (forward-char 1) (forward-comment 1))
     ";")
 
@@ -210,6 +242,9 @@
    ((looking-at "}") (forward-char 1) "}")
 
    ((looking-at ",") (forward-char 1) ",")
+   ((looking-at ":") (forward-char 1) ":")
+
+   ((looking-at "->") (forward-char 2) "->")
 
    ((looking-at "<") (forward-char 1)
     (if (looking-at "[[:upper:]]") "<T" "OP"))
@@ -220,12 +255,21 @@
     (goto-char (match-end 0)) "OP")
 
    ((looking-at swift-smie--decl-specifier-regexp)
-    (goto-char (match-end 0)) "DECSPEC")
+    (goto-char (match-end 1)) "DECSPEC")
+
+   ((looking-at swift-smie--access-modifier-regexp)
+    (goto-char (match-end 0)) "ACCESSMOD")
+
+   ((looking-at "\\<default\\>")
+    (goto-char (match-end 0)) "case")
+
+   ((looking-at "else if")
+    (goto-char (match-end 0)) "elseif")
 
    (t (let ((tok (smie-default-forward-token)))
         (cond
          ((equal tok "case")
-          (if (looking-at ".+\\(,\\|:\\)")
+          (if (looking-at "\\([\n\t ]\\|.\\)+?\\(where.*[,]\\|:\\)")
               "case"
             "ecase"))
          (t tok))))
@@ -243,22 +287,36 @@
      ((eq (char-before) ?\}) (backward-char 1) "}")
 
      ((eq (char-before) ?,) (backward-char 1) ",")
+     ((eq (char-before) ?:) (backward-char 1) ":")
+
+     ((looking-back "->" (- (point) 2) t)
+      (goto-char (match-beginning 0)) "->")
 
      ((eq (char-before) ?<) (backward-char 1)
       (if (looking-at "<[[:upper:]]") "<T" "OP"))
-     ((eq (char-before) ?>) (backward-char 1)
+     ((looking-back ">[?!]?" (- (point) 2) t)
+      (goto-char (match-beginning 0))
       (if (looking-back "[[:space:]]" 1 t) "OP" "T>"))
 
      ((looking-back swift-smie--operators-regexp (- (point) 3) t)
       (goto-char (match-beginning 0)) "OP")
 
      ((looking-back swift-smie--decl-specifier-regexp (- (point) 8) t)
-      (goto-char (match-beginning 0)) "DECSPEC")
+      (goto-char (match-beginning 1)) "DECSPEC")
+
+     ((looking-back swift-smie--access-modifier-regexp (- (point) 8) t)
+      (goto-char (match-beginning 0)) "ACCESSMOD")
+
+     ((looking-back "\\<default\\>" (- (point) 9) t)
+      (goto-char (match-beginning 0)) "case")
+
+     ((looking-back "else if" (- (point) 7) t)
+      (goto-char (match-beginning 0)) "elseif")
 
      (t (let ((tok (smie-default-backward-token)))
           (cond
            ((equal tok "case")
-            (if (looking-at ".+\\(,\\|:\\)")
+            (if (looking-at "\\([\n\t ]\\|.\\)+?\\(where.*[,]\\|:\\)")
                 "case"
               "ecase"))
            (t tok))))
@@ -268,43 +326,73 @@
   (pcase (cons kind token)
     (`(:elem . basic) swift-indent-offset)
 
+    (`(:after . ":") 0)
+    (`(:before . ":")
+     (cond
+      ;; Rule for ternary operator in
+      ;; assignment expression.
+      ;; Static indentation relatively to =
+      ((smie-rule-parent-p "=") 2)
+      ;; Rule for the case statement.
+      ((smie-rule-parent-p "case") swift-indent-offset)
+      ;; Rule for the class definition.
+      ((smie-rule-parent-p "class") (smie-rule-parent swift-indent-offset))))
+
     (`(:after . "{")
      (if (smie-rule-parent-p "switch")
          (smie-rule-parent swift-indent-switch-case-offset)))
     (`(:before . ";")
-     (if (smie-rule-parent-p "case" "default:")
+     (if (smie-rule-parent-p "case")
          (smie-rule-parent swift-indent-offset)))
 
     ;; Apply swift-indent-multiline-statement-offset only if
-    ;; - dot is followed by newline, or
-    ;; - if dot is a first token on the line
+    ;; - if is a first token on the line
     (`(:before . ".")
-     (if (or (looking-at "[.][\n]")
-             (smie-rule-bolp))
-         swift-indent-multiline-statement-offset))
+     (when (smie-rule-bolp)
+       (if (smie-rule-parent-p "{")
+           (+ swift-indent-offset swift-indent-multiline-statement-offset)
+         swift-indent-multiline-statement-offset)))
 
     ;; Apply swift-indent-multiline-statement-offset if
     ;; operator is the last symbol on the line
     (`(:before . "OP")
-     (if (and (looking-at ".[\n]")
-              (not (smie-rule-sibling-p)))
-         swift-indent-multiline-statement-offset))
+     (when (and (smie-rule-hanging-p)
+                (not (smie-rule-parent-p "OP")))
+       (if (smie-rule-parent-p "{")
+           (+ swift-indent-offset swift-indent-multiline-statement-offset)
+         swift-indent-multiline-statement-offset)))
 
     ;; Indent second line of the multi-line class
     ;; definitions with swift-indent-offset
     (`(:before . ",")
      (if (smie-rule-parent-p "class")
-       swift-indent-offset))
+       (smie-rule-parent swift-indent-offset)))
 
-    (`(:before . "if")
-     (if (smie-rule-prev-p "else")
-         (if (smie-rule-parent-p "{")
-             swift-indent-offset
-           (smie-rule-parent))))
+    ;; Disable unnecessary default indentation for
+    ;; "func" and "class" keywords
+    (`(:after . ,(or `"func" `"class")) (smie-rule-parent))
 
+    ;; "in" token in closure
+    (`(:after . "in")
+     (if (smie-rule-parent-p "{")
+         (smie-rule-parent swift-indent-offset)))
+
+    (`(:after . "(")
+     (if (smie-rule-parent-p "(") 0
+       (smie-rule-parent swift-indent-offset)))
     (`(:before . "(")
-     (if (smie-rule-next-p "[") (smie-rule-parent)))
-    (`(:before . "[") (smie-rule-parent))
+     (cond
+      ((smie-rule-next-p "[") (smie-rule-parent))
+      ;; Custom indentation for method arguments
+      ((smie-rule-parent-p "." "func") (smie-rule-parent))))
+
+    (`(:before . "[")
+     (cond
+      ((smie-rule-prev-p "->") swift-indent-offset)
+      ((smie-rule-parent-p "[") (smie-rule-parent swift-indent-offset))
+      ((smie-rule-parent-p "{") nil)
+      (t (smie-rule-parent))))
+    (`(:after . "->") (smie-rule-parent swift-indent-offset))
     ))
 
 ;;; Font lock
@@ -602,10 +690,22 @@ You can send text to the REPL process from other buffers containing source.
     ;; Parenthesis, braces and brackets
     (modify-syntax-entry ?\( "()" table)
     (modify-syntax-entry ?\) ")(" table)
-    (modify-syntax-entry ?\{ "(}" table)
-    (modify-syntax-entry ?\} "){" table)
     (modify-syntax-entry ?\[ "(]" table)
     (modify-syntax-entry ?\] ")[" table)
+
+    ;; HACK: This is not a correct syntax table definition
+    ;; for the braces, but it allows us disable smie indentation
+    ;; based on  syntax-table. Default behaviour doesn't work with
+    ;; closures in method arguments. For example:
+    ;;
+    ;; foo.bar(10,
+    ;;         closure: {
+    ;;         })
+    ;;
+    ;; With enabled syntax table, smie doesn't respect closing brace, so
+    ;; it's impossible to provide custom indentation rules
+    (modify-syntax-entry ?\{ "w" table)
+    (modify-syntax-entry ?\} "w" table)
 
     table))
 
