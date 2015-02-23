@@ -1,7 +1,6 @@
 language: emacs-lisp
 
 env:
-  - EVM_EMACS=emacs-24.3-bin
   - EVM_EMACS=emacs-24.4-bin
 
 before_install:
