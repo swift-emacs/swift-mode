@@ -279,6 +279,12 @@
   (let ((pos (point)))
     (forward-comment (- (point)))
     (cond
+     ;; shebang line
+     ((and (= 1 (line-number-at-pos))
+           (< 2 (buffer-size))
+           (string= "#!" (buffer-substring 1 3)))
+      "")
+
      ((and (> pos (line-end-position))
            (swift-smie--implicit-semi-p))
       ";")

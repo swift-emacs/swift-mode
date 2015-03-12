@@ -2009,6 +2009,15 @@ func foo() {
 }
 ")
 
+(check-indentation no-indentation-with-shebang
+  "#!/usr/bin/env swift
+//import Foundation
+func|
+" "#!/usr/bin/env swift
+//import Foundation
+func|
+")
+
 (provide 'indentation-tests)
 
 ;;; indentation-tests.el ends here
