@@ -1947,6 +1947,32 @@ foo.bar(10,
 )
 ")
 
+(check-indentation trailing-closure/1
+                   "
+a(){
+    (b: String, c:String) -> String in
+        |println(c)
+}
+" "
+a(){
+    (b: String, c:String) -> String in
+    |println(c)
+}
+")
+
+(check-indentation trailing-closure/2
+                   "
+a(){
+    b,c in
+        |println(c)
+}
+" "
+a(){
+    b,c in
+    |println(c)
+}
+")
+
 (check-indentation indents-expression-with-optional-type/1
                    "
 var object: JsonObject?
