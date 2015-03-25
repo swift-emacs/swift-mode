@@ -375,7 +375,8 @@
     ;; "in" token in closure
     (`(:after . "in")
      (if (smie-rule-parent-p "{")
-         (smie-rule-parent swift-indent-offset)))
+         (smie-rule-parent swift-indent-offset)
+       (smie-rule-parent 0)))
 
     (`(:after . "(")
      (if (smie-rule-parent-p "(") 0
