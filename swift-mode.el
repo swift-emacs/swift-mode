@@ -583,11 +583,17 @@
                       (string :tag "Linked Sources"))
        :safe #'stringp)
 
+     (flycheck-def-option-var flycheck-swift-framework-search-paths nil swift
+       "A list of framework search paths"
+       :type '(repeat (directory :tag "Include directory"))
+       :safe #'flycheck-string-list-p)
+
      (flycheck-define-checker swift
        "Flycheck plugin for for Apple's Swift programming language."
        :command ("swift"
                  "-frontend" "-parse"
                  (option "-sdk" flycheck-swift-sdk-path)
+                 (option-list "-F" flycheck-swift-framework-search-paths)
                  ;; Swift compiler will complain about redeclaration
                  ;; if we will include original file along with
                  ;; temporary source file created by flycheck.
