@@ -222,7 +222,9 @@
              ;; "in" operator in closure
              (looking-back "in" (- (point) 2) t)
              ;; Characters placed on the second line in multi-line expression
-             (looking-at "[ \n\t]+[.?:]")
+             (save-excursion
+               (forward-comment (buffer-size))
+               (looking-at "[.?:]"))
              ;; Operators placed on the second line in multi-line expression
              ;; Should respect here possible comments strict before the linebreak
              (looking-at (concat "\\(\/\/.*\\)?\n[[:space:]]*" swift-smie--operators-regexp))
