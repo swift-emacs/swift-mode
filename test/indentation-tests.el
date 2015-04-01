@@ -1607,6 +1607,21 @@ let a = a ?
 
 (check-indentation conditional-operator/8
                    "
+let a = a //foo
+        |? a +
+          1
+        : a +
+          1
+" "
+let a = a //foo
+        |? a +
+          1
+        : a +
+          1
+")
+
+(check-indentation conditional-operator/9
+                   "
 func foo() {
     return order!.deliver ?
          |OrderViewTableDeliveryCells.lastCellIndex.rawValue :
@@ -1620,7 +1635,7 @@ func foo() {
 }
 ")
 
-(check-indentation conditional-operator/9
+(check-indentation conditional-operator/10
                    "
 func foo() {
     return order!.deliver ?
