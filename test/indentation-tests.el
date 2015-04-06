@@ -2050,6 +2050,21 @@ func foo() {
 }
 ")
 
+(check-indentation indents-expression-with-comment/3
+                   "
+func foo() {
+    foo()
+    //
+        |foo()
+}
+" "
+func foo() {
+    foo()
+    //
+    |foo()
+}
+")
+
 (provide 'indentation-tests)
 
 ;;; indentation-tests.el ends here

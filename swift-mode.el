@@ -227,7 +227,10 @@
                (looking-at "[.?:]"))
              ;; Operators placed on the second line in multi-line expression
              ;; Should respect here possible comments strict before the linebreak
-             (looking-at (concat "\\(\/\/.*\\)?\n[[:space:]]*" swift-smie--operators-regexp))
+             (save-excursion
+               (forward-comment (buffer-size))
+               (looking-at swift-smie--operators-regexp))
+
              (and (looking-back swift-smie--operators-regexp (- (point) 3) t)
                   ;; Not a generic type
                   (not (looking-back "[[:upper:]]>" (- (point) 2) t)))
