@@ -593,6 +593,23 @@
        :type '(repeat (directory :tag "Include directory"))
        :safe #'flycheck-string-list-p)
 
+     (flycheck-def-option-var flycheck-swift-cc-include-search-paths nil swift
+       "A list of include file search paths to pass to the Objective C compiler"
+       :type '(repeat (directory :tag "Include directory"))
+       :safe #'flycheck-string-list-p)
+
+     (flycheck-def-option-var flycheck-swift-target "i386-apple-ios8.1" swift
+       "Target used by swift compiler"
+       :type '(choice (const :tag "Don't specify target" nil)
+                      (string :tag "Build target"))
+       :safe #'stringp)
+
+     (flycheck-def-option-var flycheck-swift-import-objc-header nil swift
+       "Objective C header file to import, if any"
+       :type '(choice (const :tag "Don't specify objective C bridging header" nil)
+                      (string :tag "Objective C bridging header path"))
+       :safe #'stringp)
+
      (flycheck-define-checker swift
        "Flycheck plugin for for Apple's Swift programming language."
        :command ("swift"
@@ -614,6 +631,12 @@
                             (eq (string-match ".#" path) nil)
                             (eq (string-match file path) nil)))
                        (file-expand-wildcards flycheck-swift-linked-sources)))))
+                 (option "-target" flycheck-swift-target)
+                 (option "-import-objc-header" flycheck-swift-import-objc-header)
+                 (eval
+                  (mapcan
+                   #'(lambda (path) (list "-Xcc" (concat "-I" path)))
+                   flycheck-swift-cc-include-search-paths))
                  "-primary-file" source)
        :error-patterns
        ((error line-start (file-name) ":" line ":" column ": "
