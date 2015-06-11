@@ -179,7 +179,7 @@
        (left "||")                                             ;; Disjunctive (Left associative, precedence level 110)
        (left "&&")                                             ;; Conjunctive (Left associative, precedence level 120)
        (nonassoc "<" "<=" ">" ">=" "==" "!=" "===" "!==" "~=") ;; Comparative (No associativity, precedence level 130)
-       (nonassoc "is" "as" "as?")                              ;; Cast (No associativity, precedence level 132)
+       (nonassoc "is" "as" "as!" "as?")                        ;; Cast (No associativity, precedence level 132)
        (nonassoc "..<" "...")                                  ;; Range (No associativity, precedence level 135)
        (left "+" "-" "&+" "&-" "|" "^")                        ;; Additive (Left associative, precedence level 140)
        (left "*" "/" "%" "&*" "&/" "&%" "&")                   ;; Multiplicative (Left associative, precedence level 150)
@@ -199,7 +199,7 @@
 (defvar swift-smie--operators-regexp
   (regexp-opt '("*=" "/=" "%=" "+=" "-=" "<<=" ">>=" "&=" "^=" "|=" "&&=" "||="
                 "<" "<=" ">" ">=" "==" "!=" "===" "!==" "~=" "||" "&&"
-                "is" "as" "as?" "..<" "..."
+                "is" "as" "as!" "as?" "..<" "..."
                 "+" "-" "&+" "&-" "|" "^"
                 "*" "/" "%" "&*" "&/" "&%" "&"
                 "<<" ">>" "??")))
