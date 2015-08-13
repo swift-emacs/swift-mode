@@ -131,6 +131,7 @@
              (method-call "{" closure "}")
              ("enum" decl-exp "{" enum-body "}")
              ("switch" exp "{" switch-body "}")
+             (guard-statement)
              (if-clause)
              ("for" for-head "{" insts "}")
              ("while" exp "{" insts "}"))
@@ -158,6 +159,9 @@
        (switch-body (case) (case "case" case))
 
        (for-head (in-exp) (op-exp) (for-head ";" for-head))
+
+       (guard-conditional (exp) (let-decl) (var-decl))
+       (guard-statement ("guard" guard-conditional "else" "{" insts "return" "}"))
 
        (if-conditional (exp) (let-decl))
        (if-body ("if" if-conditional "{" insts "}"))
