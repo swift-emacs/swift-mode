@@ -370,8 +370,8 @@
     ;; Indent second line of the multi-line class
     ;; definitions with swift-indent-offset
     (`(:before . ",")
-     (if (smie-rule-parent-p "class")
-       (smie-rule-parent swift-indent-offset)))
+     (if (smie-rule-parent-p "class" "case")
+       (smie-rule-parent)))
 
     ;; Disable unnecessary default indentation for
     ;; "func" and "class" keywords

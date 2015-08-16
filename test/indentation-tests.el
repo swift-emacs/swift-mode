@@ -486,7 +486,7 @@ case foo where bar,
 " "
 switch true {
 case foo where bar,
-     |bar where baz:
+|bar where baz:
 }
 ")
 
@@ -685,7 +685,7 @@ class Foo: Foo, Bar,
 }
 " "
 class Foo: Foo, Bar,
-    |Baz {
+|Baz {
 }
 ")
 
@@ -725,7 +725,7 @@ public class Foo: Foo, Bar,
 }
 " "
 public class Foo: Foo, Bar,
-    |Baz {
+|Baz {
 }
 ")
 
