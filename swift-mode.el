@@ -61,6 +61,12 @@
   :type 'integer
   :package-version '(swift-mode "0.3.0"))
 
+(defcustom swift-indent-hanging-comma-offset 4
+  "Defines the indentation offset for hanging comma."
+  :group 'swift
+  :type 'integer
+  :package-version '(swift-mode "0.4.0"))
+
 (defcustom swift-repl-executable
   "xcrun swift"
   "Path to the Swift CLI."
@@ -153,9 +159,11 @@
        (enum-cases (enum-case) (enum-case ";" enum-case))
        (enum-body (enum-cases) (insts))
 
-       (case-exps (exp) (guard-exp))
-       (case (case-exps ":" insts))
-       (switch-body (case) (case "case" case))
+       (case-exps (exp)
+                  (guard-exp)
+                  (case-exps "," case-exps))
+       (case ("case" case-exps "case-:" insts))
+       (switch-body (case))
 
        (for-head (in-exp) (op-exp) (for-head ";" for-head))
 
@@ -247,7 +255,10 @@
    ((looking-at "}") (forward-char 1) "}")
 
    ((looking-at ",") (forward-char 1) ",")
-   ((looking-at ":") (forward-char 1) ":")
+   ((looking-at ":") (forward-char 1)
+    (if (looking-back "case [^:]+:")
+        "case-:"
+      ":"))
 
    ((looking-at "->") (forward-char 2) "->")
 
@@ -292,7 +303,10 @@
      ((eq (char-before) ?\}) (backward-char 1) "}")
 
      ((eq (char-before) ?,) (backward-char 1) ",")
-     ((eq (char-before) ?:) (backward-char 1) ":")
+     ((eq (char-before) ?:) (backward-char 1)
+      (if (looking-back "case [^:]+")
+          "case-:"
+        ":"))
 
      ((looking-back "->" (- (point) 2) t)
       (goto-char (match-beginning 0)) "->")
@@ -369,9 +383,12 @@
 
     ;; Indent second line of the multi-line class
     ;; definitions with swift-indent-offset
+    (`(:before . "case")
+     (smie-rule-parent))
+
     (`(:before . ",")
      (if (smie-rule-parent-p "class" "case")
-       (smie-rule-parent)))
+         (smie-rule-parent swift-indent-hanging-comma-offset)))
 
     ;; Disable unnecessary default indentation for
     ;; "func" and "class" keywords
