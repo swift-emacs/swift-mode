@@ -138,7 +138,7 @@
              (method-call)
              (method-call "{" closure "}")
              ("enum" decl-exp "{" enum-body "}")
-             ("switch" exp "{" switch-body "}")
+             ("switch" switch-body)
              (if-clause)
              (guard-statement)
              ("for" for-head "for-{" insts "}")
@@ -166,7 +166,7 @@
                   (guard-exp)
                   (case-exps "," case-exps))
        (case ("case" case-exps "case-:" insts))
-       (switch-body (case))
+       (switch-body (exp "{" case "}"))
 
        (for-head (in-exp) (op-exp) (for-head ";" for-head))
 
