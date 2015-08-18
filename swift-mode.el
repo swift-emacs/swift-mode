@@ -105,8 +105,9 @@
        (top-level-st
         ("import" type)
         (decl)
-        ("ACCESSMOD" "class" class-decl-exp "{" class-level-sts "}")
-        ("ACCESSMOD" "protocol" class-decl-exp "{" protocol-level-sts "}"))
+        ("ACCESSMOD" "class" class-decl-exp "class-{" class-level-sts "}")
+        ("ACCESSMOD" "protocol" class-decl-exp "protocol-{" protocol-level-sts "}")
+        )
 
        (class-level-sts (class-level-st) (class-level-st ";" class-level-st))
        (class-level-st
@@ -144,8 +145,8 @@
        (dot-exp (id "." id))
 
        (method-call (dot-exp "(" method-args ")"))
-       (method-args (method-arg) (method-arg "," method-arg))
-       (method-arg (exp "," "{" closure "}") (exp))
+       (method-args (method-arg) (method-args "," method-args))
+       (method-arg (id "{" closure "}") (exp))
 
        (exp (op-exp)
             ("[" decl-exps "]"))
@@ -251,7 +252,10 @@
     (if (eolp) (forward-char 1) (forward-comment 1))
     ";")
 
-   ((looking-at "{") (forward-char 1) "{")
+   ((looking-at "{") (forward-char 1)
+    (if (looking-back "\\(class\\|protocol\\) [^{]+{")
+        (concat (match-string 1) "-{")
+      "{"))
    ((looking-at "}") (forward-char 1) "}")
 
    ((looking-at ",") (forward-char 1) ",")
@@ -299,7 +303,10 @@
            (swift-smie--implicit-semi-p))
       ";")
 
-     ((eq (char-before) ?\{) (backward-char 1) "{")
+     ((eq (char-before) ?\{) (backward-char 1)
+      (if (looking-back "\\(class\\|protocol\\) [^{]+")
+          (concat (match-string 1) "-{")
+        "{"))
      ((eq (char-before) ?\}) (backward-char 1) "}")
 
      ((eq (char-before) ?,) (backward-char 1) ",")
@@ -354,6 +361,7 @@
       ((smie-rule-parent-p "=") 2)
       ;; Rule for the case statement.
       ((smie-rule-parent-p "case") swift-indent-offset)
+      ((smie-rule-parent-p ",") (smie-rule-parent swift-indent-offset))
       ;; Rule for the class definition.
       ((smie-rule-parent-p "class") (smie-rule-parent swift-indent-offset))))
 
@@ -414,6 +422,7 @@
       ((smie-rule-prev-p "->") swift-indent-offset)
       ((smie-rule-parent-p "[") (smie-rule-parent swift-indent-offset))
       ((smie-rule-parent-p "{") nil)
+      ((smie-rule-parent-p "class-{") nil)
       (t (smie-rule-parent))))
     (`(:after . "->") (smie-rule-parent swift-indent-offset))
     ))
@@ -744,20 +753,8 @@ You can send text to the REPL process from other buffers containing source.
     (modify-syntax-entry ?\) ")(" table)
     (modify-syntax-entry ?\[ "(]" table)
     (modify-syntax-entry ?\] ")[" table)
-
-    ;; HACK: This is not a correct syntax table definition
-    ;; for the braces, but it allows us disable smie indentation
-    ;; based on  syntax-table. Default behaviour doesn't work with
-    ;; closures in method arguments. For example:
-    ;;
-    ;; foo.bar(10,
-    ;;         closure: {
-    ;;         })
-    ;;
-    ;; With enabled syntax table, smie doesn't respect closing brace, so
-    ;; it's impossible to provide custom indentation rules
-    (modify-syntax-entry ?\{ "w" table)
-    (modify-syntax-entry ?\} "w" table)
+    (modify-syntax-entry ?\{ "(}" table)
+    (modify-syntax-entry ?\} "){" table)
 
     table))
 
