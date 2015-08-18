@@ -143,7 +143,7 @@
              (guard-statement)
              ;; id is for avoiding "for" as opener
              (id "for" for-head "for-{" insts "}")
-             ("while" exp "{" insts "}"))
+             ("while" exp-block))
 
        (dot-exp (id "." id))
 
@@ -173,6 +173,8 @@
 
        (guard-conditional (exp) (let-decl) (var-decl))
        (guard-statement ("guard" guard-conditional "elseguard" "{" insts "}"))
+
+       (exp-block (exp "{" insts "}"))
 
        (if-conditional (exp) (let-decl))
        (if-body (if-conditional "{" insts "}"))
