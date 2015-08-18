@@ -137,7 +137,7 @@
              (dot-exp "{" closure "}")
              (method-call)
              (method-call "{" closure "}")
-             ("enum" decl-exp "{" enum-body "}")
+             ("enum" enum-body)
              ("switch" switch-body)
              ("if" if-clause)
              (guard-statement)
@@ -161,7 +161,8 @@
        (enum-case ("ecase" assign-exp)
                   ("ecase" "(" type ")"))
        (enum-cases (enum-case) (enum-case ";" enum-case))
-       (enum-body (enum-cases) (insts))
+       (enum-body (decl-exp "{" enum-cases "}")
+                  (decl-exp "{" insts "}"))
 
        (case-exps (exp)
                   (guard-exp)
@@ -301,7 +302,7 @@
    (t (let ((tok (smie-default-forward-token)))
         (cond
          ((equal tok "case")
-          (if (looking-at "\\([\n\t ]\\|.\\)+?\\(where.*[,]\\|:\\)")
+          (if (looking-at "[^}]+?\\(where.*[,]\\|:\\)")
               "case"
             "ecase"))
          ((equal tok "else")
@@ -358,7 +359,7 @@
      (t (let ((tok (smie-default-backward-token)))
           (cond
            ((equal tok "case")
-            (if (looking-at "\\([\n\t ]\\|.\\)+?\\(where.*[,]\\|:\\)")
+            (if (looking-at "[^}]+?\\(where.*[,]\\|:\\)")
                 "case"
               "ecase"))
            ((equal tok "else")
@@ -387,6 +388,7 @@
 
     (`(:after . "if") 0)
     (`(:before . "elseif") (smie-rule-parent))
+    (`(:after . "enum") 0)
 
     (`(:after . "{")
      (cond
