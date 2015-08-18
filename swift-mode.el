@@ -139,7 +139,7 @@
              (method-call "{" closure "}")
              ("enum" decl-exp "{" enum-body "}")
              ("switch" switch-body)
-             (if-clause)
+             ("if" if-clause)
              (guard-statement)
              ("for" for-head "for-{" insts "}")
              ("while" exp "{" insts "}"))
@@ -174,16 +174,20 @@
        (guard-statement ("guard" guard-conditional "elseguard" "{" insts "}"))
 
        (if-conditional (exp) (let-decl))
-       (if-body ("if" if-conditional "{" insts "}"))
+       (if-body (if-conditional "{" insts "}"))
+       (else (if-body "else" "{" insts "}"))
+       (elseif (elseif "elseif" elseif)
+               (if-body))
        (if-clause (if-body)
-                  (if-body "elseif" if-conditional "{" insts "}")
-                  (if-body "else" "{" insts "}"))
+                  (else)
+                  (elseif "elseif" if-clause))
 
        (closure (insts) (exp "in" insts) (exp "->" id "in" insts)))
      ;; Conflicts
      '((nonassoc "{") (assoc "in") (assoc ",") (assoc ";") (assoc ":") (right "="))
      '((assoc "in") (assoc "where") (assoc "OP"))
      '((assoc ";") (assoc "ecase"))
+     '((assoc "elseif"))
      '((assoc "case")))
 
     (smie-precs->prec2
@@ -378,9 +382,18 @@
       ;; Rule for the class definition.
       ((smie-rule-parent-p "class") (smie-rule-parent swift-indent-offset))))
 
+    (`(:after . "if") 0)
+    (`(:before . "elseif") (smie-rule-parent))
+
     (`(:after . "{")
-     (if (smie-rule-parent-p "switch")
-         (smie-rule-parent swift-indent-switch-case-offset)))
+     (cond
+      ((smie-rule-parent-p "switch")
+       (smie-rule-parent swift-indent-switch-case-offset))
+      ((smie-rule-parent-p "(" "class-{")
+       swift-indent-offset)
+      ((smie-rule-hanging-p)
+       (smie-rule-parent swift-indent-offset))))
+
     (`(:before . ";")
      (if (smie-rule-parent-p "case")
          (smie-rule-parent swift-indent-offset)))
