@@ -59,6 +59,8 @@ values of customisable variables."
               (swift-indent-offset 4)
               (swift-indent-switch-case-offset 0)
               (swift-indent-multiline-statement-offset 2)
+              ;; Change from default value to detect offset bug.
+              (swift-indent-hanging-comma-offset 3)
               ,@var-bindings)
          (with-temp-buffer
            (insert ,before)
@@ -486,7 +488,7 @@ case foo where bar,
 " "
 switch true {
 case foo where bar,
-     |bar where baz:
+   |bar where baz:
 }
 ")
 
@@ -685,7 +687,7 @@ class Foo: Foo, Bar,
 }
 " "
 class Foo: Foo, Bar,
-    |Baz {
+   |Baz {
 }
 ")
 
@@ -725,7 +727,7 @@ public class Foo: Foo, Bar,
 }
 " "
 public class Foo: Foo, Bar,
-    |Baz {
+   |Baz {
 }
 ")
 
