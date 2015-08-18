@@ -141,7 +141,8 @@
              ("switch" switch-body)
              ("if" if-clause)
              (guard-statement)
-             ("for" for-head "for-{" insts "}")
+             ;; id is for avoiding "for" as opener
+             (id "for" for-head "for-{" insts "}")
              ("while" exp "{" insts "}"))
 
        (dot-exp (id "." id))
@@ -168,7 +169,7 @@
        (case ("case" case-exps "case-:" insts))
        (switch-body (exp "{" case "}"))
 
-       (for-head (in-exp) (op-exp) (for-head ";" for-head))
+       (for-head (in-exp) (op-exp) (exp ";" exp ";" exp))
 
        (guard-conditional (exp) (let-decl) (var-decl))
        (guard-statement ("guard" guard-conditional "elseguard" "{" insts "}"))
@@ -393,6 +394,7 @@
        swift-indent-offset)
       ((smie-rule-hanging-p)
        (smie-rule-parent swift-indent-offset))))
+    (`(:after . "for-{") swift-indent-offset)
 
     (`(:before . ";")
      (if (smie-rule-parent-p "case")
