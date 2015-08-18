@@ -2067,6 +2067,17 @@ func foo() {
 }
 ")
 
+(check-indentation indents-guard-statement/1
+                   "
+guard let x = y else {
+        |return
+}
+" "
+guard let x = y else {
+    |return
+}
+")
+
 (provide 'indentation-tests)
 
 ;;; indentation-tests.el ends here
