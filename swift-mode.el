@@ -131,8 +131,8 @@
              (method-call "{" closure "}")
              ("enum" decl-exp "{" enum-body "}")
              ("switch" exp "{" switch-body "}")
-             (guard-statement)
              (if-clause)
+             (guard-statement)
              ("for" for-head "{" insts "}")
              ("while" exp "{" insts "}"))
 
@@ -161,7 +161,7 @@
        (for-head (in-exp) (op-exp) (for-head ";" for-head))
 
        (guard-conditional (exp) (let-decl) (var-decl))
-       (guard-statement ("guard" guard-conditional "else" "{" insts "return" "}"))
+       (guard-statement ("guard" guard-conditional "elseguard" "{" insts "}"))
 
        (if-conditional (exp) (let-decl))
        (if-body ("if" if-conditional "{" insts "}"))
@@ -274,13 +274,17 @@
 
    ((looking-at "else if")
     (goto-char (match-end 0)) "elseif")
-
+   
    (t (let ((tok (smie-default-forward-token)))
         (cond
          ((equal tok "case")
           (if (looking-at "\\([\n\t ]\\|.\\)+?\\(where.*[,]\\|:\\)")
               "case"
             "ecase"))
+         ((equal tok "else")
+          (if (looking-back "\\(guard.*\\)")
+              "elseguard"
+            "else"))
          (t tok))))
    ))
 
@@ -328,6 +332,10 @@
             (if (looking-at "\\([\n\t ]\\|.\\)+?\\(where.*[,]\\|:\\)")
                 "case"
               "ecase"))
+           ((equal tok "else")
+            (if (looking-back "\\(guard.*\\)")
+                "elseguard"
+              "else"))
            (t tok))))
      )))
 
@@ -424,7 +432,7 @@
 
 (defvar swift-mode--statement-keywords
   '("break" "case" "continue" "default" "do" "else" "fallthrough"
-    "if" "in" "for" "return" "switch" "where" "while"))
+    "if" "in" "for" "return" "switch" "where" "while" "guard"))
 
 (defvar swift-mode--contextual-keywords
   '("associativity" "didSet" "get" "infix" "inout" "left" "mutating" "none"
