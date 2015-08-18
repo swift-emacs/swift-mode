@@ -274,7 +274,7 @@
 
    ((looking-at "else if")
     (goto-char (match-end 0)) "elseif")
-   
+
    (t (let ((tok (smie-default-forward-token)))
         (cond
          ((equal tok "case")
