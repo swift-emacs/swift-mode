@@ -95,6 +95,7 @@
        (let-decl
         ("let" id ":" type)
         ("let" id "=" exp)
+        ("let" id "=" tern-exp)
         ("let" id ":" type "=" exp))
        (var-decl
         ("var" id ":" type)
@@ -140,7 +141,7 @@
              ("switch" exp "{" switch-body "}")
              (if-clause)
              (guard-statement)
-             ("for" for-head "{" insts "}")
+             ("for" for-head "for-{" insts "}")
              ("while" exp "{" insts "}"))
 
        (dot-exp (id "." id))
@@ -257,7 +258,7 @@
     ";")
 
    ((looking-at "{") (forward-char 1)
-    (if (looking-back "\\(class\\|protocol\\) [^{]+{" (line-beginning-position) t)
+    (if (looking-back "\\(class\\|protocol\\|for\\)[ (][^{]+{" (line-beginning-position) t)
         (concat (match-string 1) "-{")
       "{"))
    ((looking-at "}") (forward-char 1) "}")
@@ -312,7 +313,7 @@
       ";")
 
      ((eq (char-before) ?\{) (backward-char 1)
-      (if (looking-back "\\(class\\|protocol\\) [^{]+" (line-beginning-position) t)
+      (if (looking-back "\\(class\\|protocol\\|for\\)[ (][^{]+" (line-beginning-position) t)
           (concat (match-string 1) "-{")
         "{"))
      ((eq (char-before) ?\}) (backward-char 1) "}")
