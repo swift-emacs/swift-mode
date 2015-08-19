@@ -175,7 +175,8 @@
        (for-head (in-exp) (op-exp) (exp ";" exp ";" exp))
 
        (guard-conditional (exp) (let-decl) (var-decl))
-       (guard-statement ("guard" guard-conditional "elseguard" "{" insts "}"))
+       (guard-statement ("guard" guard-body))
+       (guard-body (guard-conditional "elseguard" "{" insts "}"))
 
        (exp-block (exp "{" insts "}"))
 
