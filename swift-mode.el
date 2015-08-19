@@ -106,15 +106,17 @@
        (top-level-st
         ("import" type)
         (decl)
-        ("ACCESSMOD" "class" class-decl-exp "class-{" class-level-sts "}")
-        ("ACCESSMOD" "protocol" class-decl-exp "protocol-{" protocol-level-sts "}")
+        ("ACCESSMOD" "class" class-body)
+        ("ACCESSMOD" "protocol" protocol-body)
         )
 
+       (class-body (class-decl-exp "class-{" class-level-sts "}"))
        (class-level-sts (class-level-st) (class-level-st ";" class-level-st))
        (class-level-st
         (decl)
         (func))
 
+       (protocol-body (class-decl-exp "protocol-{" protocol-level-sts "}"))
        (protocol-level-sts (protocol-level-st) (protocol-level-st ";" protocol-level-st))
        (protocol-level-st
         (decl)
@@ -399,6 +401,8 @@
       ((smie-rule-hanging-p)
        (smie-rule-parent swift-indent-offset))))
     (`(:after . "for-{") swift-indent-offset)
+    (`(:after . ,(or `"class-{" `"protocol-{"))
+     (smie-rule-parent swift-indent-offset))
 
     (`(:before . ";")
      (if (smie-rule-parent-p "case")
