@@ -257,14 +257,14 @@
     ";")
 
    ((looking-at "{") (forward-char 1)
-    (if (looking-back "\\(class\\|protocol\\) [^{]+{")
+    (if (looking-back "\\(class\\|protocol\\) [^{]+{" (line-beginning-position) t)
         (concat (match-string 1) "-{")
       "{"))
    ((looking-at "}") (forward-char 1) "}")
 
    ((looking-at ",") (forward-char 1) ",")
    ((looking-at ":") (forward-char 1)
-    (if (looking-back "case [^:]+:")
+    (if (looking-back "case [^:]+:" (line-beginning-position 0) t)
         "case-:"
       ":"))
 
@@ -297,7 +297,7 @@
               "case"
             "ecase"))
          ((equal tok "else")
-          (if (looking-back "\\(guard.*\\)")
+          (if (looking-back "\\(guard.*\\)" (line-beginning-position) t)
               "elseguard"
             "else"))
          (t tok))))
@@ -312,14 +312,14 @@
       ";")
 
      ((eq (char-before) ?\{) (backward-char 1)
-      (if (looking-back "\\(class\\|protocol\\) [^{]+")
+      (if (looking-back "\\(class\\|protocol\\) [^{]+" (line-beginning-position) t)
           (concat (match-string 1) "-{")
         "{"))
      ((eq (char-before) ?\}) (backward-char 1) "}")
 
      ((eq (char-before) ?,) (backward-char 1) ",")
      ((eq (char-before) ?:) (backward-char 1)
-      (if (looking-back "case [^:]+")
+      (if (looking-back "case [^:]+" (line-beginning-position 0))
           "case-:"
         ":"))
 
@@ -354,7 +354,7 @@
                 "case"
               "ecase"))
            ((equal tok "else")
-            (if (looking-back "\\(guard.*\\)")
+            (if (looking-back "\\(guard.*\\)" (line-beginning-position) t)
                 "elseguard"
               "else"))
            (t tok))))
