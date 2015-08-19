@@ -2078,6 +2078,20 @@ guard let x = y else {
 }
 ")
 
+(require 'ert-x)
+
+(ert-deftest other/match-paren/1 ()
+  (ert-with-test-buffer (:name "swift-mode")
+    (swift-mode)
+    (insert "{}")
+    (goto-char 1)
+    ;; { is follen back to syntax table base match
+    (should (equal (smie--opener/closer-at-point) nil))
+    (goto-char 2)
+    ;; } is follen back to syntax table base match
+    (should (equal (smie--opener/closer-at-point) nil))
+  ))
+
 (provide 'indentation-tests)
 
 ;;; indentation-tests.el ends here
