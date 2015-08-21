@@ -81,7 +81,8 @@
    (smie-merge-prec2s
     (smie-bnf->prec2
      '((id)
-       (type (type) (type "<T" types "T>") ("[" type "]"))
+       (type (type) (type "<T" types "T>") ;;("[" type "]")
+             )
        (types (type) (type "," type))
 
        (class-decl-exp (id) (id ":" types))
@@ -120,31 +121,39 @@
        (protocol-level-sts (protocol-level-st) (protocol-level-st ";" protocol-level-st))
        (protocol-level-st
         (decl)
-        (func-decl))
+        ;;(func-decl)
+        )
 
        (func-body (insts) ("return" exp))
-       (func (func-decl "{" func-body "}"))
-       (func-decl ("DECSPEC" "func" func-header)
-                  (func-decl "->" type))
+       ;;(func (func-decl "{" func-body "}"))
+       (func ("func " func-header "{" func-body "}"))
+       ;; (func-decl ("func" func-header);;"DECSPEC"
+       ;;            (func-decl "->" type))
        (func-header (id "(" func-params ")"))
        (func-param (decl-exp) (decl-exp "=" id) ("..."))
-       (func-params (func-param "," func-param))
+       ;;(func-param (id))
+       (func-params (func-params "," func-params) (func-param))
 
-       (insts (inst) (insts ";" insts))
+       (insts (inst) (insts ";" insts)
+              ("DECSPEC" inst))
        (inst (decl)
+             ;;(func)
+             ("func" func-header "func-{" func-body "}")
+             ("func" func-header "->" id "func-{" func-body "}")
              (exp "=" exp)
              (tern-exp)
              (in-exp)
              (dot-exp)
              (dot-exp "{" closure "}")
-             (method-call)
+             (id "." id "(" method-args ")");; call
+             ;;(method-call)
              (method-call "{" closure "}")
              ("enum" enum-body)
              ("switch" switch-body)
              ("if" if-clause)
              (guard-statement)
              ;; id is for avoiding "for" as opener
-             (id "for" for-head "for-{" insts "}")
+             (id "fofunc-headerr" for-head "for-{" insts "}")
              ("while" exp-block))
 
        (dot-exp (id "." id))
@@ -189,9 +198,12 @@
                   (else)
                   (elseif "elseif" if-clause))
 
-       (closure (insts) (exp "in" insts) (exp "->" id "in" insts)))
+       (closure (insts) (exp "in" insts) (exp "->" id "in" insts)
+                ))
      ;; Conflicts
      '((nonassoc "{") (assoc "in") (assoc ",") (assoc ";") (assoc ":") (right "="))
+     '((assoc "(") (assoc ".") )
+     '((assoc "->") (assoc "func"))
      '((assoc "in") (assoc "where") (assoc "OP"))
      '((assoc ";") (assoc "ecase"))
      '((assoc "elseif"))
@@ -269,10 +281,10 @@
     ";")
 
    ((looking-at "{") (forward-char 1)
-    (if (looking-back "\\(class\\|protocol\\|for\\)[ (][^{]+{" (line-beginning-position) t)
+    (if (looking-back "\\(class\\|protocol\\|for\\|func\\)[ (][^{]+{" (line-beginning-position) t)
         (concat (match-string 1) "-{")
       "{"))
-   ((looking-at "}") (forward-char 1) "}")
+   ;;((looking-at "}") (forward-char 1) "}")
 
    ((looking-at ",") (forward-char 1) ",")
    ((looking-at ":") (forward-char 1)
@@ -324,10 +336,10 @@
       ";")
 
      ((eq (char-before) ?\{) (backward-char 1)
-      (if (looking-back "\\(class\\|protocol\\|for\\)[ (][^{]+" (line-beginning-position) t)
+      (if (looking-back "\\(class\\|protocol\\|for\\|func\\)[ (][^{]+" (line-beginning-position) t)
           (concat (match-string 1) "-{")
         "{"))
-     ((eq (char-before) ?\}) (backward-char 1) "}")
+     ;;((eq (char-before) ?\}) (backward-char 1) "}")
 
      ((eq (char-before) ?,) (backward-char 1) ",")
      ((eq (char-before) ?:) (backward-char 1)
@@ -404,6 +416,37 @@
     (`(:after . "for-{") swift-indent-offset)
     (`(:after . ,(or `"class-{" `"protocol-{"))
      (smie-rule-parent swift-indent-offset))
+    (`(:before . ,(or "class-{" `"protocol-{"))
+     (cond
+      ((smie-rule-hanging-p) (smie-rule-parent))))
+
+    (`(:after . "func-{") swift-indent-offset)
+    (`(:before . "func-{")
+     (cond
+      ((smie-rule-hanging-p) (smie-rule-parent))))
+
+    ;; Disable unnecessary default indentation for
+    ;; "func" and "class" keywords
+    (`(:after . ,(or `"func" `"class")) (smie-rule-parent))
+    (`(:before . ,(or `"func" `"class"))
+     (cond
+      ((smie-rule-bolp) nil)
+      (t (smie-rule-parent))
+      ;;(t 0)
+      ))
+
+    (`(:before . "{")
+     (cond
+      ((smie-rule-hanging-p)
+       (if (smie-rule-parent-p "(")
+           nil
+         (smie-rule-parent)))
+      ;;((smie-rule-bolp) (smie-rule-parent))
+      ;; ((smie-rule-parent-p ",") (smie-rule-parent))
+      ;; ((smie-rule-parent-p "if") (smie-rule-parent))
+      ;; ((smie-rule-parent-p "elseif") (smie-rule-parent))
+      ;;((smie-rule-parent-p "(") `(column . ,(current-column)))
+      ))
 
     (`(:before . ";")
      (if (smie-rule-parent-p "case")
@@ -412,18 +455,21 @@
     ;; Apply swift-indent-multiline-statement-offset only if
     ;; - if is a first token on the line
     (`(:before . ".")
-     (when (smie-rule-bolp)
-       (if (smie-rule-parent-p "{")
+     (cond
+      ((smie-rule-bolp)
+       (if (smie-rule-parent-p "func-{" "class-{")
            (+ swift-indent-offset swift-indent-multiline-statement-offset)
-         swift-indent-multiline-statement-offset)))
+         swift-indent-multiline-statement-offset))
+      ;;(t swift-indent-offset)
+      ))
 
     ;; Apply swift-indent-multiline-statement-offset if
     ;; operator is the last symbol on the line
     (`(:before . "OP")
      (when (and (smie-rule-hanging-p)
                 (not (smie-rule-parent-p "OP")))
-       (if (smie-rule-parent-p "{")
-           (+ swift-indent-offset swift-indent-multiline-statement-offset)
+       (if (smie-rule-parent-p "func-{" "class-{")
+           (+ swift-indent-offset swift-indent-multiline-statement-offset);; should indent to "OP" ?
          swift-indent-multiline-statement-offset)))
 
     ;; Indent second line of the multi-line class
@@ -434,24 +480,29 @@
     (`(:before . ",")
      (if (smie-rule-parent-p "class" "case")
          (smie-rule-parent swift-indent-hanging-comma-offset)))
-
-    ;; Disable unnecessary default indentation for
-    ;; "func" and "class" keywords
-    (`(:after . ,(or `"func" `"class")) (smie-rule-parent))
-
     ;; "in" token in closure
     (`(:after . "in")
      (if (smie-rule-parent-p "{")
          (smie-rule-parent swift-indent-offset)
        (smie-rule-parent 0)))
 
-    (`(:after . "(")
-     (if (smie-rule-parent-p "(") 0
-       (smie-rule-parent swift-indent-offset)))
+    ;; (`(:after . "(")
+    ;;  (cond
+    ;;   ((smie-rule-parent-p "(") 0)
+    ;;   ;;((smie-rule-parent swift-indent-offset))
+    ;;   ;; ?
+    ;;   ((smie-rule-hanging-p) (smie-rule-parent swift-indent-offset))
+    ;;   (t (smie-rule-parent))
+    ;;    ))
+    (`(:before . "ACCESSMOD") 0)
     (`(:before . "(")
      (cond
+      ((smie-rule-hanging-p) (smie-rule-parent))
+      ((smie-rule-bolp) swift-indent-offset)
       ((smie-rule-next-p "[") (smie-rule-parent))
       ;; Custom indentation for method arguments
+      ((smie-rule-parent-p "func") 0)
+      ;;((smie-rule-parent-p "func") nil)
       ((smie-rule-parent-p "." "func") (smie-rule-parent))))
 
     (`(:before . "[")
@@ -460,6 +511,7 @@
       ((smie-rule-parent-p "[") (smie-rule-parent swift-indent-offset))
       ((smie-rule-parent-p "{") nil)
       ((smie-rule-parent-p "class-{") nil)
+      ((smie-rule-parent-p "func-{") nil)
       (t (smie-rule-parent))))
     (`(:after . "->") (smie-rule-parent swift-indent-offset))
     ))
@@ -829,7 +881,7 @@ You can send text to the REPL process from other buffers containing source.
   (setq-local indent-tabs-mode nil)
   (setq-local electric-indent-chars
               (append '(?. ?, ?: ?\) ?\] ?\}) electric-indent-chars))
-  (smie-setup swift-smie-grammar 'swift-smie-rules ;; 'verbose-swift-smie-rules
+  (smie-setup swift-smie-grammar 'verbose-swift-smie-rules ;; 'swift-smie-rules
               :forward-token 'swift-smie--forward-token
               :backward-token 'swift-smie--backward-token))
 
