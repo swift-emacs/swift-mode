@@ -217,22 +217,22 @@ if foo {
 (check-indentation indents-case-statements-to-same-level-as-enclosing-switch/1
   "
 switch true {
-    |case
+    |case foo:
 }
 " "
 switch true {
-|case
+|case foo:
 }
 ")
 
 (check-indentation indents-case-statements-to-same-level-as-enclosing-switch/2
   "
 switch true {
-          |case
+          |case foo:
 }
 " "
 switch true {
-|case
+|case foo:
 }
 ")
 
@@ -240,13 +240,13 @@ switch true {
   "
 {
     switch true {
-|case
+|case foo:
     }
 }
 " "
 {
     switch true {
-    |case
+    |case foo:
     }
 }
 ")
@@ -255,13 +255,13 @@ switch true {
   "
 {
     switch true {
-              |case
+              |case foo:
     }
 }
 " "
 {
     switch true {
-    |case
+    |case foo:
     }
 }
 ")
@@ -511,11 +511,11 @@ case foo where bar,
 (check-indentation indents-case-statements-to-user-defined-offset/1
   "
 switch true {
-    |case
+    |case foo:
 }
 " "
 switch true {
-  |case
+  |case foo:
 }
 "
 ((swift-indent-switch-case-offset 2)))
@@ -523,11 +523,11 @@ switch true {
 (check-indentation indents-case-statements-to-user-defined-offset/2
   "
 switch true {
-          |case
+          |case foo:
 }
 " "
 switch true {
-  |case
+  |case foo:
 }
 "
 ((swift-indent-switch-case-offset 2)))
@@ -2088,6 +2088,16 @@ guard let x = y else {
     |return
 }
 ")
+
+(require 'ert-x)
+
+(ert-deftest other/match-paren/1 ()
+  (ert-with-test-buffer (:name "swift-mode")
+    (swift-mode)
+    (insert "{}")
+    (goto-char 2)
+    (blink-matching-open) ;; should not signal error
+  ))
 
 (provide 'indentation-tests)
 

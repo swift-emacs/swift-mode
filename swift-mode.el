@@ -95,6 +95,7 @@
        (let-decl
         ("let" id ":" type)
         ("let" id "=" exp)
+        ("let" id "=" tern-exp)
         ("let" id ":" type "=" exp))
        (var-decl
         ("var" id ":" type)
@@ -105,27 +106,32 @@
        (top-level-st
         ("import" type)
         (decl)
-        ("ACCESSMOD" "class" class-decl-exp "class-{" class-level-sts "}")
-        ("ACCESSMOD" "protocol" class-decl-exp "protocol-{" protocol-level-sts "}")
+        ("class" class-body)
+        ("protocol" protocol-body)
+        ("ACCESSMOD" top-level-st)
         )
 
+       (class-body (class-decl-exp "class-{" class-level-sts "}"))
        (class-level-sts (class-level-st) (class-level-st ";" class-level-st))
        (class-level-st
         (decl)
         (func))
 
+       (protocol-body (class-decl-exp "protocol-{" protocol-level-sts "}"))
        (protocol-level-sts (protocol-level-st) (protocol-level-st ";" protocol-level-st))
        (protocol-level-st
         (decl)
         (func-decl))
 
        (func-body (insts) ("return" exp))
-       (func (func-decl "{" func-body "}"))
-       (func-decl ("DECSPEC" "func" func-header)
-                  (func-decl "->" type))
-       (func-header (id "(" func-params ")"))
+       (func ("func" func-header "func-{" insts "}")
+             ("DECSPEC" func))
+       (func-decl ("func" func-header)
+                  ("DECSPEC" func-decl))
+       (func-header (id "(" func-params ")")
+                    (func-header "->" type))
        (func-param (decl-exp) (decl-exp "=" id) ("..."))
-       (func-params (func-param "," func-param))
+       (func-params (func-params "," func-params) (func-param))
 
        (insts (inst) (insts ";" insts))
        (inst (decl)
@@ -136,12 +142,12 @@
              (dot-exp "{" closure "}")
              (method-call)
              (method-call "{" closure "}")
-             ("enum" decl-exp "{" enum-body "}")
-             ("switch" exp "{" switch-body "}")
-             (if-clause)
-             (guard-statement)
-             ("for" for-head "{" insts "}")
-             ("while" exp "{" insts "}"))
+             ("enum" enum-body)
+             ("switch" switch-body)
+             ("if" if-clause)
+             ("guard" guard-body)
+             ("for" for-body)
+             ("while" while-body))
 
        (dot-exp (id "." id))
 
@@ -158,31 +164,39 @@
 
        (enum-case ("ecase" assign-exp)
                   ("ecase" "(" type ")"))
-       (enum-cases (enum-case) (enum-case ";" enum-case))
-       (enum-body (enum-cases) (insts))
+       (enum-cases (enum-case) (enum-cases ";" enum-cases))
+       (enum-body (decl-exp "enum-{" enum-cases "}")
+                  (decl-exp "enum-{" insts "}"))
 
        (case-exps (exp)
                   (guard-exp)
                   (case-exps "," case-exps))
        (case ("case" case-exps "case-:" insts))
-       (switch-body (case))
+       (switch-body (exp "switch-{" case "}"))
 
-       (for-head (in-exp) (op-exp) (for-head ";" for-head))
+       (for-head (in-exp) (op-exp) (exp ";" exp ";" exp))
+       (for-body (for-head "for-{" insts "}"))
 
        (guard-conditional (exp) (let-decl) (var-decl))
-       (guard-statement ("guard" guard-conditional "elseguard" "{" insts "}"))
+       (guard-body (guard-conditional "elseguard" "{" insts "}"))
+
+       (while-body (exp "while-{" insts "}"))
 
        (if-conditional (exp) (let-decl))
-       (if-body ("if" if-conditional "{" insts "}"))
+       (if-body (if-conditional "{" insts "}"))
+       (else (if-body "else" "{" insts "}"))
+       (elseif (elseif "elseif" elseif)
+               (if-body))
        (if-clause (if-body)
-                  (if-body "elseif" if-conditional "{" insts "}")
-                  (if-body "else" "{" insts "}"))
+                  (else)
+                  (elseif "elseif" if-clause))
 
        (closure (insts) (exp "in" insts) (exp "->" id "in" insts)))
      ;; Conflicts
-     '((nonassoc "{") (assoc "in") (assoc ",") (assoc ";") (assoc ":") (right "="))
+     '((nonassoc "{") (assoc "for") (assoc "in") (assoc ",") (assoc ";") (assoc ":") (right "="))
      '((assoc "in") (assoc "where") (assoc "OP"))
      '((assoc ";") (assoc "ecase"))
+     '((assoc "elseif"))
      '((assoc "case")))
 
     (smie-precs->prec2
@@ -202,11 +216,12 @@
 
 (defun verbose-swift-smie-rules (kind token)
   (let ((value (swift-smie-rules kind token)))
-    (message "%s '%s'; sibling-p:%s parent:%s hanging:%s == %s" kind token
-             (ignore-errors (smie-rule-sibling-p))
-             (ignore-errors smie--parent)
-             (ignore-errors (smie-rule-hanging-p))
-             value)
+    (unless (eq this-command 'ert-run-tests-interactively)
+      (message "%s '%s'; sibling-p:%s parent:%s hanging:%s == %s" kind token
+               (ignore-errors (smie-rule-sibling-p))
+               (ignore-errors smie--parent)
+               (ignore-errors (smie-rule-hanging-p))
+               value))
     value))
 
 (defvar swift-smie--operators-regexp
@@ -256,11 +271,13 @@
     (if (eolp) (forward-char 1) (forward-comment 1))
     ";")
 
-   ((looking-at "{") (forward-char 1)
-    (if (looking-back "\\(class\\|protocol\\) [^{]+{" (line-beginning-position) t)
-        (concat (match-string 1) "-{")
-      "{"))
-   ((looking-at "}") (forward-char 1) "}")
+   ((looking-at "{")
+    (cond
+     ((looking-back "\\(class\\|protocol\\|for\\|func\\|enum\\|switch\\|while\\)\\Sw[^{]+" (line-beginning-position) t)
+      (forward-char 1)
+      (concat (match-string 1) "-{"))
+     (t "")
+     ))
 
    ((looking-at ",") (forward-char 1) ",")
    ((looking-at ":") (forward-char 1)
@@ -293,7 +310,7 @@
    (t (let ((tok (smie-default-forward-token)))
         (cond
          ((equal tok "case")
-          (if (looking-at "\\([\n\t ]\\|.\\)+?\\(where.*[,]\\|:\\)")
+          (if (looking-at "[^}]+?\\(where.*[,]\\|:\\)")
               "case"
             "ecase"))
          ((equal tok "else")
@@ -311,11 +328,13 @@
            (swift-smie--implicit-semi-p))
       ";")
 
-     ((eq (char-before) ?\{) (backward-char 1)
-      (if (looking-back "\\(class\\|protocol\\) [^{]+" (line-beginning-position) t)
-          (concat (match-string 1) "-{")
-        "{"))
-     ((eq (char-before) ?\}) (backward-char 1) "}")
+     ((eq (char-before) ?\{)
+      (cond
+       ((looking-back "\\(class\\|protocol\\|for\\|func\\|enum\\|switch\\|while\\)\\Sw[^{]+{" (line-beginning-position) t)
+        (backward-char 1)
+        (concat (match-string 1) "-{"))
+       (t "")
+        ))
 
      ((eq (char-before) ?,) (backward-char 1) ",")
      ((eq (char-before) ?:) (backward-char 1)
@@ -350,7 +369,7 @@
      (t (let ((tok (smie-default-backward-token)))
           (cond
            ((equal tok "case")
-            (if (looking-at "\\([\n\t ]\\|.\\)+?\\(where.*[,]\\|:\\)")
+            (if (looking-at "[^}]+?\\(where.*[,]\\|:\\)")
                 "case"
               "ecase"))
            ((equal tok "else")
@@ -377,9 +396,24 @@
       ;; Rule for the class definition.
       ((smie-rule-parent-p "class") (smie-rule-parent swift-indent-offset))))
 
-    (`(:after . "{")
-     (if (smie-rule-parent-p "switch")
-         (smie-rule-parent swift-indent-switch-case-offset)))
+    (`(:after . "if") 0)
+    (`(:before . "elseif") (smie-rule-parent))
+    (`(:after . "enum") 0)
+
+    (`(:after . ,(or `"switch-{" `"class-{" `"protocol-{" `"func-{" `"enum-{" `"while-{" `"for-{"))
+     (smie-rule-parent swift-indent-offset))
+    (`(:before . ,(or `"switch-{" `"class-{" `"protocol-{" `"func-{" `"enum-{" `"while-{" `"for-{"))
+     (cond
+      ((smie-rule-hanging-p) (smie-rule-parent))))
+
+    (`(:before . "{")
+     (cond
+      ((and (smie-rule-parent-p "(") (smie-rule-hanging-p))
+       (current-column))
+      ((smie-rule-hanging-p) (smie-rule-parent))
+      ((smie-rule-parent-p ",") (smie-rule-parent))
+      ))
+
     (`(:before . ";")
      (if (smie-rule-parent-p "case")
          (smie-rule-parent swift-indent-offset)))
@@ -388,7 +422,7 @@
     ;; - if is a first token on the line
     (`(:before . ".")
      (when (smie-rule-bolp)
-       (if (smie-rule-parent-p "{")
+       (if (smie-rule-parent-p "func-{" "class-{")
            (+ swift-indent-offset swift-indent-multiline-statement-offset)
          swift-indent-multiline-statement-offset)))
 
@@ -397,14 +431,14 @@
     (`(:before . "OP")
      (when (and (smie-rule-hanging-p)
                 (not (smie-rule-parent-p "OP")))
-       (if (smie-rule-parent-p "{")
+       (if (smie-rule-parent-p "func-{" "class-{")
            (+ swift-indent-offset swift-indent-multiline-statement-offset)
          swift-indent-multiline-statement-offset)))
 
     ;; Indent second line of the multi-line class
     ;; definitions with swift-indent-offset
     (`(:before . "case")
-     (smie-rule-parent))
+     (smie-rule-parent swift-indent-switch-case-offset))
 
     (`(:before . ",")
      (if (smie-rule-parent-p "class" "case")
@@ -413,6 +447,10 @@
     ;; Disable unnecessary default indentation for
     ;; "func" and "class" keywords
     (`(:after . ,(or `"func" `"class")) (smie-rule-parent))
+    (`(:before . ,(or `"func" `"class"))
+     (if (smie-rule-bolp)
+         nil
+       (smie-rule-parent)))
 
     ;; "in" token in closure
     (`(:after . "in")
@@ -420,22 +458,22 @@
          (smie-rule-parent swift-indent-offset)
        (smie-rule-parent 0)))
 
-    (`(:after . "(")
-     (if (smie-rule-parent-p "(") 0
-       (smie-rule-parent swift-indent-offset)))
     (`(:before . "(")
      (cond
+      ((smie-rule-hanging-p) (smie-rule-parent))
+      ((smie-rule-bolp) swift-indent-offset)
       ((smie-rule-next-p "[") (smie-rule-parent))
       ;; Custom indentation for method arguments
-      ((smie-rule-parent-p "." "func") (smie-rule-parent))))
+      ((smie-rule-parent-p "." "func") (smie-rule-parent))
+      ))
 
     (`(:before . "[")
      (cond
+      ((smie-rule-hanging-p) (smie-rule-parent))
       ((smie-rule-prev-p "->") swift-indent-offset)
       ((smie-rule-parent-p "[") (smie-rule-parent swift-indent-offset))
-      ((smie-rule-parent-p "{") nil)
-      ((smie-rule-parent-p "class-{") nil)
-      (t (smie-rule-parent))))
+      ))
+
     (`(:after . "->") (smie-rule-parent swift-indent-offset))
     ))
 
@@ -753,7 +791,7 @@ You can send text to the REPL process from other buffers containing source.
 
     ;; Additional symbols
     (modify-syntax-entry ?_ "w" table)
-    (modify-syntax-entry ?: "_" table)
+    (modify-syntax-entry ?: "." table)
 
     ;; Comments
     (modify-syntax-entry ?/  ". 124b" table)
@@ -804,9 +842,10 @@ You can send text to the REPL process from other buffers containing source.
   (setq-local indent-tabs-mode nil)
   (setq-local electric-indent-chars
               (append '(?. ?, ?: ?\) ?\] ?\}) electric-indent-chars))
-  (smie-setup swift-smie-grammar 'swift-smie-rules ;; 'verbose-swift-smie-rules
+  (smie-setup swift-smie-grammar  'verbose-swift-smie-rules
               :forward-token 'swift-smie--forward-token
-              :backward-token 'swift-smie--backward-token))
+              :backward-token 'swift-smie--backward-token)
+  )
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.swift\\'" . swift-mode))
