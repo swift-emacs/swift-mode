@@ -233,7 +233,7 @@
              ;; ??, is? and as? are operators
              (looking-back "[?][?]\\|as[?]\\|is[?]" (- (point) 3) t)
              ;; "in" operator in closure
-             (looking-back "in" (- (point) 2) t)
+             (looking-back "\\bin" (- (point) 3) t)
              ;; Characters placed on the second line in multi-line expression
              (save-excursion
                (forward-comment (buffer-size))

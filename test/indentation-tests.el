@@ -634,6 +634,17 @@ import Foo
 |import Bar
 ")
 
+(check-indentation indents-import-statements/2
+  "
+import Darwin
+    |class Test {
+}
+" "
+import Darwin
+|class Test {
+}
+")
+
 (check-indentation indents-class-declaration/1
   "
 class Foo {
