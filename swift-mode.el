@@ -218,7 +218,7 @@
                 "<<" ">>" "??")))
 
 (defvar swift-smie--decl-specifier-regexp
-  "\\(?1:class\\|mutating\\|override\\|static\\|unowned\\|weak\\)")
+  "\\(?1:mutating\\|override\\|static\\|unowned\\|weak\\)")
 
 (defvar swift-smie--access-modifier-regexp
   (regexp-opt '("private" "public" "internal")))
@@ -349,6 +349,10 @@
      ((looking-back ">[?!]?" (- (point) 2) t)
       (goto-char (match-beginning 0))
       (if (looking-back "[[:space:]]" 1 t) "OP" "T>"))
+
+     ((looking-back (regexp-opt swift-mode--type-decl-keywords) (- (point) 9) t)
+      (goto-char (match-beginning 0))
+      (match-string-no-properties 0))
 
      ((looking-back swift-smie--operators-regexp (- (point) 3) t)
       (goto-char (match-beginning 0)) "OP")
@@ -762,7 +766,7 @@ You can send text to the REPL process from other buffers containing source.
   (let ((table (make-syntax-table)))
 
     ;; Operators
-    (dolist (i '(?+ ?- ?* ?/ ?& ?| ?^ ?! ?< ?> ?~))
+    (dolist (i '(?+ ?- ?* ?/ ?& ?| ?^ ?< ?> ?~))
       (modify-syntax-entry i "." table))
 
     ;; Strings
@@ -771,6 +775,8 @@ You can send text to the REPL process from other buffers containing source.
 
     ;; Additional symbols
     (modify-syntax-entry ?_ "w" table)
+    (modify-syntax-entry ?? "_" table)
+    (modify-syntax-entry ?! "_" table)
     (modify-syntax-entry ?: "_" table)
 
     ;; Comments
