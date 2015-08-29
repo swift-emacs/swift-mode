@@ -288,7 +288,9 @@
 
    ((looking-at "<") (forward-char 1)
     (if (looking-at "[[:upper:]]") "<T" "OP"))
-   ((looking-at ">") (forward-char 1)
+
+   ((looking-at ">[?!]?")
+    (goto-char (match-end 0))
     (if (looking-back "[[:space:]]>" 2 t) "OP" "T>"))
 
    ((looking-at swift-smie--operators-regexp)
