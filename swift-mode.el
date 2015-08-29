@@ -218,7 +218,7 @@
                 "<<" ">>" "??")))
 
 (defvar swift-smie--decl-specifier-regexp
-  "\\(?1:class\\|mutating\\|override\\|static\\|unowned\\|weak\\)\\(?:[[:space:]]*func\\)")
+  "\\(?1:class\\|mutating\\|override\\|static\\|unowned\\|weak\\)")
 
 (defvar swift-smie--access-modifier-regexp
   (regexp-opt '("private" "public" "internal")))
