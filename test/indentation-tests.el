@@ -68,6 +68,8 @@ values of customisable variables."
            (search-forward "|")
            (delete-char -1)
            (swift-mode)
+           (setq smie-forward-token-function 'swift-smie--forward-token-debug)
+           (setq smie-backward-token-function 'swift-smie--backward-token-debug)
            (indent-according-to-mode)
 
            (should (equal expected-state (buffer-string)))

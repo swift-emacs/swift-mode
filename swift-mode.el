@@ -249,6 +249,22 @@
                   (not (looking-back "[[:upper:]]>" (- (point) 2) t)))
              ))))
 
+(defun swift-smie--forward-token-debug ()
+  (let ((token (swift-smie--forward-token)))
+    (unless (equal token "")
+      (assert (equal token
+                     (save-excursion (swift-smie--backward-token))) t))
+    token
+    ))
+
+(defun swift-smie--backward-token-debug ()
+  (let ((token (swift-smie--backward-token)))
+    (unless (equal token "")
+      (assert (equal token
+                     (save-excursion (swift-smie--forward-token))) t))
+      token
+    ))
+
 (defun swift-smie--forward-token ()
   (skip-chars-forward " \t")
   (cond
