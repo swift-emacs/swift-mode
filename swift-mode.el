@@ -286,7 +286,8 @@ We try to constraint those lookups by reasonable number of lines.")
 
    ((looking-at ",") (forward-char 1) ",")
    ((looking-at ":") (forward-char 1)
-    (if (looking-back "\\(case [^:]+\\|default\\):" (line-beginning-position 0) t)
+    ;; look-back until "case", ":", "{", ";"
+    (if (looking-back "case[\n\t ][^:{;]+:")
         "case-:"
       ":"))
 
@@ -341,7 +342,8 @@ We try to constraint those lookups by reasonable number of lines.")
 
      ((eq (char-before) ?,) (backward-char 1) ",")
      ((eq (char-before) ?:) (backward-char 1)
-      (if (looking-back "case [^:]+\\|default" (line-beginning-position 0))
+      ;; look-back until "case", ":", "{", ";"
+      (if (looking-back "case[\n\t ][^:{;]+")
           "case-:"
         ":"))
 
