@@ -32,6 +32,7 @@
 
 (require 'rx)
 (require 'comint)
+(require 'cl-lib)
 
 (eval-and-compile
   ;; Added in Emacs 24.3
@@ -252,7 +253,7 @@
 (defun swift-smie--forward-token-debug ()
   (let ((token (swift-smie--forward-token)))
     (unless (equal token "")
-      (assert (equal token
+      (cl-assert (equal token
                      (save-excursion (swift-smie--backward-token))) t))
     token
     ))
@@ -260,7 +261,7 @@
 (defun swift-smie--backward-token-debug ()
   (let ((token (swift-smie--backward-token)))
     (unless (equal token "")
-      (assert (equal token
+      (cl-assert (equal token
                      (save-excursion (swift-smie--forward-token))) t))
       token
     ))
