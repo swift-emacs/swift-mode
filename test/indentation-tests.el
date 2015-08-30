@@ -77,6 +77,8 @@ values of customisable variables."
            (goto-char (point-min))
            (forward-sexp 10)
            (should (equal (point-max) (point)))
+           (forward-sexp -10)
+           (should (equal (point-min) (point)))
            )))))
 
 ;; Provide font locking for easier test editing.
