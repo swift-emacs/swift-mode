@@ -443,8 +443,12 @@
        (smie-rule-parent 0)))
 
     (`(:after . "(")
-     (if (smie-rule-parent-p "(") 0
-       (smie-rule-parent swift-indent-offset)))
+     (cond
+      ((smie-rule-parent-p "(") 0)
+      ((and (smie-rule-parent-p "." "func")
+            (not (smie-rule-hanging-p))) 1)
+      (t (smie-rule-parent swift-indent-offset))))
+
     (`(:before . "(")
      (cond
       ((smie-rule-next-p "[") (smie-rule-parent))
