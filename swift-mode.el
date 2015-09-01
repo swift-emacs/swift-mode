@@ -32,6 +32,7 @@
 
 (require 'rx)
 (require 'comint)
+(require 'cl-lib)
 
 (eval-and-compile
   ;; Added in Emacs 24.3
@@ -218,7 +219,7 @@
                 "<<" ">>" "??")))
 
 (defvar swift-smie--decl-specifier-regexp
-  "\\(?1:class\\|mutating\\|override\\|static\\|unowned\\|weak\\)\\(?:[[:space:]]*func\\)")
+  "\\(?1:mutating\\|override\\|static\\|unowned\\|weak\\)")
 
 (defvar swift-smie--access-modifier-regexp
   (regexp-opt '("private" "public" "internal")))
@@ -249,6 +250,22 @@
                   (not (looking-back "[[:upper:]]>" (- (point) 2) t)))
              ))))
 
+(defun swift-smie--forward-token-debug ()
+  (let ((token (swift-smie--forward-token)))
+    (unless (equal token "")
+      (cl-assert (equal token
+                     (save-excursion (swift-smie--backward-token))) t))
+    token
+    ))
+
+(defun swift-smie--backward-token-debug ()
+  (let ((token (swift-smie--backward-token)))
+    (unless (equal token "")
+      (cl-assert (equal token
+                     (save-excursion (swift-smie--forward-token))) t))
+      token
+    ))
+
 (defun swift-smie--forward-token ()
   (skip-chars-forward " \t")
   (cond
@@ -272,7 +289,9 @@
 
    ((looking-at "<") (forward-char 1)
     (if (looking-at "[[:upper:]]") "<T" "OP"))
-   ((looking-at ">") (forward-char 1)
+
+   ((looking-at ">[?!]?")
+    (goto-char (match-end 0))
     (if (looking-back "[[:space:]]>" 2 t) "OP" "T>"))
 
    ((looking-at swift-smie--operators-regexp)
@@ -331,6 +350,10 @@
      ((looking-back ">[?!]?" (- (point) 2) t)
       (goto-char (match-beginning 0))
       (if (looking-back "[[:space:]]" 1 t) "OP" "T>"))
+
+     ((looking-back (regexp-opt swift-mode--type-decl-keywords) (- (point) 9) t)
+      (goto-char (match-beginning 0))
+      (match-string-no-properties 0))
 
      ((looking-back swift-smie--operators-regexp (- (point) 3) t)
       (goto-char (match-beginning 0)) "OP")
@@ -421,8 +444,12 @@
        (smie-rule-parent 0)))
 
     (`(:after . "(")
-     (if (smie-rule-parent-p "(") 0
-       (smie-rule-parent swift-indent-offset)))
+     (cond
+      ((smie-rule-parent-p "(") 0)
+      ((and (smie-rule-parent-p "." "func")
+            (not (smie-rule-hanging-p))) 1)
+      (t (smie-rule-parent swift-indent-offset))))
+
     (`(:before . "(")
      (cond
       ((smie-rule-next-p "[") (smie-rule-parent))
@@ -744,7 +771,7 @@ You can send text to the REPL process from other buffers containing source.
   (let ((table (make-syntax-table)))
 
     ;; Operators
-    (dolist (i '(?+ ?- ?* ?/ ?& ?| ?^ ?! ?< ?> ?~))
+    (dolist (i '(?+ ?- ?* ?/ ?& ?| ?^ ?< ?> ?~))
       (modify-syntax-entry i "." table))
 
     ;; Strings
@@ -753,7 +780,9 @@ You can send text to the REPL process from other buffers containing source.
 
     ;; Additional symbols
     (modify-syntax-entry ?_ "w" table)
-    (modify-syntax-entry ?: "_" table)
+    (modify-syntax-entry ?? "_" table)
+    (modify-syntax-entry ?! "_" table)
+    (modify-syntax-entry ?: "." table)
 
     ;; Comments
     (modify-syntax-entry ?/  ". 124b" table)
