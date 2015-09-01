@@ -72,7 +72,12 @@ values of customisable variables."
            (indent-according-to-mode)
 
            (should (equal expected-state (buffer-string)))
-           (should (equal expected-cursor-pos (point))))))))
+           (should (equal expected-cursor-pos (point)))
+
+           (goto-char (point-min))
+           (forward-sexp 10)
+           (should (equal (point-max) (point)))
+           )))))
 
 ;; Provide font locking for easier test editing.
 
