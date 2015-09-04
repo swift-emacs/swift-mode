@@ -59,8 +59,7 @@ values of customisable variables."
               (swift-indent-offset 4)
               (swift-indent-switch-case-offset 0)
               (swift-indent-multiline-statement-offset 2)
-              ;; Change from default value to detect offset bug.
-              (swift-indent-hanging-comma-offset 3)
+              (swift-indent-hanging-comma-offset nil)
               ,@var-bindings)
          (with-temp-buffer
            (insert ,before)
@@ -219,22 +218,22 @@ if foo {
 (check-indentation indents-case-statements-to-same-level-as-enclosing-switch/1
   "
 switch true {
-    |case
+    |case foo:
 }
 " "
 switch true {
-|case
+|case foo:
 }
 ")
 
 (check-indentation indents-case-statements-to-same-level-as-enclosing-switch/2
   "
 switch true {
-          |case
+          |case foo:
 }
 " "
 switch true {
-|case
+|case foo:
 }
 ")
 
@@ -242,13 +241,13 @@ switch true {
   "
 {
     switch true {
-|case
+|case foo:
     }
 }
 " "
 {
     switch true {
-    |case
+    |case foo:
     }
 }
 ")
@@ -257,13 +256,13 @@ switch true {
   "
 {
     switch true {
-              |case
+              |case foo:
     }
 }
 " "
 {
     switch true {
-    |case
+    |case foo:
     }
 }
 ")
@@ -295,6 +294,23 @@ switch {
 |case
     foo, bar, buz:
     foo
+}
+")
+
+(check-indentation indents-case-statements-to-same-level-as-enclosing-switch/7
+                   "
+switch {
+case foo:
+    foo
+    bar
+  |case baz:
+}
+" "
+switch {
+case foo:
+    foo
+    bar
+|case baz:
 }
 ")
 
@@ -421,6 +437,27 @@ case y:
 }
 ")
 
+(check-indentation indents-default-statements-to-same-level-as-enclosing-switch/3
+                   "
+{
+    switch true {
+    case y:
+        x
+    default:
+        foo
+        |}
+}
+" "
+{
+    switch true {
+    case y:
+        x
+    default:
+        foo
+    |}
+}
+")
+
 (check-indentation indents-statements-under-default-case/1
   "
 {
@@ -490,9 +527,23 @@ case foo where bar,
 " "
 switch true {
 case foo where bar,
-   |bar where baz:
+     |bar where baz:
 }
 ")
+
+(check-indentation indents-case-statements-with-multiline-guard-custom-offset/1
+                   "
+switch true {
+case foo where bar,
+|bar where baz:
+}
+" "
+switch true {
+case foo where bar,
+   |bar where baz:
+}
+"
+((swift-indent-hanging-comma-offset 3)))
 
 (check-indentation indents-case-statements-with-multiline-guard/2
   "
@@ -513,11 +564,11 @@ case foo where bar,
 (check-indentation indents-case-statements-to-user-defined-offset/1
   "
 switch true {
-    |case
+    |case foo:
 }
 " "
 switch true {
-  |case
+  |case foo:
 }
 "
 ((swift-indent-switch-case-offset 2)))
@@ -525,11 +576,11 @@ switch true {
 (check-indentation indents-case-statements-to-user-defined-offset/2
   "
 switch true {
-          |case
+          |default:
 }
 " "
 switch true {
-  |case
+  |default:
 }
 "
 ((swift-indent-switch-case-offset 2)))
@@ -700,9 +751,21 @@ class Foo: Foo, Bar,
 }
 " "
 class Foo: Foo, Bar,
-   |Baz {
+      |Baz {
 }
 ")
+
+(check-indentation indents-class-declaration-custom-offset/1
+                   "
+class Foo: Foo, Bar,
+|Baz {
+}
+" "
+class Foo: Foo, Bar,
+   |Baz {
+}
+"
+((swift-indent-hanging-comma-offset 3)))
 
 (check-indentation indents-class-declaration/6
                    "
@@ -724,13 +787,43 @@ class Foo: Bar<A, B,
                |C>
 ")
 
-(check-indentation indents-class-declaration/9
+(check-indentation indents-class-declaration/8
                    "
 class Foo<A: B<C>>:
                    |Bar
 " "
 class Foo<A: B<C>>:
     |Bar
+")
+
+(check-indentation indents-class-declaration/9
+                   "
+class Foo: Foo,
+      Bar,
+      Bar2,
+         |Baz {
+}
+" "
+class Foo: Foo,
+      Bar,
+      Bar2,
+      |Baz {
+}
+")
+
+(check-indentation indents-class-declaration/10
+                   "
+class Foo: Foo,
+      Bar,
+      Bar2,
+      Baz {
+  |}
+" "
+class Foo: Foo,
+      Bar,
+      Bar2,
+      Baz {
+|}
 ")
 
 (check-indentation indents-public-class-declaration/1
@@ -740,9 +833,21 @@ public class Foo: Foo, Bar,
 }
 " "
 public class Foo: Foo, Bar,
-   |Baz {
+             |Baz {
 }
 ")
+
+(check-indentation indents-public-class-declaration-custom-offset/1
+                   "
+public class Foo: Foo, Bar,
+|Baz {
+}
+" "
+public class Foo: Foo, Bar,
+   |Baz {
+}
+"
+((swift-indent-hanging-comma-offset 3)))
 
 (check-indentation indents-public-class-declaration/2
   "
@@ -751,6 +856,30 @@ public class Foo {
 }
 " "
 public class Foo {
+    |foo
+}
+")
+
+(check-indentation indents-public-class-declaration/3
+                   "
+public class Foo: Foo, Bar,
+             Baz {
+  |}
+" "
+public class Foo: Foo, Bar,
+             Baz {
+|}
+")
+
+(check-indentation indents-public-class-declaration/4
+                   "
+public class Foo: Foo, Bar,
+             Baz {
+|foo
+}
+" "
+public class Foo: Foo, Bar,
+             Baz {
     |foo
 }
 ")
