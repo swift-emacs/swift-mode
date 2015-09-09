@@ -79,6 +79,12 @@ values of customisable variables."
            (should (equal (point-max) (point)))
            (forward-sexp -10)
            (should (equal (point-min) (point)))
+
+           (goto-char (point-min))
+           (forward-list 10)
+           (should (equal (point-max) (point)))
+           (forward-list -10)
+           (should (equal (point-min) (point)))
            )))))
 
 ;; Provide font locking for easier test editing.
@@ -1368,10 +1374,12 @@ foo?(bar) +
 func a () {
     a +
 |a
+}
 " "
 func a () {
     a +
       |a
+}
 ")
 
 (check-indentation indents-multiline-expressions/12
@@ -1379,10 +1387,12 @@ func a () {
 func a () {
     a
 |.a()
+}
 " "
 func a () {
     a
       |.a()
+}
 ")
 
 (check-indentation indents-multiline-expressions/13
