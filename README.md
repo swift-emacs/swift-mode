@@ -15,7 +15,7 @@ Major-mode for Apple's [Swift programming language][swift]. Provides:
 This is currently at an early stage of development and there's plenty of work to
 do. Check the issue tracker.
 
-Requires Emacs 24 or later.
+Requires Emacs 24.4 or later.
 
 ## Installing
 
