@@ -1663,7 +1663,7 @@ let foo = bar >
           |baz
 ")
 
-(check-indentation indents-multiline-operators-only-once
+(check-indentation indents-multiline-operators-only-once/1
                    "
 1 +
   2 + 5 *
@@ -1671,6 +1671,18 @@ let foo = bar >
 " "
 1 +
   2 + 5 *
+      |3
+"
+)
+
+(check-indentation indents-multiline-operators-only-once/2
+                   "
+1 +
+  2 * 5 +
+|3
+" "
+1 +
+  2 * 5 +
   |3
 "
 )
