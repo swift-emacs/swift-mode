@@ -1508,6 +1508,19 @@ let x = bar
         |defaultValue
 ")
 
+(check-indentation indents-multiline-expressions/24
+  "
+let foo =
+    bar +
+  |baz +
+    a
+" "
+let foo =
+    bar +
+    |baz +
+    a
+")
+
 (check-indentation indents-long-parameters/1
                    "
 func foo() {
@@ -1619,7 +1632,7 @@ let options = NSRegularExpressionOptions.CaseInsensitive &
 |NSRegularExpressionOptions.DotMatchesLineSeparators
 " "
 let options = NSRegularExpressionOptions.CaseInsensitive &
-                |NSRegularExpressionOptions.DotMatchesLineSeparators
+              |NSRegularExpressionOptions.DotMatchesLineSeparators
 "
 ((swift-indent-multiline-statement-offset 4)))
 

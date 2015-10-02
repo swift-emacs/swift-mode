@@ -408,13 +408,13 @@ We try to constraint those lookups by reasonable number of lines.")
 
     ;; Apply swift-indent-multiline-statement-offset if
     ;; operator is the last symbol on the line
-    (`(:before . ,(pred (lambda (token)
+    (`(:after . ,(pred (lambda (token)
                           (member token swift-smie--operators))))
      (when (and (smie-rule-hanging-p)
-                (not (apply 'smie-rule-parent-p swift-smie--operators)))
-       (if (smie-rule-parent-p "{")
-           (+ swift-indent-offset swift-indent-multiline-statement-offset)
-         swift-indent-multiline-statement-offset)))
+                (not (apply 'smie-rule-parent-p
+                            (append swift-smie--operators '("?" ":" "=")))))
+       swift-indent-multiline-statement-offset
+       ))
 
     (`(:before . ",")
      (if (and swift-indent-hanging-comma-offset (smie-rule-parent-p "class" "case"))
