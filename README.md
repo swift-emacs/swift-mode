@@ -101,6 +101,9 @@ Thanks to the following users for their contributions:
 - [@bbatsov](https://github.com/bbatsov) (Bozhidar Batsov)
 - [@ckruse](https://github.com/ckruse) (Christian Kruse)
 - [@syohex](https://github.com/syohex) (Syohei Yoshida)
+- [@uk-ar](https://github.com/uk-ar) (Yuuki Arisawa)
+
+You can find a [full list of those people here](https://github.com/chrisbarrett/swift-mode/graphs/contributors).
 
 ## License
 
