@@ -482,7 +482,8 @@ We try to constraint those lookups by reasonable number of lines.")
 
 (defvar swift-mode--attribute-keywords
   '("class_protocol" "exported" "noreturn"
-    "NSCopying" "NSManaged" "objc" "auto_closure"
+    "NSCopying" "NSManaged" "objc" "autoclosure"
+    "available" "noescape" "nonobjc" "NSApplicationMain" "testable" "UIApplicationMain" "warn_unused_result" "convention"
     "IBAction" "IBDesignable" "IBInspectable" "IBOutlet"))
 
 (defvar swift-mode--keywords
