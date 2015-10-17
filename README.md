@@ -1,5 +1,7 @@
 [![License GPL 3][badge-license]][copying]
 [![Build Status][badge-travis]][travis]
+[![MELPA](http://melpa.org/packages/swift-mode-badge.svg)](http://melpa.org/#/swift-mode)
+[![MELPA stable](http://stable.melpa.org/packages/swift-mode-badge.svg)](http://stable.melpa.org/#/swift-mode)
 
 # swift-mode
 
