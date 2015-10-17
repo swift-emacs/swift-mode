@@ -1836,6 +1836,19 @@ func foo() {
 }
 ")
 
+(check-indentation conditional-operator/11
+                   "
+let a = a ? a +
+              1
+        |: a +
+              1
+" "
+let a = a ? a +
+              1
+          |: a +
+              1
+")
+
 (check-indentation blank-line/1
                    "
 func foo() {
