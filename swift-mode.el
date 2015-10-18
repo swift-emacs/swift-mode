@@ -682,7 +682,7 @@ We try to constraint those lookups by reasonable number of lines.")
                (option "-target" flycheck-swift-target)
                (option "-import-objc-header" flycheck-swift-import-objc-header)
                (eval
-                (mapcan
+                (cl-mapcan
                  #'(lambda (path) (list "-Xcc" (concat "-I" path)))
                  flycheck-swift-cc-include-search-paths))
                "-primary-file" source)
