@@ -1,7 +1,7 @@
 [![License GPL 3][badge-license]][copying]
 [![Build Status][badge-travis]][travis]
-[![MELPA](http://melpa.org/packages/swift-mode-badge.svg)](http://melpa.org/#/swift-mode)
-[![MELPA stable](http://stable.melpa.org/packages/swift-mode-badge.svg)](http://stable.melpa.org/#/swift-mode)
+[![MELPA](https://melpa.org/packages/swift-mode-badge.svg)](https://melpa.org/#/swift-mode)
+[![MELPA stable](https://stable.melpa.org/packages/swift-mode-badge.svg)](https://stable.melpa.org/#/swift-mode)
 
 # swift-mode
 
@@ -35,7 +35,7 @@ might be unstable (albeit rarely).
 You can add MELPA to the list of `package.el` repositories like this:
 
 ```el
-(add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/"))
+(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
 ```
 
 #### MELPA Stable
@@ -46,7 +46,7 @@ You can install the last stable version of `swift-mode` from the
 You can add MELPA Stable to the list of `package.el` repositories like this:
 
 ```el
-(add-to-list 'package-archives '("melpa-stable" . "http://melpa-stable.milkbox.net/packages/"))
+(add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/"))
 ```
 
 ***
@@ -119,8 +119,8 @@ See [COPYING][]. Copyright (c) 2014 Chris Barrett.
 [swift]: https://developer.apple.com/swift/
 [cask]: https://github.com/cask/cask
 [rust-mode]: https://github.com/mozilla/rust/tree/master/src/etc/emacs
-[melpa]: http://melpa.milkbox.net
-[melpa stable]: http://melpa-stable.milkbox.net
+[melpa]: https://melpa.org
+[melpa stable]: https://stable.melpa.org
 [imenu]: http://www.gnu.org/software/emacs/manual/html_node/emacs/Imenu.html
 [flycheck]: http://flycheck.readthedocs.org/en/latest/
 [js-comint]: http://js-comint-el.sourceforge.net/
