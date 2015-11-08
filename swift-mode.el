@@ -79,7 +79,11 @@
        (insts (inst)
               (insts ";" insts)
               (insts "case" exp "case-:" insts))
-       (inst (exp))
+       (inst (exp)
+             ("{" inst "}")
+             ("func" inst "}")
+             ("class" inst "}")
+             )
        (exp (exp1)
             (exp "," exp))
        (exp1 ("<T" exp "T>")
@@ -95,8 +99,6 @@
     ;; Ref: https://developer.apple.com/library/prerelease/ios/documentation/Swift/Reference/Swift_StandardLibrary_Operators/index.html
     (smie-precs->prec2
      '(
-       (assoc ";")
-       (assoc "class" "func")
        (assoc ",")
        (right "*=" "/=" "%=" "+=" "-=" "<<=" ">>=" "&="
               "^=" "|=" "&&=" "||=" "=")                       ;; Assignment (Right associative, precedence level 90)
@@ -192,6 +194,11 @@
 In some cases we can't avoid reverse lookup and this operation can be slow.
 We try to constraint those lookups by reasonable number of lines.")
 
+(defun swift-smie--redundant-do-p (&optional skip)
+  (save-excursion
+    (if skip (backward-word 1))
+    (member (nth 2 (smie-backward-sexp ";")) '("func" "class"))))
+
 (defun swift-smie--forward-token ()
   (skip-chars-forward " \t")
   (cond
@@ -201,7 +208,7 @@ We try to constraint those lookups by reasonable number of lines.")
    (t
     (forward-comment (point))
     (cond
-
+     ((looking-at "}") (forward-char 1) "}")
    ((looking-at ",") (forward-char 1) ",")
    ((looking-at ":") (forward-char 1)
     ;; look-back until "case", "default", ":", "{", ";"
@@ -230,6 +237,13 @@ We try to constraint those lookups by reasonable number of lines.")
           (if (looking-back "\\(guard.*\\)" (line-beginning-position) t)
               "elseguard"
             "else"))
+         ((equal tok "{")
+          (cond
+           ((not (swift-smie--redundant-do-p 'skip)) tok)
+           ((> (save-excursion (forward-comment (point-max)) (point))
+               (line-end-position))
+            (swift-smie--forward-token)) ;Fully redundant.
+           (t ";")))
          (t tok))))
    ))
    ))
@@ -241,7 +255,7 @@ We try to constraint those lookups by reasonable number of lines.")
      ((and (> pos (line-end-position))
            (swift-smie--implicit-semi-p))
       ";")
-
+     ((eq (char-before) ?}) (backward-char 1) "}")
      ((eq (char-before) ?,) (backward-char 1) ",")
      ((eq (char-before) ?:) (backward-char 1)
       ;; look-back until "case", "default", ":", "{", ";"
@@ -270,6 +284,14 @@ We try to constraint those lookups by reasonable number of lines.")
             (if (looking-back "\\(guard.*\\)" (line-beginning-position) t)
                 "elseguard"
               "else"))
+           ((equal tok "{")
+            (cond
+             ((not (swift-smie--redundant-do-p)) tok)
+             ((> (save-excursion (forward-word 1)
+                                 (forward-comment (point-max)) (point))
+                 (line-end-position))
+              (swift-smie--backward-token)) ;Fully redundant.
+             (t ";")))
            (t tok))))
      )))
 
@@ -715,8 +737,11 @@ You can send text to the REPL process from other buffers containing source.
     (modify-syntax-entry ?\) ")(" table)
     (modify-syntax-entry ?\[ "(]" table)
     (modify-syntax-entry ?\] ")[" table)
-    (modify-syntax-entry ?\{ "(}" table)
-    (modify-syntax-entry ?\} "){" table)
+    ;; FIXME: Enable electric-pair
+    ;; (modify-syntax-entry ?\{ "(}" table)
+    ;; (modify-syntax-entry ?\} "){" table)
+    (modify-syntax-entry ?\{ "w" table)
+    (modify-syntax-entry ?\} "w" table)
 
     table))
 
