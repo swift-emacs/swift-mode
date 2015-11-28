@@ -10,7 +10,7 @@ USER_ELPA_D  = $(USER_EMACS_D)/elpa
 
 SRCS         = $(filter-out %-pkg.el, $(wildcard *.el))
 TESTS        = $(filter-out %-pkg.el, $(wildcard test/*.el))
-TAR          = $(DIST)/swift-mode-$(VERSION).tar
+EL          = $(DIST)/swift-mode-$(VERSION).el
 
 .PHONY: all
 all : deps $(DIST)
@@ -30,7 +30,7 @@ check : deps
 .PHONY: install
 install : $(DIST) $(USER_ELPA_D)
 	$(EMACS) $(EMACSFLAGS) -l package \
-	-f package-initialize  --eval '(package-install-file "$(TAR)")'
+	-f package-initialize  --eval '(package-install-file "$(EL)")'
 
 .PHONY: uninstall
 uninstall :
