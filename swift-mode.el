@@ -693,6 +693,131 @@ We try to constraint those lookups by reasonable number of lines.")
                "warning: " (message) line-end))
      :modes swift-mode))
 
+;;; BUILDING
+
+(defun swift-mode-find-workspaces-for-directory(directory)
+  (mapcar #'string-trim
+          (split-string
+           (shell-command-to-string
+            (format "find %s -name '*workspace' -maxdepth 1" (substring directory 0 -1))))))
+
+(defun swift-mode-find-projects-for-directory(directory)
+  (mapcar #'string-trim
+          (split-string
+           (shell-command-to-string
+            (format "find %s -name '*xcodeproj' -maxdepth 1" (substring directory 0 -1))))))
+
+(defun swift-mode-find-schemes-for-workspace(workspace)
+  (mapcar #'string-trim
+          (cdr (cdr (split-string (shell-command-to-string
+                                   (format "xcodebuild -workspace %s -list" workspace)) "\n")))))
+
+(defvar swift-mode-platforms-list nil)
+
+(defun swift-mode-get-platform-list()
+  (setq swift-mode-platforms-list
+        (cdr (assoc 'devices
+                    (json-read-from-string
+                     (shell-command-to-string "xcrun simctl list devices -j"))))))
+
+(defun swift-mode-get-device-list(platform)
+  (let ((platforms (cdr (assoc-if #'(lambda(str) (string= platform str))
+                                  swift-mode-platforms-list))))
+    (mapcar (lambda (element)
+              (let ((device-list '()))
+                (let ((device (cdr element))
+                      (udid (cdr (car element))))
+                  (cons (concat (cdr (assoc 'name device)) (concat " - " udid)) device-list))))
+            (append platforms nil))))
+
+(defun swift-mode-select-destination-id()
+  (nth 3
+       (split-string
+        (completing-read "Select device:"
+                         (swift-mode-get-device-list
+                          (completing-read "Select platform:"
+                                           (swift-mode-get-platform-list) nil t)) nil t))))
+
+(defun swift-mode-select-sdk()
+  (completing-read "Select SDK:" '("iphoneos" "macosx" "appletvos" "watchos") nil t))
+
+(defun swift-mode-select-build-config()
+  (completing-read "Select build config:" '("Debug" "Release") nil t))
+
+(defun swift-mode-build-project()
+  "Builds the Xcode project using xcodebuild."
+  (interactive)
+  (swift-mode-compile (format "xcodebuild -project %s -sdk %s -configuration %s"
+                              (completing-read
+                               "Select project: "
+                               (if (not (swift-mode-find-projects-for-directory default-directory))
+                                   (swift-mode-find-projects-for-directory ;; try one directory up
+                                    (file-name-directory (directory-file-name default-directory)))) nil t)
+                              (swift-mode-select-sdk)
+                              (swift-mode-select-build-config))))
+
+(defun swift-mode-build-workspace()
+  "Builds the Xcode workspace using xcodebuild."
+  (interactive)
+  (progn
+    (let* ((workspace 
+            (completing-read
+             "Select workspace: "
+             (if (not (swift-mode-find-workspaces-for-directory default-directory))
+                 (swift-mode-find-workspaces-for-directory ;; try one directory up
+                  (file-name-directory (directory-file-name default-directory)))) nil t)))
+      (swift-mode-compile (format "xcodebuild -scheme %s -workspace %s -sdk %s -configuration %s"
+                                  (completing-read
+                                   "Select scheme: "
+                                   (swift-mode-find-schemes-for-workspace workspace) nil t)
+                                  workspace
+                                  (swift-mode-select-sdk)
+                                  (swift-mode-select-build-config))))))
+
+(defun swift-mode-test-workspace()
+  "Test the Xcode workspace using xcodebuild."
+  (interactive)
+  (progn
+    (let* ((workspace 
+            (completing-read
+             "Select workspace: "
+             (if (not (swift-mode-find-workspaces-for-directory default-directory))
+                 (swift-mode-find-workspaces-for-directory ;; try one directory up
+                  (file-name-directory (directory-file-name default-directory)))) nil t)))
+      (swift-mode-compile
+       (format "xcodebuild test -scheme %s -workspace %s -destination 'id=%s'"
+               (completing-read
+                "Select scheme: "
+                (swift-mode-find-schemes-for-workspace workspace) nil t)
+               workspace
+               (swift-mode-select-destination-id))))))
+
+(defun swift-mode-clean-workspace()
+  "Cleans the Xcode workspace using xcodebuild."
+  (interactive)
+  (progn
+    (let* ((workspace 
+            (completing-read
+             "Select workspace: "
+             (if (not (swift-mode-find-workspaces-for-directory default-directory))
+                 (swift-mode-find-workspaces-for-directory ;; try one directory up
+                  (file-name-directory (directory-file-name default-directory)))) nil t)))
+      (swift-mode-compile
+       (format "xcodebuild clean -scheme %s -workspace %s"
+               (completing-read
+                "Select scheme: "
+                (swift-mode-find-schemes-for-workspace workspace) nil t)
+               workspace)))))
+  
+(defun swift-mode-run-pod-install()
+  "Runs pod install."
+  (interactive)
+  (swift-mode-compile "pod install"))
+  
+(defun swift-mode-compile(command)
+  (setq compilation-scroll-output t)
+  (compile command))
+
 ;;; REPL
 
 (defvar swift-repl-buffer nil
@@ -784,12 +909,21 @@ You can send text to the REPL process from other buffers containing source.
 
 (defvar swift-mode-map
   (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-c C-k") 'swift-mode-clean-workspace)
+    (define-key map (kbd "C-c C-w") 'swift-mode-build-workspace)
+    (define-key map (kbd "C-c C-p") 'swift-mode-build-project)
     (define-key map (kbd "C-c C-z") 'swift-mode-run-repl)
     (define-key map (kbd "C-c C-f") 'swift-mode-send-buffer)
     (define-key map (kbd "C-c C-r") 'swift-mode-send-region)
     (easy-menu-define swift-menu map "Swift Mode menu"
       `("Swift"
         :help "Swift-specific Features"
+        ["Clean workspace" swift-mode-clean-workspace
+         :help "Clean workspace"]
+        ["Build workspace" swift-mode-build-workspace
+         :help "Build workspace"]
+        ["Build project" swift-mode-build-project
+         :help "Build project"]
         ["Run REPL" swift-mode-run-repl
          :help "Run Swift REPL"]
         ["Send buffer to REPL" swift-mode-send-buffer
