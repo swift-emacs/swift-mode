@@ -1,9 +1,11 @@
-[![License GPL 3][badge-license]][copying]
+# swift-mode
+
 [![Build Status][badge-travis]][travis]
+[![Coverage Status](https://coveralls.io/repos/chrisbarrett/swift-mode/badge.svg)](https://coveralls.io/r/chrisbarrett/swift-mode)
 [![MELPA](https://melpa.org/packages/swift-mode-badge.svg)](https://melpa.org/#/swift-mode)
 [![MELPA stable](https://stable.melpa.org/packages/swift-mode-badge.svg)](https://stable.melpa.org/#/swift-mode)
-
-# swift-mode
+[![Tag Version](https://img.shields.io/github/tag/chrisbarrett/swift-mode.svg)](https://github.com/chrisbarrett/swift-mode/tags)
+[![License GPL 3][badge-license]][copying]
 
 ## Summary
 
