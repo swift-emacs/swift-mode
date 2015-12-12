@@ -1,4 +1,4 @@
-;;; indentation-tests.el --- Test swift-mode indentation behaviour
+;;; indentation-test.el --- Test swift-mode indentation behaviour
 
 ;; Copyright (C) 2014 Chris Barrett
 
@@ -25,10 +25,6 @@
 ;; Test swift-mode indentation behaviour
 
 ;;; Code:
-
-(require 'ert)
-(require 'swift-mode)
-(require 's)
 
 ;;; Test utilities
 
@@ -2275,6 +2271,6 @@ guard let x = y else {
 }
 ")
 
-(provide 'indentation-tests)
+(provide 'indentation-test)
 
-;;; indentation-tests.el ends here
+;;; indentation-test.el ends here

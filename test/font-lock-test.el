@@ -1,4 +1,4 @@
-;;; font-lock-tests.el --- Tests for font-lock behaviours in swift-mode.  -*- lexical-binding: t; -*-
+;;; font-lock-test.el --- Tests for font-lock behaviours in swift-mode.  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2014 Chris Barrett
 
@@ -28,13 +28,6 @@
 ;; https://github.com/lunaryorn/puppet-mode/blob/master/test/puppet-mode-test.el
 
 ;;; Code:
-
-
-(require 'swift-mode)
-(require 'ert)
-(require 'cl-lib)
-(require 's nil t)
-(require 'dash nil t)
 
 ;;; Test utilities
 
@@ -207,6 +200,6 @@ test will fail."
 
 (check-face comments/nested-multiline-comments-has-comments-face/1 font-lock-comment-face "/*/* text */{{*/}}")
 
-(provide 'font-lock-tests)
+(provide 'font-lock-test)
 
-;;; font-lock-tests.el ends here
+;;; font-lock-test.el ends here
