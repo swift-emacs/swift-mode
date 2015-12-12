@@ -12,38 +12,28 @@ SRCS         = $(filter-out %-pkg.el, $(wildcard *.el))
 TESTS        = $(filter-out %-pkg.el, $(wildcard test/*.el))
 EL          = $(DIST)/swift-mode-$(VERSION).el
 
-.PHONY: all
+.PHONY: all test deps install uninstall clean-all clean
 all : deps $(DIST)
 
-.PHONY: deps
 deps : $(PKG_DIR)
 $(PKG_DIR) :
 	$(CASK) install
 
-.PHONY: check
-check : deps
-	$(CASK) exec $(EMACS) $(EMACSFLAGS)  \
-	$(patsubst %,-l % , $(SRCS))\
-	$(patsubst %,-l % , $(TESTS))\
-	-f ert-run-tests-batch-and-exit
+test:
+	$(CASK) exec ert-runner
 
-.PHONY: install
 install : $(DIST) $(USER_ELPA_D)
 	$(EMACS) $(EMACSFLAGS) -l package \
 	-f package-initialize  --eval '(package-install-file "$(EL)")'
 
-.PHONY: uninstall
 uninstall :
 	rm -rf $(USER_ELPA_D)/swift-mode-*
 
-.PHONY: reinstall
 reinstall : clean uninstall install
 
-.PHONY: clean-all
 clean-all : clean
 	rm -rf $(PKG_DIR)
 
-.PHONY: clean
 clean :
 	$(CASK) clean-elc
 	rm -f *.elc
