@@ -36,7 +36,8 @@
 (require 's nil t)
 (require 'dash nil t)
 
-
+(require 'undercover)
+(undercover "swift-mode.el")
 (require 'swift-mode)
 
 (provide 'test-helper)
