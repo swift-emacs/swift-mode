@@ -214,10 +214,10 @@ class Foo:
       ;; return foo +*! ← not inserts ";" here
       ;; return foo ? ← not inserts ";" here
       (and (looking-back "[][:alnum:]_)>][?!]" (- (point) 2) t)
-           (not (member (save-excursion
-                          (smie-default-backward-token)
-                          (smie-default-backward-token))
-                        '("as" "is"))))
+           (not (equal (save-excursion
+                         (smie-default-backward-token)
+                         (smie-default-backward-token))
+                       "as")))
 
       ;; otherwise, insert a implicit semicolon unless some conditions met.
       (not
@@ -311,7 +311,7 @@ class Foo:
               ))
            ((equal tok "=") "=")
            ((equal tok "as")
-            (when (eq (char-after) ??) ; "as?"
+            (when (member (char-after) '(?? ?!)) ; "as?" or "as!"
               (forward-char))
             "OP")
            ((equal tok "is") "OP")
@@ -362,6 +362,12 @@ class Foo:
             "TYPE:")
            ((equal tok ":")
             (if (swift-smie--is-type-colon) "TYPE:" ":"))
+           ((equal tok "!")
+            (let ((pos (point)))
+              (if (equal (smie-default-backward-token) "as") ; "as!"
+                  "OP"
+                (goto-char pos)
+                "OP")))
            ((equal tok "?")
             (let ((pos (point)))
               (if (equal (smie-default-backward-token) "as") ; "as?"
