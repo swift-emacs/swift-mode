@@ -168,7 +168,8 @@ class Foo:
              value)
     value))
 
-(defvar swift-smie--operators-regexp "\\`[-.!#$%&=^~\\|@+:*<>?]+\\'")
+(defvar swift-smie--operators-bare-regexp "[-.!#$%&=^~\\|@+:*<>?]+")
+(defvar swift-smie--operators-regexp (concat "\\`" swift-smie--operators-bare-regexp "\\'"))
 
 
 (defun swift-smie--implicit-semi-p ()
@@ -288,7 +289,10 @@ class Foo:
 
      (t (let
             ((pos-after-comment (point))
-             (tok (smie-default-forward-token)))
+             (tok (if (looking-at swift-smie--operators-bare-regexp)
+                      (progn (goto-char (match-end 0))
+                             (match-string-no-properties 0))
+                    (smie-default-forward-token))))
           (cond
            ((string-match-p ">+:" tok) ; e.g. class Foo<A: B<C>>:
             (goto-char pos-after-comment)
@@ -303,7 +307,7 @@ class Foo:
             ;; heuristic for conditional operator
             (if (memq (char-before (1- (point))) '(?\s ?\t ?\n))
                 "?" ; conditional operator
-              "ID" ; part of type name or chaining operator
+              "OP" ; part of type name or chaining operator
               ))
            ((equal tok "=") "=")
            ((equal tok "as")
@@ -338,7 +342,7 @@ class Foo:
       "<T")
 
      ;; optional type suffix after brackets.
-     ((looking-back "[[:alnum:]_][])>]*[!?]" (- (point) 32) nil)
+     ((looking-back "[[:alnum:]_][])>]+[!?]" (- (point) 32) nil)
       (backward-char 1)
       "OP")
 
@@ -366,7 +370,7 @@ class Foo:
                 ;; heuristic for conditional operator
                 (if (memq (char-before) '(?\s ?\t ?\n))
                     "?" ; conditional operator
-                  "ID" ; part of type name or chaining operator
+                  "OP" ; part of type name or chaining operator
                   ))))
            ((equal tok "=") "=")
            ((member tok '("is" "as")) "OP")
