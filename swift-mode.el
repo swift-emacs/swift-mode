@@ -253,7 +253,7 @@
   "Return t if a colon at the cursor is the colon for supertype declaration or type declaration of let or var."
   (save-excursion
     (or (equal (smie-default-backward-token) ">")
-        (member (smie-default-backward-token) '("class" "let" "var")))))
+        (member (smie-default-backward-token) '("class" "extension" "let" "var")))))
 
 (defun swift-smie--forward-token-debug ()
   (let ((token (swift-smie--forward-token)))
