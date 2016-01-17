@@ -99,6 +99,8 @@ class Foo:
       (var)
       (for)
       (if)
+      (do)
+      (where)
       (insts ";" insts)
       (insts "IMP;" insts))
      ;; expressions.
@@ -122,7 +124,7 @@ class Foo:
      ;; switch statement header.
      (switch (id "switch" expr))
      ;; case label.
-     (case (id "case" id ":" id))
+     (case (id "indirect" id "case" id ":" id))
      (default (id "default" id ":" id))
      ;; let
      (let (id "let" expr))
@@ -131,7 +133,11 @@ class Foo:
      ;; for statement.
      (for (id "for" expr ";" expr ";" expr) (id "for" expr "in" expr))
      ;; if statement.
-     (if (id "if" let) (id "if" expr))
+     (if (id "if" let "else" id) (id "if" expr "else" id))
+     ;; do statement.
+     (do (id "do" block "catch" expr))
+     ;; where clause
+     (where (expr "where" expr))
      ;; block.
      (block ("{" insts "}"))
      ;; types.
@@ -142,10 +148,12 @@ class Foo:
       ("[" dict-type-inner "]")
       (type "OP" type) ; -> or !
       (type "?" id)
-      ("(" types ")")
+      (tuple-type "throws" id)
+      (tuple-type "rethrows" id)
       ("<T" types "T>") ; generic type. this is almost identical to (id "<T" types "T>") except "<T" and "T>" are recognized as a parenthesis.
       )
-     (dict-type-inner (type ":" type)))
+     (dict-type-inner (type ":" type))
+     (tuple-type ("(" types ")")))
    '(;; explicit preceeding definitions for conflict resolution
      (assoc ";" "IMP;")
      (assoc ",")
@@ -220,11 +228,12 @@ class Foo:
       ;; return foo as! ← not inserts ";" here
       ;; return foo +*! ← not inserts ";" here
       ;; return foo ? ← not inserts ";" here
+      ;; try! ← not inserts ";" here
       (and (looking-back "[][:alnum:]_)>][?!]" (- (point) 2) t)
-           (not (equal (save-excursion
+           (not (member (save-excursion
                          (smie-default-backward-token)
                          (smie-default-backward-token))
-                       "as")))
+                        '("as" "try"))))
 
       ;; otherwise, insert a implicit semicolon unless some conditions met.
       (not
@@ -234,7 +243,7 @@ class Foo:
         ;; supresses implicit semicolon after keyword
         ;; Note that "as?" is already handled by preceeding conditions.
         (save-excursion
-          (member (smie-default-backward-token) '("as" "is" "class" "deinit" "enum" "extension" "func" "import" "init" "internal" "let" "operator" "private" "protocol" "public" "static" "struct" "subscript" "typealias" "var" "case" "for" "if" "return" "switch" "where" "while" "associativity" "convenience" "dynamic" "didSet" "final" "get" "infix" "inout" "lazy" "mutating" "nonmutating" "optional" "override" "postfix" "precedence" "prefix" "required" "set" "unowned" "weak" "willSet")))
+          (member (smie-default-backward-token) '("as" "is" "try" "class" "deinit" "enum" "extension" "func" "import" "init" "internal" "let" "operator" "private" "protocol" "public" "static" "struct" "subscript" "typealias" "var" "case" "for" "if" "return" "throw" "switch" "where" "while" "associativity" "convenience" "dynamic" "didSet" "final" "get" "infix" "inout" "lazy" "mutating" "nonmutating" "optional" "override" "postfix" "precedence" "prefix" "required" "set" "unowned" "weak" "willSet" "throws" "rethrows" "catch" "indirect")))
         ;; supresses implicit semicolon before operator
         (progn
           (forward-comment (point-max))
@@ -242,7 +251,7 @@ class Foo:
         ;; supresses implicit semicolon before keyword
         (save-excursion
           ;; note that comments are already skipped by previous condition
-          (member (smie-default-forward-token) '("as" "is")))))))))
+          (member (smie-default-forward-token) '("as" "is" "throws" "rethrows" "where")))))))))
 
 (defun swift-smie--is-type-colon ()
   "Return t if a colon at the cursor is the colon for supertype declaration or type declaration of let or var."
@@ -317,7 +326,7 @@ class Foo:
               "OP" ; part of type name or chaining operator
               ))
            ((equal tok "=") "=")
-           ((equal tok "as")
+           ((member tok '("as" "try"))
             (when (member (char-after) '(?? ?!)) ; "as?" or "as!"
               (forward-char))
             "OP")
@@ -371,13 +380,13 @@ class Foo:
             (if (swift-smie--is-type-colon) "TYPE:" ":"))
            ((equal tok "!")
             (let ((pos (point)))
-              (if (equal (smie-default-backward-token) "as") ; "as!"
+              (if (member (smie-default-backward-token) '("as" "try")) ; "as!"
                   "OP"
                 (goto-char pos)
                 "OP")))
            ((equal tok "?")
             (let ((pos (point)))
-              (if (equal (smie-default-backward-token) "as") ; "as?"
+              (if (member (smie-default-backward-token) '("as" "try")) ; "as?"
                   "OP"
                 (goto-char pos)
                 ;; heuristic for conditional operator
@@ -386,7 +395,7 @@ class Foo:
                   "OP" ; part of type name or chaining operator
                   ))))
            ((equal tok "=") "=")
-           ((member tok '("is" "as")) "OP")
+           ((member tok '("is" "as" "try")) "OP")
            ((equal tok "OP") "ID")
            ((string-match-p swift-smie--operators-regexp tok)
             "OP")
@@ -480,9 +489,9 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
       (if (smie-indent--bolp-1)
           swift-indent-multiline-statement-offset
         0)))
-    (`(:after . ,(or "OP" "?" "="))
+    (`(:after . ,(or "OP" "?" "=" "throws" "rethrows"))
      (swift-smie--rule-after-op))
-    (`(:before . ,(or "OP" "?" "="))
+    (`(:before . ,(or "OP" "?" "=" "throws" "rethrows"))
      (swift-smie--rule-before-op))
     (`(:after . "TYPE:")
      (swift-smie--rule-after-op nil swift-indent-supertype-offset))
@@ -593,7 +602,7 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
        (swift-smie--forward-token)
        (swift-smie--backward-token)
        (cons 'column (current-column))))
-    (`(:after . ,(or "class" "func" "enum" "switch" "case" "for" "if" "let" "var"))
+    (`(:after . ,(or "class" "func" "enum" "switch" "case" "for" "if" "let" "var" "catch" "where" "indirect"))
      ;; i.e.
      ;;
      ;; switch
@@ -620,6 +629,32 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
             swift-smie--statement-parent-tokens
             swift-indent-switch-case-offset)))
         (t nil))))
+    (`(:before . "where")
+     (save-excursion
+       (let* ((pos (point))
+              (parent (swift-smie--backward-sexps-until '("IMP;" ";" "{" "(" "[" "<T" "catch")))
+              (parent-pos (nth 1 parent))
+              (parent-token (nth 2 parent)))
+         (if (and (eq (point) pos) (smie-indent--bolp-1))
+             ;; {
+             ;;   where ...
+             ;; }
+             ;; This is not a valid Swift code. Handles gracefully.
+             nil
+           ;; do {
+           ;; } catch Foo
+           ;;     where
+           ;;
+           ;; rather than
+           ;;
+           ;; do {
+           ;; } catch Foo
+           ;;           where
+           (when (equal parent-token "catch")
+             (goto-char parent-pos))
+           (cons
+            'column
+            (+ swift-indent-multiline-statement-offset (current-column)))))))
     ))
 
 (defun swift-smie--rule-before-semicolon (implicit)
@@ -829,19 +864,28 @@ and returns nil"
 
 (defvar swift-mode--statement-keywords
   '("break" "case" "continue" "default" "do" "else" "fallthrough"
-    "if" "in" "for" "return" "switch" "where" "while" "guard"))
+    "if" "in" "for" "return" "throw" "switch" "catch" "where" "while" "guard"
+    "defer"))
 
 (defvar swift-mode--contextual-keywords
   '("associativity" "didSet" "get" "infix" "inout" "left" "mutating" "none"
     "nonmutating" "operator" "override" "postfix" "precedence" "prefix" "right"
-    "set" "unowned" "unowned(safe)" "unowned(unsafe)" "weak" "willSet" "convenience"
-    "required" "dynamic" "final" "lazy" "optional" "private" "public" "internal"))
+    "set" "unowned" "unowned(safe)" "unowned(unsafe)" "weak" "willSet"
+    "convenience" "required" "dynamic" "final" "lazy" "optional"
+    "private" "public" "internal" "indirect"))
+
+(defvar swift-mode--function-signature-keywords
+  '("throws" "rethrows"))
+
+(defvar swift-mode--operator-keywords
+  '("as" "is" "try"))
 
 (defvar swift-mode--attribute-keywords
   '("class_protocol" "exported" "noreturn"
     "NSCopying" "NSManaged" "objc" "autoclosure"
-    "available" "noescape" "nonobjc" "NSApplicationMain" "testable" "UIApplicationMain" "warn_unused_result" "convention"
-    "IBAction" "IBDesignable" "IBInspectable" "IBOutlet"))
+    "available" "noescape" "nonobjc" "NSApplicationMain" "testable"
+    "UIApplicationMain" "warn_unused_result" "convention" "IBAction"
+    "IBDesignable" "IBInspectable" "IBOutlet"))
 
 (defvar swift-mode--keywords
   (append swift-mode--type-decl-keywords
@@ -850,7 +894,9 @@ and returns nil"
           swift-mode--fn-decl-keywords
           swift-mode--misc-keywords
           swift-mode--statement-keywords
-          swift-mode--contextual-keywords)
+          swift-mode--contextual-keywords
+          swift-mode--function-signature-keywords
+          swift-mode--operator-keywords)
   "Keywords used in the Swift language.")
 
 (defvar swift-mode--constants

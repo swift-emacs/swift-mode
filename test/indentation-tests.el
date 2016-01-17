@@ -228,6 +228,33 @@ if foo {
 }
 ")
 
+(check-indentation indent-if-with-where/1
+  "
+if case foo = bar
+|where baz {
+    foo
+}
+" "
+if case foo = bar
+  |where baz {
+    foo
+}
+")
+
+(check-indentation indent-if-with-where/1
+  "
+if case foo = bar
+  where baz {
+|foo
+}
+" "
+if case foo = bar
+  where baz {
+    |foo
+}
+")
+
+
 (check-indentation indent-multiple-bindings-in-if-let
   "
 if let a = b,
@@ -529,7 +556,7 @@ case let .Foo(x) where x > 0:
 }
 ")
 
-(check-indentation indents-case-statements-with-guard
+(check-indentation indents-case-statements-with-guard/1
   "
 switch true {
 case foo where bar:
@@ -541,6 +568,76 @@ case foo where bar:
     |foo
 }
 ")
+
+(check-indentation indents-case-statements-with-guard/2
+  "
+switch true {
+case foo
+|where bar:
+    foo
+}
+" "
+switch true {
+case foo
+  |where bar:
+    foo
+}
+")
+
+(check-indentation indents-case-statements-with-guard/3
+  "
+switch true {
+case foo
+  where bar:
+|foo
+}
+" "
+switch true {
+case foo
+  where bar:
+    |foo
+}
+")
+
+(check-indentation indents-case-statements-with-guard/4
+  ;; should be like following?
+  ;; case foo
+  ;;   where
+  ;;   bar:
+  ;;     foo
+  "
+switch true {
+case foo
+  where
+|bar:
+    foo
+}
+" "
+switch true {
+case foo
+  where
+    |bar:
+    foo
+}
+")
+
+(check-indentation indents-case-statements-with-guard/5
+  "
+switch true {
+case foo
+  where
+    bar:
+|foo
+}
+" "
+switch true {
+case foo
+  where
+    bar:
+    |foo
+}
+")
+
 
 (check-indentation indents-case-statements-with-multiline-guard/1
   "
@@ -584,6 +681,26 @@ case foo where bar,
 }
 ")
 
+(check-indentation indents-case-statements-with-multiline-guard/3
+  "
+switch true {
+case foo
+  where
+    bar,
+     bar
+|where baz:
+    foo
+}
+" "
+switch true {
+case foo
+  where
+    bar,
+     bar
+  |where baz:
+    foo
+}
+")
 
 (check-indentation indents-case-statements-to-user-defined-offset/1
   "
@@ -643,6 +760,38 @@ enum Foo: Bar {
 }
 ")
 
+(check-indentation indents-case-statements-in-enum/4
+  "
+enum Foo: Bar {
+         |indirect case
+}
+" "
+enum Foo: Bar {
+    |indirect case
+}
+")
+
+(check-indentation indents-case-statements-in-enum/5
+  "
+indirect enum Foo: Bar {
+         |case
+}
+" "
+indirect enum Foo: Bar {
+    |case
+}
+")
+
+(check-indentation indents-indirect-enum/1
+  "
+indirect enum Foo: Bar {
+  |}
+" "
+indirect enum Foo: Bar {
+|}
+")
+
+
 (check-indentation indents-declaration-statements-in-enum/1
                    "
 enum Foo: Bar {
@@ -654,6 +803,21 @@ enum Foo: Bar {
 enum Foo: Bar {
     case foo
     case bar
+    |var foo
+}
+")
+
+(check-indentation indents-declaration-statements-in-enum/2
+                   "
+enum Foo: Bar {
+    case foo
+    indirect case bar
+         |var foo
+}
+" "
+enum Foo: Bar {
+    case foo
+    indirect case bar
     |var foo
 }
 ")
@@ -691,6 +855,33 @@ for var index = 0; index < 3; ++index  {
 }
 ")
 
+(check-indentation indents-for-statements-with-where/1
+  "
+for case foo in bar
+|where baz {
+    foo
+}
+" "
+for case foo in bar
+  |where baz {
+    foo
+}
+")
+
+(check-indentation indents-for-statements-with-where/2
+  "
+for case foo in bar
+  where baz {
+|foo
+}
+" "
+for case foo in bar
+  where baz {
+    |foo
+}
+")
+
+
 (check-indentation indents-while-statements
   "
 while foo < bar{
@@ -701,6 +892,33 @@ while foo < bar{
     |foo
 }
 ")
+
+(check-indentation indents-while-statements-with-where/1
+  "
+while case foo = bar
+|where baz {
+    foo
+}
+" "
+while case foo = bar
+  |where baz {
+    foo
+}
+")
+
+(check-indentation indents-while-statements-with-where/2
+  "
+while case foo = bar
+  where baz {
+|foo
+}
+" "
+while case foo = bar
+  where baz {
+    |foo
+}
+")
+
 
 (check-indentation indents-import-statements/1
   "
@@ -1042,6 +1260,33 @@ class Foo: Bar {
         |foo
     }
 }
+")
+
+(check-indentation indents-func-declaration-with-throws/1
+                   "
+func foo() throws ->
+|String
+" "
+func foo() throws ->
+  |String
+")
+
+(check-indentation indents-func-declaration-with-throws/2
+                   "
+func foo() throws
+|-> String
+" "
+func foo() throws
+  |-> String
+")
+
+(check-indentation indents-func-declaration-with-throws/3
+                   "
+func foo()
+|throws -> String
+" "
+func foo()
+  |throws -> String
 ")
 
 (check-indentation indents-protocol-declaration/1
@@ -2294,6 +2539,127 @@ guard let x = y else {
     |return
 }
 ")
+
+(check-indentation indents-do-statement/1
+                   "
+do {
+|foo
+} catch Foo {
+} catch Bar
+    where
+      b {
+}
+" "
+do {
+    |foo
+} catch Foo {
+} catch Bar
+    where
+      b {
+}
+")
+
+(check-indentation indents-do-statement/2
+                   "
+do {
+} catch Foo {
+|foo
+} catch Bar
+    where
+      b {
+}
+" "
+do {
+} catch Foo {
+    |foo
+} catch Bar
+    where
+      b {
+}
+")
+
+(check-indentation indents-do-statement/3
+                   "
+do {
+} catch Foo {
+} catch Bar
+|where
+      b {
+}
+" "
+do {
+} catch Foo {
+} catch Bar
+    |where
+      b {
+}
+")
+
+(check-indentation indents-do-statement/4
+                   "
+do {
+} catch Foo {
+} catch Bar
+    where
+|b {
+}
+" "
+do {
+} catch Foo {
+} catch Bar
+    where
+      |b {
+}
+")
+
+(check-indentation indents-do-statement/5
+                   "
+do {
+} catch Foo {
+} catch Bar
+    where
+      b {
+|foo
+}
+" "
+do {
+} catch Foo {
+} catch Bar
+    where
+      b {
+    |foo
+}
+")
+
+(check-indentation indents-try-expression/1
+                   "
+try
+|foo
+" "
+try
+  |foo
+")
+
+(check-indentation indents-try-expression/2
+                   "
+try?
+|foo
+" "
+try?
+  |foo
+")
+
+
+(check-indentation indents-try-expression/3
+                   "
+try!
+|foo
+" "
+try!
+  |foo
+")
+
+
 
 (provide 'indentation-tests)
 
