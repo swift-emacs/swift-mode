@@ -95,7 +95,10 @@ class Foo:
       (switch)
       (case)
       (default)
+      (let)
+      (var)
       (for)
+      (if)
       (insts ";" insts)
       (insts "IMP;" insts))
      ;; expressions.
@@ -121,8 +124,14 @@ class Foo:
      ;; case label.
      (case (id "case" id ":" id))
      (default (id "default" id ":" id))
+     ;; let
+     (let (id "let" expr))
+     ;; var
+     (var (id "var" expr))
      ;; for statement.
      (for (id "for" expr ";" expr ";" expr) (id "for" expr "in" expr))
+     ;; if statement.
+     (if (id "if" let) (id "if" expr))
      ;; block.
      (block ("{" insts "}"))
      ;; types.
@@ -155,8 +164,6 @@ class Foo:
 (defconst swift-smie-grammar (smie-prec2->grammar swift-smie-prec2))
 
 ;; (insert (prin1-to-string swift-smie-grammar))
-
-
 
 (defun verbose-swift-smie-rules (kind token)
   (let ((value (swift-smie-rules kind token)))
@@ -539,7 +546,7 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
                    ;; case bar,
                    ;; buz:
                    (append (remove "," swift-smie--expression-parent-tokens)
-                           '("TYPE:" "case"))
+                           '("TYPE:" "case" "let" "var"))
                    '(","))))
        (cons
         'column
@@ -586,7 +593,7 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
        (swift-smie--forward-token)
        (swift-smie--backward-token)
        (cons 'column (current-column))))
-    (`(:after . ,(or "class" "func" "enum" "switch" "case" "for"))
+    (`(:after . ,(or "class" "func" "enum" "switch" "case" "for" "if" "let" "var"))
      ;; i.e.
      ;;
      ;; switch

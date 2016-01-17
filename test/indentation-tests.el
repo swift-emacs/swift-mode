@@ -228,6 +228,17 @@ if foo {
 }
 ")
 
+(check-indentation indent-multiple-bindings-in-if-let
+  "
+if let a = b,
+|b = b {
+}
+" "
+if let a = b,
+       |b = b {
+}
+")
+
 (check-indentation indents-case-statements-to-same-level-as-enclosing-switch/1
   "
 switch true {
@@ -1243,6 +1254,15 @@ let foo = [
         bar: baz
     |]
 ]
+")
+
+(check-indentation indents-declaration/16
+                   "
+let foo = 1,
+|bar = 2
+" "
+let foo = 1,
+    |bar = 2
 ")
 
 (check-indentation indents-expressions/1
