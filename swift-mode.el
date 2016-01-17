@@ -1226,7 +1226,10 @@ You can send text to the REPL process from other buffers containing source.
 
   (setq-local comment-start "// ")
   (setq-local comment-end "")
-  (setq-local comment-start-skip "\\(//+\\|/\\*+\\)\\s *")
+  ;; ":" is for Playground Rich Comments Markup Syntax:
+  ;; https://developer.apple.com/library/prerelease/ios/documentation/Xcode/Reference/xcode_markup_formatting_ref/PlaygroundRichComments.html
+  (setq-local comment-start-skip "\\(//+:?\\|/\\*+:?\\)\\s *")
+  (setq-local adaptive-fill-regexp comment-start-skip)
   (setq-local indent-tabs-mode nil)
   (setq-local electric-indent-chars
               (append '(?. ?, ?: ?\) ?\] ?\}) electric-indent-chars))
