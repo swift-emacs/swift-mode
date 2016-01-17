@@ -2659,6 +2659,75 @@ try!
   |foo
 ")
 
+(check-indentation indents-conditional-compilation/1
+                   "
+{
+    #if a
+|a
+    #elseif a
+    a
+    #else
+    a
+    #endif
+}
+" "
+{
+    #if a
+    |a
+    #elseif a
+    a
+    #else
+    a
+    #endif
+}
+")
+
+(check-indentation indents-conditional-compilation/2
+                   "
+{
+    #if a
+    a
+|#elseif a
+    a
+    #else
+    a
+    #endif
+}
+" "
+{
+    #if a
+    a
+    |#elseif a
+    a
+    #else
+    a
+    #endif
+}
+")
+
+(check-indentation indents-conditional-compilation/3
+                   "
+{
+    #if a
+    a
+    #elseif a
+|a
+    #else
+    a
+    #endif
+}
+" "
+{
+    #if a
+    a
+    #elseif a
+    |a
+    #else
+    a
+    #endif
+}
+")
+
 
 
 (provide 'indentation-tests)

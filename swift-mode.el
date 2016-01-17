@@ -247,7 +247,7 @@ class Foo:
         ;; supresses implicit semicolon before operator
         (progn
           (forward-comment (point-max))
-          (looking-at "[-.,!#$%&=^~\\|+:*<>?]"))
+          (looking-at "[-.,!$%&=^~\\|+:*<>?]"))
         ;; supresses implicit semicolon before keyword
         (save-excursion
           ;; note that comments are already skipped by previous condition
