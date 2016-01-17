@@ -887,6 +887,9 @@ and returns nil"
     "UIApplicationMain" "warn_unused_result" "convention" "IBAction"
     "IBDesignable" "IBInspectable" "IBOutlet"))
 
+(defvar swift-mode--compiler-control-statement-keywords
+  '("available" "if" "else" "elseif" "endif" "line"))
+
 (defvar swift-mode--keywords
   (append swift-mode--type-decl-keywords
           swift-mode--val-decl-keywords
@@ -923,6 +926,14 @@ and returns nil"
        `(and "@" bow (or ,@swift-mode--attribute-keywords) eow)
        t)
      0 font-lock-keyword-face)
+
+    ;; Compiler Control Statements
+    ;;
+    ;; Highlight compiler control statements with keyword face
+    (,(rx-to-string
+       `(and "#" bow (or ,@swift-mode--compiler-control-statement-keywords) eow)
+       t)
+     0 font-lock-keyword-face t)
 
     ;; Types
     ;;
