@@ -2540,6 +2540,18 @@ guard let x = y else {
 }
 ")
 
+(check-indentation indent-multiple-bindings-in-guard-let
+  "
+guard let a = b,
+|b = b {
+}
+" "
+guard let a = b,
+          |b = b {
+}
+")
+
+
 (check-indentation indents-do-statement/1
                    "
 do {

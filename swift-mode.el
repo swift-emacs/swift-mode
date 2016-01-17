@@ -99,6 +99,7 @@ class Foo:
       (var)
       (for)
       (if)
+      (guard)
       (do)
       (where)
       (insts ";" insts)
@@ -134,6 +135,8 @@ class Foo:
      (for (id "for" expr ";" expr ";" expr) (id "for" expr "in" expr))
      ;; if statement.
      (if (id "if" let "else" id) (id "if" expr "else" id))
+     ;; guard statement.
+     (guard (id "guard" let "else" id) (id "guard" expr "else" id))
      ;; do statement.
      (do (id "do" block "catch" expr))
      ;; where clause
@@ -243,7 +246,7 @@ class Foo:
         ;; supresses implicit semicolon after keyword
         ;; Note that "as?" is already handled by preceeding conditions.
         (save-excursion
-          (member (smie-default-backward-token) '("as" "is" "try" "class" "deinit" "enum" "extension" "func" "import" "init" "internal" "let" "operator" "private" "protocol" "public" "static" "struct" "subscript" "typealias" "var" "case" "for" "if" "return" "throw" "switch" "where" "while" "associativity" "convenience" "dynamic" "didSet" "final" "get" "infix" "inout" "lazy" "mutating" "nonmutating" "optional" "override" "postfix" "precedence" "prefix" "required" "set" "unowned" "weak" "willSet" "throws" "rethrows" "catch" "indirect")))
+          (member (smie-default-backward-token) '("as" "is" "try" "class" "deinit" "enum" "extension" "func" "import" "init" "internal" "let" "operator" "private" "protocol" "public" "static" "struct" "subscript" "typealias" "var" "case" "for" "if" "return" "throw" "switch" "where" "while" "associativity" "convenience" "dynamic" "didSet" "final" "get" "infix" "inout" "lazy" "mutating" "nonmutating" "optional" "override" "postfix" "precedence" "prefix" "required" "set" "unowned" "weak" "willSet" "throws" "rethrows" "catch" "indirect" "guard")))
         ;; supresses implicit semicolon before operator
         (progn
           (forward-comment (point-max))
@@ -602,7 +605,7 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
        (swift-smie--forward-token)
        (swift-smie--backward-token)
        (cons 'column (current-column))))
-    (`(:after . ,(or "class" "func" "enum" "switch" "case" "for" "if" "let" "var" "catch" "where" "indirect"))
+    (`(:after . ,(or "class" "func" "enum" "switch" "case" "for" "if" "let" "var" "catch" "where" "indirect" "guard"))
      ;; i.e.
      ;;
      ;; switch
