@@ -44,16 +44,6 @@
   :group 'swift
   :type 'integer)
 
-(defcustom swift-indent-supertype-offset 4
-  "Defines the indentation offset for supertypes.
-
-example:
-class Foo:
-    Bar ← offset for this line"
-  :group 'swift
-  :type 'integer
-  :package-version '(swift-mode "0.4.0"))
-
 (defcustom swift-indent-switch-case-offset 0
   "Defines the indentation offset for cases in a switch statement."
   :group 'swift
@@ -500,9 +490,9 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
     (`(:before . ,(or "OP" "?" "=" "throws" "rethrows"))
      (swift-smie--rule-before-op))
     (`(:after . "TYPE:")
-     (swift-smie--rule-after-op nil swift-indent-supertype-offset))
+     (swift-smie--rule-after-op nil swift-indent-multiline-statement-offset))
     (`(:before . "TYPE:")
-     (swift-smie--rule-before-op nil swift-indent-supertype-offset))
+     (swift-smie--rule-before-op nil swift-indent-multiline-statement-offset))
 
     (`(:after . ":")
      ;; If this is a ":" token of case or default clause, indent with standard
@@ -565,7 +555,7 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
                    '(","))))
        (cons
         'column
-        (if (equal (nth 2 parent) "TYPE:")
+        (if (and swift-indent-hanging-comma-offset (member (nth 2 parent) '("TYPE:" "case")))
             ;; class Foo: Bar,
             ;;     Buz
             ;;
@@ -573,12 +563,9 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
             ;;
             ;; class Foo: Bar,
             ;;            Buz
-            ;;
-            ;; If you prefer latter indentation, replace this if-expression
-            ;; with a (current-column).
             (progn
               (goto-char (nth 1 parent))
-              (+ (smie-indent-virtual) swift-indent-supertype-offset))
+              (+ (smie-indent-virtual) swift-indent-hanging-comma-offset))
           (current-column)))))
 
     (`(:before . "IMP;")
