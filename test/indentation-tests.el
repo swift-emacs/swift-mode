@@ -2740,6 +2740,29 @@ try!
 }
 ")
 
+(check-indentation indents-repeat-while/1
+                   "
+repeat {
+|a
+} while a
+" "
+repeat {
+    |a
+} while a
+")
+
+(check-indentation indents-repeat-while/2
+                   "
+repeat {
+    a
+} while
+|a
+" "
+repeat {
+    a
+} while
+    |a
+")
 
 
 (provide 'indentation-tests)

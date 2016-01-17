@@ -100,6 +100,7 @@ class Foo:
       (for)
       (if)
       (guard)
+      (while)
       (do)
       (where)
       (insts ";" insts)
@@ -137,6 +138,8 @@ class Foo:
      (if (id "if" let "else" id) (id "if" expr "else" id))
      ;; guard statement.
      (guard (id "guard" let "else" id) (id "guard" expr "else" id))
+     ;; while statement.
+     (while (id "while" expr))
      ;; do statement.
      (do (id "do" block "catch" expr))
      ;; where clause
@@ -605,7 +608,7 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
        (swift-smie--forward-token)
        (swift-smie--backward-token)
        (cons 'column (current-column))))
-    (`(:after . ,(or "class" "func" "enum" "switch" "case" "for" "if" "let" "var" "catch" "where" "indirect" "guard"))
+    (`(:after . ,(or "class" "func" "enum" "switch" "case" "for" "if" "while" "let" "var" "catch" "where" "indirect" "guard"))
      ;; i.e.
      ;;
      ;; switch
@@ -658,6 +661,11 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
            (cons
             'column
             (+ swift-indent-multiline-statement-offset (current-column)))))))
+    (`(:before . "while")
+     (when (and (not (smie-indent--bolp-1))
+                (equal (save-excursion (swift-smie--backward-token)) "}"))
+       ;; repeat { ... } while
+       (cons 'column (current-column))))
     ))
 
 (defun swift-smie--rule-before-semicolon (implicit)
@@ -868,7 +876,7 @@ and returns nil"
 (defvar swift-mode--statement-keywords
   '("break" "case" "continue" "default" "do" "else" "fallthrough"
     "if" "in" "for" "return" "throw" "switch" "catch" "where" "while" "guard"
-    "defer"))
+    "defer" "repeat"))
 
 (defvar swift-mode--contextual-keywords
   '("associativity" "didSet" "get" "infix" "inout" "left" "mutating" "none"
