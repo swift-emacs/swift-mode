@@ -855,6 +855,33 @@ for var index = 0; index < 3; ++index  {
 }
 ")
 
+(check-indentation indents-for-statements/4
+  "
+for x in
+|xs {
+}
+" "
+for x in
+    |xs {
+}
+")
+
+(check-indentation indents-for-statements/5
+  "
+for
+|a;
+  b;
+  c {
+}
+" "
+for
+  |a;
+  b;
+  c {
+}
+")
+
+
 (check-indentation indents-for-statements-with-where/1
   "
 for case foo in bar
@@ -1262,6 +1289,68 @@ class Foo: Bar {
 }
 ")
 
+(check-indentation indents-func-declaration/13
+                   "
+protocol Foo {
+    func foo() ->
+|String
+}
+" "
+protocol Foo {
+    func foo() ->
+      |String
+}
+")
+
+(check-indentation indents-func-declaration/14
+                   "
+func foo() -> Foo<(A, B),
+|[C]>
+" "
+func foo() -> Foo<(A, B),
+                  |[C]>
+")
+
+(check-indentation indents-func-declaration/15
+                   "
+func a(a: a,
+       a: a
+       |= 1) {
+}
+" "
+func a(a: a,
+       a: a
+          |= 1) {
+}
+")
+
+(check-indentation indents-func-declaration/16
+                   "
+func foo(x:
+|Int,
+         y:
+           Int)
+" "
+func foo(x:
+           |Int,
+         y:
+           Int)
+")
+
+(check-indentation indents-func-declaration/17
+                   "
+func foo(x:
+           Int,
+         y:
+           |Int)
+" "
+func foo(x:
+           Int,
+         y:
+           |Int)
+")
+
+
 (check-indentation indents-func-declaration-with-throws/1
                    "
 func foo() throws ->
@@ -1508,6 +1597,41 @@ let foo = 1,
 " "
 let foo = 1,
     |bar = 2
+")
+
+(check-indentation indents-declaration/17
+                   "
+let f: Int
+|throws -> Int
+" "
+let f: Int
+  |throws -> Int
+")
+
+(check-indentation indents-declaration/18
+                   "
+let foo = [
+    foo:
+      bar,
+    foo:
+|bar
+]
+" "
+let foo = [
+    foo:
+      bar,
+    foo:
+      |bar
+]
+")
+
+(check-indentation indents-declaration/19
+                   "
+let foo
+|= 1
+" "
+let foo
+  |= 1
 ")
 
 (check-indentation indents-expressions/1
@@ -2762,6 +2886,46 @@ repeat {
     a
 } while
     |a
+")
+
+(check-indentation indents-continued-expression-after-keyword/1
+                   "
+func foo() {
+    return
+|1
+}
+" "
+func foo() {
+    return
+      |1
+}
+")
+
+(check-indentation indents-continued-expression-after-keyword/2
+                   "
+while
+|1
+" "
+while
+  |1
+")
+
+(check-indentation indents-continued-expression-after-keyword/3
+                   "
+switch
+|1
+" "
+switch
+  |1
+")
+
+(check-indentation indents-continued-expression-after-keyword/4
+                   "
+guard
+|1
+" "
+guard
+  |1
 ")
 
 
