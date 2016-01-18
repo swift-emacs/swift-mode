@@ -1094,6 +1094,7 @@ and returns nil"
    (list "Enums"     (swift-mode--mk-regex-for-def "enum") 1)
    (list "Protocols" (swift-mode--mk-regex-for-def "protocol") 1)
    (list "Structs"   (swift-mode--mk-regex-for-def "struct") 1)
+   (list "Extensions"   (swift-mode--mk-regex-for-def "extension") 1)
    (list "Constants" (swift-mode--mk-regex-for-def "let") 1)
    (list "Variables" (swift-mode--mk-regex-for-def "var") 1))
   "Value for `imenu-generic-expression' in swift-mode.")
