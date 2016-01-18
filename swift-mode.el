@@ -282,11 +282,29 @@ let x = someFunction(
 (defun swift-smie--is-type-colon ()
   "Return t if a colon at the cursor is the colon for supertype declaration or type declaration of let or var."
   (save-excursion
-    (or (looking-back "[[:alnum:]_][])>]*> *" (- (point) 32) nil) ;; Foo<[(a, b)]>:
-
+    ;; class Foo<T>: Bar ← type colon
+    ;; class Foo<T> : Bar ← type colon
+    ;; class Foo<T where T: Bar<[(Int, String)]>> : Bar ← type colon
+    ;; case Foo: ← not a type colon
+    ;; case Foo where foo: ← not a type colon
+    ;; default: ← not a type colon
+    ;; foo ? bar : baz ← not a type colon
+    ;; [
+    ;;   foo: ← not a type colon
+    ;;     bar
+    ;; ]
+    ;; foo(bar, baz: baz) ← not a type colon
+    (or (looking-back "[[:alnum:]_][])>]*> *" (- (point) 32) nil)
+        ;; class Foo: ← type colon
+        ;; extension Foo: ← type colon
+        ;; let foo: ← type colon
+        ;; var foo: ← type colon
+        ;; protocol Foo {
+        ;;   typealias Bar: Baz ← type colon
+        ;; }
         (progn
           (smie-default-backward-token)
-          (member (smie-default-backward-token) '("class" "extension" "let" "var"))))))
+          (member (smie-default-backward-token) '("class" "extension" "enum" "struct" "protocol" "typealias" "let" "var"))))))
 
 (defun swift-smie--forward-token-debug ()
   (let ((token (swift-smie--forward-token)))
