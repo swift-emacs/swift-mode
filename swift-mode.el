@@ -62,6 +62,33 @@
                  (integer :tag "Custom offset"))
   :package-version '(swift-mode "0.4.0"))
 
+(defcustom swift-indent-compact-parenthesis nil
+  "Non-nil means saves spaces for parenthesized expressions:
+
+let x = someFunction(
+    a,
+    bbb: b
+    ccc: c
+)
+
+instead of:
+
+let x = someFunction(
+            a,
+            bbb: b
+            ccc: c
+        )"
+  :type 'boolean
+  :group 'swift
+  :package-version '(swift-mode "0.5.0"))
+
+(defcustom swift-indent-parenthesized-expression-offset swift-indent-offset
+  "Defines the indentation offset for parenthesized expressions and array elements."
+  :type 'integer
+  :group 'swift
+  :package-version '(swift-mode "0.5.0"))
+
+
 (defcustom swift-repl-executable
   "xcrun swift"
   "Path to the Swift CLI."
@@ -71,177 +98,213 @@
 
 (require 'smie)
 
-(defconst swift-smie-grammar
-  (smie-prec2->grammar
-   (smie-merge-prec2s
-    (smie-bnf->prec2
-     '((id)
-       (type (type) (type "<T" types "T>") ("[" type "]"))
-       (types (type) (type "," type))
+(defconst swift-smie-prec2
+  (smie-bnf->prec2
+   '(;; identifiers and other insignificant tokens.
+     ;; SMIE automatically skips tokens not mentioned in the syntax.
+     (id)
+     ;; instructions or something that may appers in blocks.
+     (insts
+      (exprs)
+      (func)
+      (class)
+      (enum)
+      (switch)
+      (case)
+      (default)
+      (let)
+      (var)
+      (for)
+      (if)
+      (guard)
+      (while)
+      (do)
+      (where)
+      (insts ";" insts)
+      (insts "IMP;" insts))
+     ;; expressions.
+     (exprs (expr) (exprs "," exprs))
+     (expr
+      (id)
+      (expr "OP" expr)
+      (expr "=" expr)
+      (expr "?" expr ":" expr)
+      ("[" exprs "]"))
+     ;; function declaration.
+     (func (func-modifiers "func" params))
+     (func-modifiers (id) ("class"))
+     ;; function parameters.
+     (params ("(" exprs ")"))
+     ;; class declaration.
+     (class (class-modifiers "class" id) (id "class" id "TYPE:" types))
+     ;; enum declaration.
+     (enum (class-modifiers "enum" id) (id "enum" id "TYPE:" types))
+     (class-modifiers (id))
+     ;; switch statement header.
+     (switch (id "switch" expr))
+     ;; case label.
+     (case (id "indirect" id "case" id ":" id))
+     (default (id "default" id ":" id))
+     ;; let
+     (let (id "let" expr))
+     ;; var
+     (var (id "var" expr))
+     ;; for statement.
+     (for (id "for" expr ";" expr ";" expr) (id "for" expr "in" expr))
+     ;; if statement.
+     (if (id "if" let "else" id) (id "if" expr "else" id))
+     ;; guard statement.
+     (guard (id "guard" let "else" id) (id "guard" expr "else" id))
+     ;; while statement.
+     (while (id "while" expr))
+     ;; do statement.
+     (do (id "do" block "catch" expr))
+     ;; where clause
+     (where (expr "where" expr))
+     ;; block.
+     (block ("{" insts "}"))
+     ;; types.
+     (types (type) (types "," types))
+     (type
+      (id)
+      (id "." type)
+      ("[" dict-type-inner "]")
+      (type "OP" type) ; -> or !
+      (type "?" id)
+      (tuple-type "throws" id)
+      (tuple-type "rethrows" id)
+      ("<T" types "T>") ; generic type. this is almost identical to (id "<T" types "T>") except "<T" and "T>" are recognized as a parenthesis.
+      )
+     (dict-type-inner (type ":" type))
+     (tuple-type ("(" types ")")))
+   '(;; explicit preceeding definitions for conflict resolution
+     (assoc ";" "IMP;")
+     (assoc ",")
+     (right "=")
 
-       (class-decl-exp (id) (id ":" types))
-       (decl-exp (id) (id ":" type))
-       (decl-exps (decl-exp) (decl-exp "," decl-exp))
+     ;; i.e. a ? a ? a : a ? a : a : a == a ? (a ? a : (a ? a : a)) : a
+     (left ":")
+     (right "?")
+     (assoc "OP")
+     (left ".")
+     )
+   ))
 
-       (assign-exp (decl-exp) (id "=" exp))
+;; (insert (prin1-to-string swift-smie-prec2))
 
-       (decl (decl ";" decl))
-       (decl (let-decl) (var-decl))
-       (let-decl
-        ("let" decl-exp)
-        ("let" decl-exp "=" exp))
-       (var-decl
-        ("var" decl-exp)
-        ("var" decl-exp "=" exp))
+(defconst swift-smie-grammar (smie-prec2->grammar swift-smie-prec2))
 
-       (top-level-sts (top-level-st) (top-level-st ";" top-level-st))
-       (top-level-st
-        ("import" type)
-        (decl)
-        ("ACCESSMOD" "class" class-decl-exp "{" class-level-sts "}")
-        ("ACCESSMOD" "protocol" class-decl-exp "{" protocol-level-sts "}")
-        )
-
-       (class-level-sts (class-level-st) (class-level-st ";" class-level-st))
-       (class-level-st
-        (decl)
-        (func))
-
-       (protocol-level-sts (protocol-level-st) (protocol-level-st ";" protocol-level-st))
-       (protocol-level-st
-        (decl)
-        (func-decl))
-
-       (func-body (insts) ("return" exp))
-       (func (func-decl "{" func-body "}"))
-       (func-decl ("DECSPEC" "func" func-header)
-                  (func-decl "->" type))
-       (func-header (id "(" func-params ")"))
-       (func-param (decl-exp) (decl-exp "=" id) ("..."))
-       (func-params (func-param "," func-param))
-
-       (insts (inst) (insts ";" insts))
-       (inst (decl)
-             (exp "=" exp)
-             (in-exp)
-             (dot-exp)
-             (dot-exp "{" closure "}")
-             (method-call)
-             (method-call "{" closure "}")
-             ("enum" decl-exp "{" enum-body "}")
-             ("switch" exp "{" switch-body "}")
-             (if-clause)
-             (guard-statement)
-             ("for" for-head "{" insts "}")
-             ("while" exp "{" insts "}"))
-
-       (dot-exp (id "." id))
-
-       (method-call (dot-exp "(" method-args ")"))
-       (method-args (method-arg) (method-args "," method-args))
-       (method-arg (id "{" closure "}") (exp))
-
-       (exp ("[" decl-exps "]"))
-       (in-exp (id "in" exp))
-       (guard-exp (exp "where" exp))
-
-       (enum-case ("ecase" assign-exp)
-                  ("ecase" "(" type ")"))
-       (enum-cases (enum-case) (enum-case ";" enum-case))
-       (enum-body (enum-cases) (insts))
-
-       (case-exps (exp)
-                  (guard-exp)
-                  (case-exps "," case-exps))
-       (case (case-exps "case-:" insts))
-       (switch-body (case) (case "case" case))
-
-       (for-head (in-exp) (op-exp) (for-head ";" for-head))
-
-       (guard-conditional (exp) (let-decl) (var-decl))
-       (guard-statement ("guard" guard-conditional "elseguard" "{" insts "}"))
-
-       (if-conditional (exp) (let-decl))
-       (if-body ("if" if-conditional "{" insts "}"))
-       (if-clause (if-body)
-                  (if-body "elseif" if-conditional "{" insts "}")
-                  (if-body "else" "{" insts "}"))
-
-       (closure (insts) (exp "in" insts) (exp "->" id "in" insts)))
-     ;; Conflicts
-     '((nonassoc "{") (assoc "in") (assoc ",") (assoc ";") (right "=") (right ":"))
-     '((assoc "in") (assoc "where"))
-     '((assoc ";") (assoc "ecase"))
-     '((assoc "case")))
-
-    (smie-precs->prec2
-     '(
-       (right "*=" "/=" "%=" "+=" "-=" "<<=" ">>=" "&="
-              "^=" "|=" "&&=" "||=" "=")                       ;; Assignment (Right associative, precedence level 90)
-       (right "?" ":")                                         ;; Ternary Conditional (Right associative, precedence level 100)
-       (left "||")                                             ;; Disjunctive (Left associative, precedence level 110)
-       (left "&&")                                             ;; Conjunctive (Left associative, precedence level 120)
-       (right "??")                                            ;; Nil Coalescing (Right associativity, precedence level 120)
-       (nonassoc "<" "<=" ">" ">=" "==" "!=" "===" "!==" "~=") ;; Comparative (No associativity, precedence level 130)
-       (nonassoc "is" "as" "as!" "as?")                        ;; Cast (No associativity, precedence level 132)
-       (nonassoc "..<" "...")                                  ;; Range (No associativity, precedence level 135)
-       (left "+" "-" "&+" "&-" "|" "^")                        ;; Additive (Left associative, precedence level 140)
-       (left "*" "/" "%" "&*" "&/" "&%" "&")                   ;; Multiplicative (Left associative, precedence level 150)
-       (nonassoc "<<" ">>")                                    ;; Exponentiative (No associativity, precedence level 160)
-       ))
-    )))
+;; (insert (prin1-to-string swift-smie-grammar))
 
 (defun verbose-swift-smie-rules (kind token)
   (let ((value (swift-smie-rules kind token)))
-    (message "%s '%s'; sibling-p:%s parent:%s hanging:%s == %s" kind token
+    (message "%s '%s'; sibling-p:%s parent:%s hanging:%s point: %s == %s" kind token
              (ignore-errors (smie-rule-sibling-p))
-             (ignore-errors smie--parent)
+             (ignore-errors (smie-indent--parent))
              (ignore-errors (smie-rule-hanging-p))
+             (ignore-errors (point))
              value)
     value))
 
-(defvar swift-smie--operators
-  '("*=" "/=" "%=" "+=" "-=" "<<=" ">>=" "&=" "^=" "|=" "&&=" "||="
-   "<" "<=" ">" ">=" "==" "!=" "===" "!==" "~=" "||" "&&"
-   "is" "as" "as!" "as?" "..<" "..."
-   "+" "-" "&+" "&-" "|" "^"
-   "*" "/" "%" "&*" "&/" "&%" "&"
-   "<<" ">>" "??"))
+(defvar swift-smie--operators-bare-regexp "[-/.!#$%&=^~\\|@+:*<>?]+")
+(defvar swift-smie--operators-regexp (concat "\\`" swift-smie--operators-bare-regexp "\\'"))
 
-(defvar swift-smie--operators-regexp
-  (regexp-opt swift-smie--operators))
-
-(defvar swift-smie--decl-specifier-regexp
-  "\\(?1:mutating\\|override\\|static\\|unowned\\|weak\\)")
-
-(defvar swift-smie--access-modifier-regexp
-  (regexp-opt '("private" "public" "internal")))
 
 (defun swift-smie--implicit-semi-p ()
-  (save-excursion
-    (not (or (memq (char-before) '(?\{ ?\[ ?, ?. ?: ?= ?\())
-             ;; Checking for operators form for "?" and "!",
-             ;; they can be a part of the type.
-             ;; Special case: is? and as? are operators.
-             (looking-back "[[:space:]][?!]" (- (point) 2) t)
-             ;; ??, is? and as? are operators
-             (looking-back "[?][?]\\|as[?]\\|is[?]" (- (point) 3) t)
-             ;; "in" operator in closure
-             (looking-back "\\bin" (- (point) 3) t)
-             ;; Characters placed on the second line in multi-line expression
-             (save-excursion
-               (forward-comment (buffer-size))
-               (looking-at "[.?:]"))
-             ;; Operators placed on the second line in multi-line expression
-             ;; Should respect here possible comments strict before the linebreak
-             (save-excursion
-               (forward-comment (buffer-size))
-               (looking-at swift-smie--operators-regexp))
+  "Return t if the cursor is at the end of a statement."
+  (and
+   ;; supresses implicit semicolon on empty line
+   (not
+    (save-excursion
+      (goto-char (line-beginning-position))
+      (< (line-end-position) (progn (forward-comment (point-max)) (point)))))
+   (save-excursion
+     (forward-comment (- (point)))
+     (or
+      ;; inserts implicit semicolon just after a ">" token of a type parameter
+      ;; unless a ":", "(", or "=" follows:
+      ;;
+      ;; protocol {
+      ;;   func foo: Foo<A> ← inserts ";" here
+      ;;   func bar: Bar<A> ← inserts ";" here
+      ;; }
+      ;;
+      ;; class Foo<A> ← not inserts ";" here
+      ;;     : Bar
+      ;;
+      ;; func foo<A> ← not inserts ";" here
+      ;;   (bar: Bar)
+      ;;
+      ;; let foo: Foo<A> ← not inserts ";" here
+      ;;   = new Foo<A>()
+      ;;
+      (and (looking-back "[[:alnum:]_][])>]*>" (- (point) 32) nil) ; see comment for T> in swift-smie--forward-token
+           (save-excursion
+             (forward-comment (point-max))
+             (not (looking-at "[:(=]"))))
+      ;; sentinel
+      (= (point) (point-min))
+      ;; var foo: Foo! ← inserts ";" here
+      ;; var foo: Foo<Bar>! ← inserts ";" here
+      ;; var foos: [Foo]! ← inserts ";" here
+      ;; var foobar: (Foo, Bar)! ← inserts ";" here
+      ;; return foo as! ← not inserts ";" here
+      ;; return foo +*! ← not inserts ";" here
+      ;; return foo ? ← not inserts ";" here
+      ;; try! ← not inserts ";" here
+      (and (looking-back "[][:alnum:]_)>][?!]" (- (point) 2) t)
+           (not (member (save-excursion
+                         (smie-default-backward-token)
+                         (smie-default-backward-token))
+                        '("as" "try"))))
 
-             (and (looking-back swift-smie--operators-regexp (- (point) 3) t)
-                  ;; Not a generic type
-                  (not (looking-back "[[:upper:]]>" (- (point) 2) t)))
-             ))))
+      ;; otherwise, insert a implicit semicolon unless some conditions met.
+      (not
+       (or
+        ;; supresses implicit semicolon after operator
+        ;;
+        ;; swift-smie--operators-bare-regexp with brackets and ";"
+        (looking-back "[-/.({[,!#$%&=^~\\|@+:*<>?;]" (- (point) 1) t)
+        ;; supresses implicit semicolon after keyword
+        ;; Note that "as?" is already handled by preceeding conditions.
+        (save-excursion
+          (member (smie-default-backward-token) '("as" "is" "try" "class" "deinit" "enum" "extension" "func" "import" "init" "internal" "let" "operator" "private" "protocol" "public" "static" "struct" "subscript" "typealias" "var" "case" "for" "if" "return" "throw" "switch" "where" "while" "associativity" "convenience" "dynamic" "didSet" "final" "get" "infix" "inout" "lazy" "mutating" "nonmutating" "optional" "override" "postfix" "precedence" "prefix" "required" "set" "unowned" "weak" "willSet" "throws" "rethrows" "catch" "indirect" "guard")))
+        ;; supresses implicit semicolon before operator
+        (progn
+          (forward-comment (point-max))
+          ;; swift-smie--operators-bare-regexp with ",", without "@"
+          (looking-at "[-/.,!$%&=^~\\|+:*<>?]"))
+        ;; supresses implicit semicolon before keyword
+        (save-excursion
+          ;; note that comments are already skipped by previous condition
+          (member (smie-default-forward-token) '("as" "is" "throws" "rethrows" "where")))))))))
+
+(defun swift-smie--is-type-colon ()
+  "Return t if a colon at the cursor is the colon for supertype declaration or type declaration of let or var."
+  (save-excursion
+    ;; class Foo<T>: Bar ← type colon
+    ;; class Foo<T> : Bar ← type colon
+    ;; class Foo<T where T: Bar<[(Int, String)]>> : Bar ← type colon
+    ;; case Foo: ← not a type colon
+    ;; case Foo where foo: ← not a type colon
+    ;; default: ← not a type colon
+    ;; foo ? bar : baz ← not a type colon
+    ;; [
+    ;;   foo: ← not a type colon
+    ;;     bar
+    ;; ]
+    ;; foo(bar, baz: baz) ← not a type colon
+    (or (looking-back "[[:alnum:]_][])>]*> *" (- (point) 32) nil)
+        ;; class Foo: ← type colon
+        ;; extension Foo: ← type colon
+        ;; let foo: ← type colon
+        ;; var foo: ← type colon
+        ;; protocol Foo {
+        ;;   typealias Bar: Baz ← type colon
+        ;; }
+        (progn
+          (smie-default-backward-token)
+          (member (smie-default-backward-token) '("class" "extension" "enum" "struct" "protocol" "typealias" "let" "var"))))))
 
 (defun swift-smie--forward-token-debug ()
   (let ((token (swift-smie--forward-token)))
@@ -259,195 +322,670 @@
       token
     ))
 
-(defconst swift-smie--lookback-max-lines -2
-  "Max number of lines 'looking-back' allowed to scan.
-In some cases we can't avoid reverse lookup and this operation can be slow.
-We try to constraint those lookups by reasonable number of lines.")
-
 (defun swift-smie--forward-token ()
-  (skip-chars-forward " \t")
-  (cond
-   ((and (looking-at "\n\\|\/\/") (swift-smie--implicit-semi-p))
-    (if (eolp) (forward-char 1) (forward-comment 1))
-    ";")
-   (t
-    (forward-comment (point))
+  (let ((pos (point)))
+    (forward-comment (point-max))
     (cond
-   ((looking-at "{") (forward-char 1) "{")
-   ((looking-at "}") (forward-char 1) "}")
+     ;; implicit semicolon.
+     ((and (< pos (line-beginning-position))
+           (save-excursion (goto-char pos) (swift-smie--implicit-semi-p)))
+      "IMP;")
 
-   ((looking-at ",") (forward-char 1) ",")
-   ((looking-at ":") (forward-char 1)
-    ;; look-back until "case", "default", ":", "{", ";"
-    (if (looking-back "\\(case[\n\t ][^:{;]+\\|default[\n\t ]*\\):")
-        "case-:"
-      ":"))
+     ;; separators and parenthesis.
+     ((memq (char-after) '(?, ?\; ?\{ ?\} ?\[ ?\] ?\( ?\)))
+      (forward-char 1)
+      (string (char-before)))
 
-   ((looking-at "->") (forward-char 2) "->")
+     ;; open angle bracket for type parameters.
+     ;; We use a heuristic: spaces are inserted around inequality sign and
+     ;; a type paramer starts with an upper case character, a square bracket,
+     ;; or a parenthesis.
+     ((and (eq (char-after) ?<) (looking-at "<[[:upper:]\\[(]"))
+      (forward-char 1)
+      "<T")
 
-   ((looking-at "<") (forward-char 1)
-    (if (looking-at "[[:upper:]]") "<T" "<"))
+     ;; close angle bracket for type parameters.
+     ((and (eq (char-after) ?>)
+           ;; Foo<Bar<[(Int, String)]>>
+           (looking-back "[[:alnum:]_][])>]*" (- (point) 32) nil))
+      (forward-char 1)
+      "T>")
 
-   ((looking-at ">[?!]?")
-    (goto-char (match-end 0))
-    (if (looking-back "[[:space:]]>" 2 t) ">" "T>"))
+     ;; colon
+     ((eq (char-after) ?:)
+      (if (prog1 (swift-smie--is-type-colon) (forward-char 1))
+          "TYPE:" ":"))
 
-   ((looking-at swift-smie--decl-specifier-regexp)
-    (goto-char (match-end 1)) "DECSPEC")
-
-   ((looking-at swift-smie--access-modifier-regexp)
-    (goto-char (match-end 0)) "ACCESSMOD")
-
-   ((looking-at "\\<default\\>")
-    (goto-char (match-end 0)) "case")
-
-   ((looking-at "else if")
-    (goto-char (match-end 0)) "elseif")
-
-   (t (let ((tok (smie-default-forward-token)))
-        (cond
-         ((equal tok "case")
-          (if (looking-at "\\([\n\t ]\\|.\\)+?\\(where.*[,]\\|:\\)")
-              "case"
-            "ecase"))
-         ((equal tok "else")
-          (if (looking-back "\\(guard.*\\)" (line-beginning-position) t)
-              "elseguard"
-            "else"))
-         (t tok))))
-   ))
-   ))
+     (t (let
+            ((pos-after-comment (point))
+             (tok (if (looking-at swift-smie--operators-bare-regexp)
+                      (progn (goto-char (match-end 0))
+                             (match-string-no-properties 0))
+                    (smie-default-forward-token))))
+          (cond
+           ((equal tok "?")
+            ;; heuristic for conditional operator
+            (if (memq (char-before (1- (point))) '(?\s ?\t ?\n))
+                "?" ; conditional operator
+              "OP" ; part of type name or chaining operator
+              ))
+           ((equal tok "=") "=")
+           ((member tok '("as" "try"))
+            (when (member (char-after) '(?? ?!)) ; "as?" or "as!"
+              (forward-char))
+            "OP")
+           ((equal tok "is") "OP")
+           ((equal tok "OP") "ID")
+           ((string-match-p swift-smie--operators-regexp tok) "OP")
+           (t tok)))))))
 
 (defun swift-smie--backward-token ()
   (let ((pos (point)))
     (forward-comment (- (point)))
     (cond
+     ;; implicit semicolon.
      ((and (> pos (line-end-position))
            (swift-smie--implicit-semi-p))
-      ";")
+      "IMP;")
 
-     ((eq (char-before) ?\{) (backward-char 1) "{")
-     ((eq (char-before) ?\}) (backward-char 1) "}")
+     ;; separators and parenthesis.
+     ((memq (char-before) '(?, ?\; ?\{ ?\} ?\[ ?\] ?\( ?\)))
+      (backward-char 1)
+      (string (char-after)))
 
-     ((eq (char-before) ?,) (backward-char 1) ",")
-     ((eq (char-before) ?:) (backward-char 1)
-      ;; look-back until "case", "default", ":", "{", ";"
-      (if (looking-back "\\(case[\n\t ][^:{;]+\\|default[\n\t ]*\\)")
-          "case-:"
-        ":"))
+     ;; open angle bracket for type parameters.
+     ;; We use a heuristic: spaces are inserted around inequality sign and
+     ;; a type paramer starts with an upper case character, a square bracket,
+     ;; or a parenthesis.
+     ((and (eq (char-before) ?<) (looking-at "[[:upper:]\\[(]"))
+      (backward-char 1)
+      "<T")
 
-     ((looking-back "->" (- (point) 2) t)
-      (goto-char (match-beginning 0)) "->")
+     ;; optional type suffix after brackets.
+     ((looking-back "[[:alnum:]_][])>]+[!?]" (- (point) 32) nil)
+      (backward-char 1)
+      "OP")
 
-     ((eq (char-before) ?<) (backward-char 1)
-      (if (looking-at "<[[:upper:]]") "<T" "<"))
-     ((looking-back ">[?!]?" (- (point) 2) t)
-      (goto-char (match-beginning 0))
-      (if (looking-back "[[:space:]]" 1 t) ">" "T>"))
+     ;; close angle bracket for type parameters.
+     ((and (eq (char-before) ?>)
+           (looking-back "[[:alnum:]_][])>]*" (- (point) 32) nil))
+      (backward-char 1)
+      "T>")
 
-     ((looking-back (regexp-opt swift-mode--type-decl-keywords) (- (point) 9) t)
-      (goto-char (match-beginning 0))
-      (match-string-no-properties 0))
+     ;; colon
+     ((eq (char-before) ?:)
+      (backward-char 1)
+      (if (swift-smie--is-type-colon)
+          "TYPE:" ":"))
 
-     ((looking-back swift-smie--decl-specifier-regexp (- (point) 8) t)
-      (goto-char (match-beginning 1)) "DECSPEC")
-
-     ((looking-back swift-smie--access-modifier-regexp (- (point) 8) t)
-      (goto-char (match-beginning 0)) "ACCESSMOD")
-
-     ((looking-back "\\<default\\>" (- (point) 9) t)
-      (goto-char (match-beginning 0)) "case")
-
-     ((looking-back "else if" (- (point) 7) t)
-      (goto-char (match-beginning 0)) "elseif")
-
-     (t (let ((tok (smie-default-backward-token)))
+     (t (let
+            ((pos-before-comment (point))
+             (tok (smie-default-backward-token)))
           (cond
-           ((equal tok "case")
-            (if (looking-at "\\([\n\t ]\\|.\\)+?\\(where.*[,]\\|:\\)")
-                "case"
-              "ecase"))
-           ((equal tok "else")
-            (if (looking-back "\\(guard.*\\)" (line-beginning-position) t)
-                "elseguard"
-              "else"))
-           (t tok))))
-     )))
+           ((equal tok "!")
+            (let ((pos (point)))
+              (if (member (smie-default-backward-token) '("as" "try")) ; "as!"
+                  "OP"
+                (goto-char pos)
+                "OP")))
+           ((equal tok "?")
+            (let ((pos (point)))
+              (if (member (smie-default-backward-token) '("as" "try")) ; "as?"
+                  "OP"
+                (goto-char pos)
+                ;; heuristic for conditional operator
+                (if (memq (char-before) '(?\s ?\t ?\n))
+                    "?" ; conditional operator
+                  "OP" ; part of type name or chaining operator
+                  ))))
+           ((equal tok "=") "=")
+           ((member tok '("is" "as" "try")) "OP")
+           ((equal tok "OP") "ID")
+           ((string-match-p swift-smie--operators-regexp tok)
+            "OP")
+           (t tok)))))))
+
+(defun swift-smie--backward-sexps-until (tokens
+                                         &optional
+                                         stop-at-bol-parent-tokens
+                                         stop-at-bol-self-tokens)
+  "Backward sexps until one of given tokens.
+When this function returns, the cursor is at just after one of given tokens.
+The form of return values are same as one of `smie-backward-sexp`.
+
+TOKENS is a list of guard tokens. This function backs until one of those tokens.
+STOP-AT-BOL-PARENT-TOKENS is a list of tokens that if we hit the beginning of
+a line just after one of given token, the function returns.
+Typically, this is a list of list separator tokens (e.g. ',', ';').
+STOP-AT-BOL-SELF-TOKENS is a list of tokens that if we hit the beginning of
+a line just before one of given token, the function returns.
+Typically, this is a list of list element starter tokens (e.g. 'case' of switch statement body)."
+  (let*
+      ((pos (point))
+       (parent (smie-backward-sexp))
+       (parent-pos (nth 1 parent))
+       (token (nth 2 parent)))
+    (while (or
+            ;; we skipped over a paren-like pair or we skipped over an
+            ;; identifier, matched parentheses, ...
+            (null (car parent))
+            (and
+             ;; we hit a guard token
+             (not (member token tokens))
+             ;; beginning of the buffer
+             (not (eq parent-pos (point)))
+             ;; when this function is called from smie-indent-virtual on ","
+             ;; token before position (1), this function stops just before the
+             ;; Bar token.
+             ;;
+             ;; case Foo,
+             ;;      Bar, Baz, // (1)
+             ;;      AAA
+             (not (and stop-at-bol-parent-tokens
+                       (member token stop-at-bol-parent-tokens)
+                       (smie-indent--bolp-1)
+                       (/= pos (point))))
+             ;; when this function is called on "case" token before position
+             ;; (1), this function stops just before "case Bar".
+             ;;
+             ;; switch foo {
+             ;; case Foo:
+             ;;     ...
+             ;; case Bar: case Baz:
+             ;;     ...
+             ;; case AAA: // (1)
+             ;; }
+             (not (and stop-at-bol-self-tokens
+                       (save-excursion
+                         (and
+                          (member (swift-smie--backward-token)
+                                  stop-at-bol-self-tokens)
+                          (smie-indent--bolp-1)))
+                       (/= pos (point))))))
+      (when parent-pos (goto-char parent-pos))
+      (setq parent (smie-backward-sexp))
+      (setq parent-pos (nth 1 parent))
+      (setq token (nth 2 parent)))
+    (when (eq (point) (point-min))
+      (forward-comment (point-max)))
+    parent))
+
+(defun swift-smie--align-with (parent &optional offset)
+  "Align with given parent token with optional offset."
+  (save-excursion
+    (goto-char (nth 1 parent))
+    (cons 'column (+ (or offset 0) (smie-indent-virtual)))))
+
+(defun swift-smie--indent-keyword (parents &optional offset)
+  "Indent based on outer open-paren or previous statement/declaration.
+
+PARENTS is a list of parent tokens (i.e. open-paren or statement separator).
+OFFSET is a offset from parent tokens, or 0 if omitted."
+  (save-excursion
+    (let* ((pos (point))
+           (parent (swift-smie--backward-sexps-until parents)))
+      (if (and (eq (point) pos) (smie-indent--bolp-1))
+          ;; we are indenting this "if" token.
+          ;; falls back to :after "{" rule.
+          ;;
+          ;; {
+          ;;   if
+          nil
+        (cons 'column (+ (or offset 0) (current-column)))))))
+
+(defvar swift-smie--statement-parent-tokens
+  '("IMP;" ";" "{" "(" "[")
+  "Parent tokens for statements.")
+
+(defvar swift-smie--expression-parent-tokens
+  (append swift-smie--statement-parent-tokens '("," "<T" "for"))
+  "Parent tokens for expressions.")
 
 (defun swift-smie-rules (kind token)
   (pcase (cons kind token)
-    (`(:elem . basic) swift-indent-offset)
+    (`(:elem . basic) swift-indent-multiline-statement-offset)
+    (`(:after . "{") swift-indent-offset)
+    (`(:after . "(") swift-indent-parenthesized-expression-offset)
+    (`(:after . "[") swift-indent-parenthesized-expression-offset)
+    (`(:before . "{")
+     (or
+      (swift-smie--rule-for) ; special handling for for-statement.
+      (swift-smie--indent-keyword swift-smie--statement-parent-tokens)))
+    (`(:before . ,(or "(" "["))
+     (swift-smie--indent-keyword
+      ;; let x = someFunction(
+      ;;     a,
+      ;;     bbb: b
+      ;;     ccc: c
+      ;; )
+      ;;
+      ;; or
+      ;;
+      ;; let x = someFunction(
+      ;;             a,
+      ;;             bbb: b
+      ;;             ccc: c
+      ;;         )
+      (append swift-smie--expression-parent-tokens
+              (if (or (equal token "[") swift-indent-compact-parenthesis)
+                  '() '("=" "?" ":")))
+      (if (smie-indent--bolp-1)
+          swift-indent-multiline-statement-offset
+        0)))
+    (`(:after . ,(or "OP" "?" "=" "throws" "rethrows"))
+     (swift-smie--rule-after-op))
+    (`(:before . ,(or "OP" "?" "=" "throws" "rethrows"))
+     (swift-smie--rule-before-op))
+    (`(:after . "TYPE:")
+     (swift-smie--rule-after-op nil swift-indent-multiline-statement-offset))
+    (`(:before . "TYPE:")
+     (swift-smie--rule-before-op nil swift-indent-multiline-statement-offset))
 
-    (`(:after . ":") 0)
+    (`(:after . ":")
+     ;; If this is a ":" token of case or default clause, indent with standard
+     ;; width:
+     ;;
+     ;; switch {
+     ;; case 0:   ← after this ":" token,
+     ;;     foo() ← indent with swift-indent-offset
+     ;;
+     ;; otherwise (i.e. conditional operator or key-value separator), indent
+     ;; like other operators.
+     (let
+         ((pos (point))
+          (parent (swift-smie--backward-sexps-until
+                   ;; remove "," to skip "," tokens in case label.
+                   (append (remove "," swift-smie--expression-parent-tokens)
+                           '("case" "default" "?")))))
+       (cond
+        ((member (nth 2 parent) '("case" "default"))
+         (goto-char (nth 1 parent))
+         (cons 'column (+ swift-indent-offset (current-column))))
+        ((equal (nth 2 parent) "?")
+         ;; else part of a conditional expression. Aligns with then part.
+         (cons 'column (current-column)))
+        (t
+         (goto-char pos)
+         (swift-smie--rule-after-op t)))))
     (`(:before . ":")
-     (cond
-      ;; Rule for ternary operator in
-      ;; assignment expression.
-      ((and (smie-rule-parent-p "?") (smie-rule-bolp)) 0)
-      ((smie-rule-parent-p ",") (smie-rule-parent swift-indent-offset))
-      ;; Rule for the class definition.
-      ((smie-rule-parent-p "class") (smie-rule-parent swift-indent-offset))))
-
-    ;; Indentation rules for switch statements
-    (`(:before . "case")
-     (if (smie-rule-parent-p "{")
-         (smie-rule-parent swift-indent-switch-case-offset)))
-    (`(:before . "case-:") (smie-rule-parent swift-indent-offset))
-
-    ;; Apply swift-indent-multiline-statement-offset only if
-    ;; - if is a first token on the line
-    (`(:before . ".")
-     (when (smie-rule-bolp)
-       (if (smie-rule-parent-p "{")
-           (+ swift-indent-offset swift-indent-multiline-statement-offset)
-         swift-indent-multiline-statement-offset)))
-
-    ;; Apply swift-indent-multiline-statement-offset if
-    ;; operator is the last symbol on the line
-    (`(:after . ,(pred (lambda (token)
-                          (member token swift-smie--operators))))
-     (when (and (smie-rule-hanging-p)
-                (not (apply 'smie-rule-parent-p
-                            (append swift-smie--operators '("?" ":" "=")))))
-       swift-indent-multiline-statement-offset
-       ))
+     ;; If this is a ":" token of a conditional expression, aligns with the "?"
+     ;; token.
+     ;; Note that "?" which is not a conditional operator is converted to a
+     ;; "ID" token by the lexer.
+     (let
+         ((pos (point))
+          (bolp (smie-indent--bolp-1))
+          (parent (swift-smie--backward-sexps-until
+                   (swift-smie--op-parent-tokens))))
+       (if (and bolp (equal (nth 2 parent) "?"))
+           (progn
+             (goto-char (nth 1 parent))
+             (cons 'column (current-column)))
+         (goto-char pos)
+         (swift-smie--rule-before-op t))))
 
     (`(:before . ",")
-     (if (and swift-indent-hanging-comma-offset (smie-rule-parent-p "class" "case"))
-         (smie-rule-parent swift-indent-hanging-comma-offset)))
+     ;; aligns with the first element of a list or a preceeding sibling that is
+     ;; at the beginning of a line.
+     (let
+         ((pos (point))
+          (parent (swift-smie--backward-sexps-until
+                   ;; include "case" to indent like
+                   ;;
+                   ;; switch foo {
+                   ;; case bar,
+                   ;;      buz:
+                   ;;
+                   ;; rather than
+                   ;;
+                   ;; switch foo {
+                   ;; case bar,
+                   ;; buz:
+                   (append (remove "," swift-smie--expression-parent-tokens)
+                           '("TYPE:" "case" "let" "var"))
+                   '(","))))
+       (cons
+        'column
+        (if (and swift-indent-hanging-comma-offset (member (nth 2 parent) '("TYPE:" "case")))
+            ;; class Foo: Bar,
+            ;;     Buz
+            ;;
+            ;; rather than
+            ;;
+            ;; class Foo: Bar,
+            ;;            Buz
+            (progn
+              (goto-char (nth 1 parent))
+              (+ (smie-indent-virtual) swift-indent-hanging-comma-offset))
+          (current-column)))))
 
-    ;; Disable unnecessary default indentation for
-    ;; "func" and "class" keywords
-    (`(:after . ,(or `"func" `"class")) (smie-rule-parent))
+    (`(:before . "IMP;")
+     (or
+      ;; special handling for for-in statement:
+      ;;
+      ;; for x in
+      ;;     xs
+      (save-excursion
+        (and
+         (save-excursion (equal (swift-smie--backward-token) "in"))
+         (progn (forward-char 1)
+                (swift-smie--backward-for-head))
+         (progn
+           ;; we are before "for" token
+           (swift-smie--forward-token) ;; we are after "for" token
+           (swift-smie--forward-token) ;; we are after "x" token
+           (swift-smie--backward-token) ;; we are before "x" token
+           (cons 'column (current-column)))))
+      (swift-smie--rule-before-semicolon t)))
 
-    ;; "in" token in closure
-    (`(:after . "in")
-     (if (smie-rule-parent-p "{")
-         (smie-rule-parent swift-indent-offset)
-       (smie-rule-parent 0)))
+    (`(:before . ";")
+     (swift-smie--rule-before-semicolon nil))
 
-    (`(:after . "(")
-     (cond
-      ((smie-rule-parent-p "(") 0)
-      ((and (smie-rule-parent-p "." "func")
-            (not (smie-rule-hanging-p))) 1)
-      (t (smie-rule-parent swift-indent-offset))))
+    (`(:before . "in")
+     ;; special handling for for-in statement:
+     ;; for x
+     ;;     in xs
+     (when (swift-smie--backward-for-head)
+       ;; we are before "for" token
+       (swift-smie--forward-token) ;; we are after "for" token
+       (swift-smie--forward-token) ;; we are after "x" token
+       (swift-smie--backward-token) ;; we are before "x" token
+       (cons 'column (current-column))))
+    (`(:after . ,(or "class" "func" "enum" "switch" "case" "for" "if" "while" "let" "var" "catch" "where" "indirect" "guard"))
+     ;; switch
+     ;;   longExpression { ← indent of this line
+     swift-indent-multiline-statement-offset)
 
-    (`(:before . "(")
-     (cond
-      ((smie-rule-next-p "[") (smie-rule-parent))
-      ;; Custom indentation for method arguments
-      ((smie-rule-parent-p "." "func") (smie-rule-parent))))
-
-    (`(:before . "[")
-     (cond
-      ((smie-rule-prev-p "->") swift-indent-offset)
-      ((smie-rule-parent-p "[") (smie-rule-parent swift-indent-offset))
-      ((smie-rule-parent-p "{") nil)
-      ((smie-rule-parent-p "class-{") nil)
-      (t (smie-rule-parent))))
-    (`(:after . "->") (smie-rule-parent swift-indent-offset))
+    (`(:before . ,(or "case" "default"))
+     ;; switch foo {
+     ;; case Foo:
+     ;;     ...
+     ;; case Bar: case Baz:
+     ;;     ...
+     ;; case AAA: ← align with "case Bar", not "case Baz"
+     (let* ((parent (swift-smie--backward-sexps-until
+                     '("{")
+                     '()
+                     '("case" "default")))
+            (pos (nth 1 parent))
+            (token (nth 2 parent)))
+       (cond
+        ((member token '("case" "default"))
+         ;; align with previous case label.
+         (goto-char pos)
+         (cons 'column (current-column)))
+        ((equal token "{")
+         (goto-char pos)
+         (setq parent (swift-smie--backward-sexps-until '("switch" "enum")))
+         ;; switch {
+         ;; case Foo:
+         ;; }
+         ;;
+         ;; and
+         ;;
+         ;; enum Foo {
+         ;;     case Foo
+         ;; }
+         ;;
+         ;; falls back to :after "{" rule when parent is "enum"
+         (when (equal (nth 2 parent) "switch")
+           (swift-smie--indent-keyword
+            swift-smie--statement-parent-tokens
+            swift-indent-switch-case-offset)))
+        (t nil))))
+    (`(:before . "where")
+     (save-excursion
+       (let* ((pos (point))
+              (parent (swift-smie--backward-sexps-until
+                       '("IMP;" ";" "{" "(" "[" "<T" "catch")))
+              (parent-pos (nth 1 parent))
+              (parent-token (nth 2 parent)))
+         (if (and (eq (point) pos) (smie-indent--bolp-1))
+             ;; {
+             ;;   where ...
+             ;; }
+             ;; this is not a valid Swift code. handles gracefully.
+             nil
+           ;; do {
+           ;; } catch Foo
+           ;;     where
+           ;;
+           ;; rather than
+           ;;
+           ;; do {
+           ;; } catch Foo
+           ;;           where
+           (when (equal parent-token "catch")
+             (goto-char parent-pos))
+           (cons
+            'column
+            (+ swift-indent-multiline-statement-offset (current-column)))))))
+    (`(:before . "while")
+     (when (and (not (smie-indent--bolp-1))
+                (equal (save-excursion (swift-smie--backward-token)) "}"))
+       ;; repeat {
+       ;;   ...
+       ;; } while // smie-indent-virtual is called on this token
+       ;;     foo
+       (cons 'column (current-column))))
     ))
+
+(defun swift-smie--rule-before-semicolon (implicit)
+  ;; aligns with the first statement or a preceeding sibling that is at the
+  ;; beginning of a line unless that is a case label.
+  ;;
+  ;; foo; bar;
+  ;; baz
+  ;;
+  ;; rather than
+  ;;
+  ;; foo; bar;
+  ;;      baz
+  ;;
+  ;;
+  ;; indents with `swift-indent-offset` after case label.
+  (or
+   (swift-smie--rule-for) ;; special handling for for-statement
+   (let
+       ((pos (point))
+        (previous (save-excursion (swift-smie--backward-token)))
+        (parent (swift-smie--backward-sexps-until
+                 (list "{" "(" "[" ":" (if implicit ":" "for"))
+                 '("IMP;" ";"))))
+     (cons 'column
+           (cond
+            ((equal (nth 2 parent) ":")
+             (setq parent (swift-smie--backward-sexps-until
+                           '("{" "(" "[" "case" "default")
+                           '("IMP;" ";")))
+             (if (member (nth 2 parent) '("case" "default"))
+                 ;; we hit a case label. indent with swift-indent-offset
+                 (progn
+                   (goto-char (nth 1 parent))
+                   (+ (current-column) swift-indent-offset))
+               ;; ":" of conditional expression
+               (current-column)))
+            ;; someFunction { foo in
+            ;;     bar
+            ;; }
+            ;;
+            ;; rather than
+            ;;
+            ;; someFunction { foo in
+            ;;                bar
+            ;; }
+            ((and (equal previous "in") (equal (nth 2 parent) "{"))
+             (goto-char (nth 1 parent))
+             (+ (smie-indent-virtual) swift-indent-offset))
+            (t
+             (current-column)))))))
+
+(defun swift-smie--backward-for-head ()
+  "Backward the head of a for-statement (i.e. 'for foo; bar; buz' or
+'for x in xs') and returns the column of the \"for\" token.
+If the cursor is not at a head of a for-statement, keeps cursor position as is
+and returns nil"
+  (let*
+      ((pos (point))
+       (parent (swift-smie--backward-sexps-until
+                swift-smie--statement-parent-tokens))
+       (token (nth 2 parent))
+       (result-column
+        (cond
+         ;; 'for foo; bar; |buz' where '|' represents the cursor
+         ((equal token ";")
+          (goto-char (nth 1 parent))
+          (setq parent (swift-smie--backward-sexps-until
+                        swift-smie--statement-parent-tokens))
+          (setq token (nth 2 parent))
+          (when  (equal token ";")
+            (goto-char (nth 1 parent))
+            (swift-smie--backward-sexps-until
+             swift-smie--statement-parent-tokens)
+            (when (equal (swift-smie--forward-token) "for")
+              (swift-smie--backward-token)
+              (current-column))))
+         ((equal token "IMP;")
+          ;; four cases:
+          ;;
+          ;; 1.
+          ;;   for x
+          ;;       in
+          ;;       |xs
+          ;;
+          ;; 2.
+          ;;   for x in
+          ;;       |xs
+          ;;
+          ;; 3.
+          ;;   for x
+          ;;       |in xs
+          ;; 4.
+          ;;   |for x in xs
+          (cond
+           ;; case 1 or 2
+           ((save-excursion (swift-smie--backward-token)
+                            (equal (swift-smie--backward-token) "in"))
+            (goto-char (nth 1 parent))
+            (swift-smie--backward-token) ; "in"
+            (swift-smie--backward-token) ; "IMP;" or "x"
+            (swift-smie--backward-sexps-until
+             swift-smie--statement-parent-tokens)
+            (when (equal (swift-smie--forward-token) "for")
+              (swift-smie--backward-token)
+              (current-column)))
+           ;; case 3
+           ((save-excursion (equal (swift-smie--forward-token) "in"))
+            (goto-char (nth 1 parent))
+            (swift-smie--backward-sexps-until
+             swift-smie--statement-parent-tokens)
+            (when (equal (swift-smie--forward-token) "for")
+              (swift-smie--backward-token)
+              (current-column)))
+           ;; case 4
+           ((save-excursion
+              (and (equal (swift-smie--forward-token) "for")
+                   (progn
+                     (goto-char pos)
+                     (equal
+                      (nth 2 (swift-smie--backward-sexps-until '("IMP;" "in")))
+                      "in"))))
+            (current-column)))))))
+    (when (not result-column)
+      (goto-char pos))
+    result-column))
+
+(defun swift-smie--rule-for ()
+  "Special rule for 'for' statement."
+  (let ((column (swift-smie--backward-for-head)))
+    (when column (cons 'column column))))
+
+(defun swift-smie--op-parent-tokens (&optional ignore-question)
+  "Return parent tokens for operators."
+  (append swift-smie--expression-parent-tokens
+          (list "=" (if ignore-question ":" "?") ":")))
+
+(defun swift-smie--goto-op-parent (&optional ignore-question)
+  "Go to the parent of the current operator token."
+  (swift-smie--backward-sexps-until
+   (swift-smie--op-parent-tokens ignore-question)))
+
+(defun swift-smie--op-offset (parent &optional ignore-question offset)
+  "Return the offset after operator tokens."
+  (- (or offset swift-indent-multiline-statement-offset)
+     ;; Special handling for assignment and conditional operators:
+     ;;
+     ;; let x = 1 +
+     ;;         2 +
+     ;;         3
+     ;;
+     ;; foo()
+     ;;   ? bar1() *
+     ;;     buz1()
+     ;;   : bar2() *
+     ;;     buz2()
+     ;;
+     ;; rather than:
+     ;;
+     ;; let x = 1 +
+     ;;           2 +
+     ;;           3
+     ;;
+     ;; foo()
+     ;;   ? bar1() *
+     ;;       buz1()
+     ;;   : bar2() *
+     ;;       buz2()
+     ;;
+     ;; The reason for subtracting hardcoded 2 rather than just returning 0 is
+     ;; compatibility for older implementation that indented based on "=" token
+     ;; rather than the first token of RHS.
+     ;;
+     ;; Old implementation:
+     ;;
+     ;; let x =      1 +
+     ;;         2 // swift-indent-multiline-statement-offset from "=" token
+     ;;
+     ;; New implementation:
+     ;;
+     ;; let x =      1 +
+     ;;              2 // swift-indent-multiline-statement-offset - 2
+     ;;                // from the first token of RHS
+     (if (member (nth 2 parent) (list "=" (if ignore-question ":" "?") ":"))
+         2 0)))
+
+(defun swift-smie--rule-after-op (&optional ignore-question offset)
+  (swift-smie--op-offset (swift-smie--goto-op-parent) ignore-question offset))
+
+(defun swift-smie--rule-before-op (&optional ignore-question offset)
+  ;; When the token is at the beginning of the line (i.e. not called from
+  ;; smie-indent-virtual) and if the previous line is indented manually,
+  ;; aligns with it.
+  ;; When the token is not at the beginning of the line, and if the current
+  ;; line is indented manually, aligns with the first token.
+  (let*
+      ((pos (point))
+       (bolp (smie-indent--bolp-1))
+       (bol-of-previous-token
+        (save-excursion
+          (swift-smie--backward-token)
+          (line-beginning-position)))
+       (parent (swift-smie--goto-op-parent))
+       (offset (swift-smie--op-offset parent ignore-question offset)))
+    (if (< (point) bol-of-previous-token)
+        ;; we are at 3rd or following line. aligns with previous line.
+        (progn
+          (goto-char bol-of-previous-token)
+          (skip-chars-forward " \t")
+          ;; subtract offset if called from smie-indent-virtual because
+          ;; :after "OP" rule adds offset.
+          (cons 'column (- (current-column) (if bolp 0 offset))))
+      ;; we are at end of 1st line or beginning of 2nd line.
+      ;; indents with offset when we are at 2nd line.
+      (goto-char pos)
+      (swift-smie--indent-keyword
+       (swift-smie--op-parent-tokens ignore-question)
+       (if bolp offset 0)))))
 
 ;;; Font lock
 
@@ -468,19 +1006,31 @@ We try to constraint those lookups by reasonable number of lines.")
 
 (defvar swift-mode--statement-keywords
   '("break" "case" "continue" "default" "do" "else" "fallthrough"
-    "if" "in" "for" "return" "switch" "where" "while" "guard"))
+    "if" "in" "for" "return" "throw" "switch" "catch" "where" "while" "guard"
+    "defer" "repeat"))
 
 (defvar swift-mode--contextual-keywords
   '("associativity" "didSet" "get" "infix" "inout" "left" "mutating" "none"
     "nonmutating" "operator" "override" "postfix" "precedence" "prefix" "right"
-    "set" "unowned" "unowned(safe)" "unowned(unsafe)" "weak" "willSet" "convenience"
-    "required" "dynamic" "final" "lazy" "optional" "private" "public" "internal"))
+    "set" "unowned" "unowned(safe)" "unowned(unsafe)" "weak" "willSet"
+    "convenience" "required" "dynamic" "final" "lazy" "optional"
+    "private" "public" "internal" "indirect"))
+
+(defvar swift-mode--function-signature-keywords
+  '("throws" "rethrows"))
+
+(defvar swift-mode--operator-keywords
+  '("as" "is" "try"))
 
 (defvar swift-mode--attribute-keywords
   '("class_protocol" "exported" "noreturn"
     "NSCopying" "NSManaged" "objc" "autoclosure"
-    "available" "noescape" "nonobjc" "NSApplicationMain" "testable" "UIApplicationMain" "warn_unused_result" "convention"
-    "IBAction" "IBDesignable" "IBInspectable" "IBOutlet"))
+    "available" "noescape" "nonobjc" "NSApplicationMain" "testable"
+    "UIApplicationMain" "warn_unused_result" "convention" "IBAction"
+    "IBDesignable" "IBInspectable" "IBOutlet"))
+
+(defvar swift-mode--compiler-control-statement-keywords
+  '("available" "if" "else" "elseif" "endif" "line"))
 
 (defvar swift-mode--keywords
   (append swift-mode--type-decl-keywords
@@ -489,7 +1039,9 @@ We try to constraint those lookups by reasonable number of lines.")
           swift-mode--fn-decl-keywords
           swift-mode--misc-keywords
           swift-mode--statement-keywords
-          swift-mode--contextual-keywords)
+          swift-mode--contextual-keywords
+          swift-mode--function-signature-keywords
+          swift-mode--operator-keywords)
   "Keywords used in the Swift language.")
 
 (defvar swift-mode--constants
@@ -516,6 +1068,14 @@ We try to constraint those lookups by reasonable number of lines.")
        `(and "@" bow (or ,@swift-mode--attribute-keywords) eow)
        t)
      0 font-lock-keyword-face)
+
+    ;; Compiler Control Statements
+    ;;
+    ;; Highlight compiler control statements with keyword face
+    (,(rx-to-string
+       `(and "#" bow (or ,@swift-mode--compiler-control-statement-keywords) eow)
+       t)
+     0 font-lock-keyword-face t)
 
     ;; Types
     ;;
@@ -617,6 +1177,7 @@ We try to constraint those lookups by reasonable number of lines.")
    (list "Enums"     (swift-mode--mk-regex-for-def "enum") 1)
    (list "Protocols" (swift-mode--mk-regex-for-def "protocol") 1)
    (list "Structs"   (swift-mode--mk-regex-for-def "struct") 1)
+   (list "Extensions"   (swift-mode--mk-regex-for-def "extension") 1)
    (list "Constants" (swift-mode--mk-regex-for-def "let") 1)
    (list "Variables" (swift-mode--mk-regex-for-def "var") 1))
   "Value for `imenu-generic-expression' in swift-mode.")
@@ -754,7 +1315,7 @@ You can send text to the REPL process from other buffers containing source.
   (let ((table (make-syntax-table)))
 
     ;; Operators
-    (dolist (i '(?+ ?- ?* ?/ ?& ?| ?^ ?< ?> ?~))
+    (dolist (i '(?+ ?- ?* ?/ ?& ?| ?^ ?! ?< ?> ?~ ?: ??))
       (modify-syntax-entry i "." table))
 
     ;; Strings
@@ -763,9 +1324,6 @@ You can send text to the REPL process from other buffers containing source.
 
     ;; Additional symbols
     (modify-syntax-entry ?_ "w" table)
-    (modify-syntax-entry ?? "_" table)
-    (modify-syntax-entry ?! "_" table)
-    (modify-syntax-entry ?: "." table)
 
     ;; Comments
     (modify-syntax-entry ?/  ". 124b" table)
@@ -813,6 +1371,10 @@ You can send text to the REPL process from other buffers containing source.
 
   (setq-local comment-start "// ")
   (setq-local comment-end "")
+  ;; ":" is for Playground Rich Comments Markup Syntax:
+  ;; https://developer.apple.com/library/prerelease/ios/documentation/Xcode/Reference/xcode_markup_formatting_ref/PlaygroundRichComments.html
+  (setq-local comment-start-skip "\\(//+:?\\|/\\*+:?\\)\\s *")
+  (setq-local adaptive-fill-regexp comment-start-skip)
   (setq-local indent-tabs-mode nil)
   (setq-local electric-indent-chars
               (append '(?. ?, ?: ?\) ?\] ?\}) electric-indent-chars))
