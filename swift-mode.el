@@ -346,18 +346,15 @@ let x = someFunction(
 
      ;; close angle bracket for type parameters.
      ((and (eq (char-after) ?>)
+           ;; Foo<Bar<[(Int, String)]>>
            (looking-back "[[:alnum:]_][])>]*" (- (point) 32) nil))
       (forward-char 1)
       "T>")
 
      ;; colon
      ((eq (char-after) ?:)
-      (if (swift-smie--is-type-colon)
-          (progn
-            (forward-char 1)
-            "TYPE:")
-        (forward-char 1)
-        ":"))
+      (if (prog1 (swift-smie--is-type-colon) (forward-char 1))
+          "TYPE:" ":"))
 
      (t (let
             ((pos-after-comment (point))
@@ -456,7 +453,7 @@ let x = someFunction(
 When this function returns, the cursor is at just after one of given tokens.
 The form of return values are same as one of `smie-backward-sexp`.
 
-TOKENS is a list of guard tokens until one of that this function backs.
+TOKENS is a list of guard tokens. This function backs until one of those tokens.
 STOP-AT-BOL-PARENT-TOKENS is a list of tokens that if we hit the beginning of
 a line just after one of given token, the function returns.
 Typically, this is a list of list separator tokens (e.g. ',', ';').
@@ -473,12 +470,31 @@ Typically, this is a list of list element starter tokens (e.g. 'case' of switch 
             ;; identifier, matched parentheses, ...
             (null (car parent))
             (and
+             ;; we hit a guard token
              (not (member token tokens))
+             ;; beginning of the buffer
              (not (eq parent-pos (point)))
+             ;; when this function is called from smie-indent-virtual on ","
+             ;; token before position (1), this function stops just before the
+             ;; Bar token.
+             ;;
+             ;; case Foo,
+             ;;      Bar, Baz, // (1)
+             ;;      AAA
              (not (and stop-at-bol-parent-tokens
                        (member token stop-at-bol-parent-tokens)
                        (smie-indent--bolp-1)
                        (/= pos (point))))
+             ;; when this function is called on "case" token before position
+             ;; (1), this function stops just before "case Bar".
+             ;;
+             ;; switch foo {
+             ;; case Foo:
+             ;;     ...
+             ;; case Bar: case Baz:
+             ;;     ...
+             ;; case AAA: // (1)
+             ;; }
              (not (and stop-at-bol-self-tokens
                        (save-excursion
                          (and
@@ -509,6 +525,11 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
     (let* ((pos (point))
            (parent (swift-smie--backward-sexps-until parents)))
       (if (and (eq (point) pos) (smie-indent--bolp-1))
+          ;; we are indenting this "if" token.
+          ;; falls back to :after "{" rule.
+          ;;
+          ;; {
+          ;;   if
           nil
         (cons 'column (+ (or offset 0) (current-column)))))))
 
@@ -532,6 +553,19 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
       (swift-smie--indent-keyword swift-smie--statement-parent-tokens)))
     (`(:before . ,(or "(" "["))
      (swift-smie--indent-keyword
+      ;; let x = someFunction(
+      ;;     a,
+      ;;     bbb: b
+      ;;     ccc: c
+      ;; )
+      ;;
+      ;; or
+      ;;
+      ;; let x = someFunction(
+      ;;             a,
+      ;;             bbb: b
+      ;;             ccc: c
+      ;;         )
       (append swift-smie--expression-parent-tokens
               (if (or (equal token "[") swift-indent-compact-parenthesis)
                   '() '("=" "?" ":")))
@@ -637,9 +671,10 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
          (progn (forward-char 1)
                 (swift-smie--backward-for-head))
          (progn
-           (swift-smie--forward-token)
-           (swift-smie--forward-token)
-           (swift-smie--backward-token)
+           ;; we are before "for" token
+           (swift-smie--forward-token) ;; we are after "for" token
+           (swift-smie--forward-token) ;; we are after "x" token
+           (swift-smie--backward-token) ;; we are before "x" token
            (cons 'column (current-column)))))
       (swift-smie--rule-before-semicolon t)))
 
@@ -647,19 +682,27 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
      (swift-smie--rule-before-semicolon nil))
 
     (`(:before . "in")
+     ;; special handling for for-in statement:
+     ;; for x
+     ;;     in xs
      (when (swift-smie--backward-for-head)
-       (swift-smie--forward-token)
-       (swift-smie--forward-token)
-       (swift-smie--backward-token)
+       ;; we are before "for" token
+       (swift-smie--forward-token) ;; we are after "for" token
+       (swift-smie--forward-token) ;; we are after "x" token
+       (swift-smie--backward-token) ;; we are before "x" token
        (cons 'column (current-column))))
     (`(:after . ,(or "class" "func" "enum" "switch" "case" "for" "if" "while" "let" "var" "catch" "where" "indirect" "guard"))
-     ;; i.e.
-     ;;
      ;; switch
      ;;   longExpression { ← indent of this line
      swift-indent-multiline-statement-offset)
 
     (`(:before . ,(or "case" "default"))
+     ;; switch foo {
+     ;; case Foo:
+     ;;     ...
+     ;; case Bar: case Baz:
+     ;;     ...
+     ;; case AAA: ← align with "case Bar", not "case Baz"
      (let* ((parent (swift-smie--backward-sexps-until
                      '("{")
                      '()
@@ -674,6 +717,17 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
         ((equal token "{")
          (goto-char pos)
          (setq parent (swift-smie--backward-sexps-until '("switch" "enum")))
+         ;; switch {
+         ;; case Foo:
+         ;; }
+         ;;
+         ;; and
+         ;;
+         ;; enum Foo {
+         ;;     case Foo
+         ;; }
+         ;;
+         ;; falls back to :after "{" rule when parent is "enum"
          (when (equal (nth 2 parent) "switch")
            (swift-smie--indent-keyword
             swift-smie--statement-parent-tokens
@@ -682,14 +736,15 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
     (`(:before . "where")
      (save-excursion
        (let* ((pos (point))
-              (parent (swift-smie--backward-sexps-until '("IMP;" ";" "{" "(" "[" "<T" "catch")))
+              (parent (swift-smie--backward-sexps-until
+                       '("IMP;" ";" "{" "(" "[" "<T" "catch")))
               (parent-pos (nth 1 parent))
               (parent-token (nth 2 parent)))
          (if (and (eq (point) pos) (smie-indent--bolp-1))
              ;; {
              ;;   where ...
              ;; }
-             ;; This is not a valid Swift code. Handles gracefully.
+             ;; this is not a valid Swift code. handles gracefully.
              nil
            ;; do {
            ;; } catch Foo
@@ -708,7 +763,10 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
     (`(:before . "while")
      (when (and (not (smie-indent--bolp-1))
                 (equal (save-excursion (swift-smie--backward-token)) "}"))
-       ;; repeat { ... } while
+       ;; repeat {
+       ;;   ...
+       ;; } while // smie-indent-virtual is called on this token
+       ;;     foo
        (cons 'column (current-column))))
     ))
 
@@ -716,9 +774,18 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
   ;; aligns with the first statement or a preceeding sibling that is at the
   ;; beginning of a line unless that is a case label.
   ;;
+  ;; foo; bar;
+  ;; baz
+  ;;
+  ;; rather than
+  ;;
+  ;; foo; bar;
+  ;;      baz
+  ;;
+  ;;
   ;; indents with `swift-indent-offset` after case label.
   (or
-   (swift-smie--rule-for)
+   (swift-smie--rule-for) ;; special handling for for-statement
    (let
        ((pos (point))
         (previous (save-excursion (swift-smie--backward-token)))
@@ -732,10 +799,21 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
                            '("{" "(" "[" "case" "default")
                            '("IMP;" ";")))
              (if (member (nth 2 parent) '("case" "default"))
+                 ;; we hit a case label. indent with swift-indent-offset
                  (progn
                    (goto-char (nth 1 parent))
                    (+ (current-column) swift-indent-offset))
+               ;; ":" of conditional expression
                (current-column)))
+            ;; someFunction { foo in
+            ;;     bar
+            ;; }
+            ;;
+            ;; rather than
+            ;;
+            ;; someFunction { foo in
+            ;;                bar
+            ;; }
             ((and (equal previous "in") (equal (nth 2 parent) "{"))
              (goto-char (nth 1 parent))
              (+ (smie-indent-virtual) swift-indent-offset))
@@ -895,10 +973,15 @@ and returns nil"
        (parent (swift-smie--goto-op-parent))
        (offset (swift-smie--op-offset parent ignore-question offset)))
     (if (< (point) bol-of-previous-token)
+        ;; we are at 3rd or following line. aligns with previous line.
         (progn
           (goto-char bol-of-previous-token)
           (skip-chars-forward " \t")
+          ;; subtract offset if called from smie-indent-virtual because
+          ;; :after "OP" rule adds offset.
           (cons 'column (- (current-column) (if bolp 0 offset))))
+      ;; we are at end of 1st line or beginning of 2nd line.
+      ;; indents with offset when we are at 2nd line.
       (goto-char pos)
       (swift-smie--indent-keyword
        (swift-smie--op-parent-tokens ignore-question)
