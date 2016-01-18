@@ -993,7 +993,7 @@ class Foo: Foo, Bar,
 }
 " "
 class Foo: Foo, Bar,
-      |Baz {
+           |Baz {
 }
 ")
 
@@ -1016,7 +1016,7 @@ class Foo:
 }
 " "
 class Foo:
-    |Foo, Bar, Baz {
+  |Foo, Bar, Baz {
 }
 ")
 
@@ -1035,7 +1035,7 @@ class Foo<A: B<C>>:
                    |Bar
 " "
 class Foo<A: B<C>>:
-    |Bar
+  |Bar
 ")
 
 (check-indentation indents-class-declaration/9
@@ -1075,7 +1075,7 @@ public class Foo: Foo, Bar,
 }
 " "
 public class Foo: Foo, Bar,
-             |Baz {
+                  |Baz {
 }
 ")
 
@@ -1192,7 +1192,7 @@ func Foo(aaaaaaaaa:
 }
 " "
 func Foo(aaaaaaaaa:
-         |AAAAAAAAA) {
+           |AAAAAAAAA) {
 }
 ")
 
@@ -1202,7 +1202,7 @@ func foo() ->
 |Foo
 " "
 func foo() ->
-    |Foo
+  |Foo
 ")
 
 (check-indentation indents-func-declaration/8
@@ -1211,7 +1211,7 @@ func foo() ->
 |(A, B) {}
 " "
 func foo() ->
-    |(A, B) {}
+  |(A, B) {}
 ")
 
 (check-indentation indents-func-declaration/9
@@ -1220,7 +1220,7 @@ func foo() ->
 |[A] {}
 " "
 func foo() ->
-    |[A] {}
+  |[A] {}
 ")
 
 (check-indentation indents-func-declaration/10
@@ -1413,7 +1413,7 @@ let foo =
 |bar
 " "
 let foo =
-    |bar
+  |bar
 ")
 
 (check-indentation indents-declaration/9
@@ -1422,7 +1422,7 @@ let foo: Foo? =
 |bar
 " "
 let foo: Foo? =
-    |bar
+  |bar
 ")
 
 (check-indentation indents-declaration/10
@@ -1431,7 +1431,7 @@ let foo: Foo<A> =
 |bar
 " "
 let foo: Foo<A> =
-    |bar
+  |bar
 ")
 
 (check-indentation indents-declaration/11
@@ -1443,7 +1443,7 @@ let foo = [
 " "
 let foo = [
     foo:
-    |bar
+      |bar
 ]
 ")
 
@@ -1666,7 +1666,7 @@ if (a
 |.b){}
 " "
 if (a
-     |.b){}
+      |.b){}
 ")
 
 (check-indentation indents-multiline-expressions/14
@@ -1897,7 +1897,7 @@ let options = NSRegularExpressionOptions.CaseInsensitive &
 |NSRegularExpressionOptions.DotMatchesLineSeparators
 " "
 let options = NSRegularExpressionOptions.CaseInsensitive &
-              |NSRegularExpressionOptions.DotMatchesLineSeparators
+                |NSRegularExpressionOptions.DotMatchesLineSeparators
 "
 ((swift-indent-multiline-statement-offset 4)))
 
@@ -1949,7 +1949,7 @@ let foo = bar >
 " "
 1 +
   2 + 5 *
-      |3
+  |3
 "
 )
 
@@ -2076,13 +2076,13 @@ let a = a //foo
 func foo() {
     return order!.deliver ?
          |OrderViewTableDeliveryCells.lastCellIndex.rawValue :
-           OrderViewTableTakeAwayCells.lastCellIndex.rawValue
+      OrderViewTableTakeAwayCells.lastCellIndex.rawValue
 }
 " "
 func foo() {
     return order!.deliver ?
-           |OrderViewTableDeliveryCells.lastCellIndex.rawValue :
-           OrderViewTableTakeAwayCells.lastCellIndex.rawValue
+      |OrderViewTableDeliveryCells.lastCellIndex.rawValue :
+      OrderViewTableTakeAwayCells.lastCellIndex.rawValue
 }
 ")
 
@@ -2090,14 +2090,14 @@ func foo() {
                    "
 func foo() {
     return order!.deliver ?
-           OrderViewTableDeliveryCells.lastCellIndex.rawValue :
+      OrderViewTableDeliveryCells.lastCellIndex.rawValue :
          |OrderViewTableTakeAwayCells.lastCellIndex.rawValue
 }
 " "
 func foo() {
     return order!.deliver ?
-           OrderViewTableDeliveryCells.lastCellIndex.rawValue :
-           |OrderViewTableTakeAwayCells.lastCellIndex.rawValue
+      OrderViewTableDeliveryCells.lastCellIndex.rawValue :
+      |OrderViewTableTakeAwayCells.lastCellIndex.rawValue
 }
 ")
 
@@ -2357,7 +2357,7 @@ foo.bar(10,
 " "
 foo.bar(10,
         completionHandler: { (
-            |bar, baz) in
+                                 |bar, baz) in
             foo
         }
 )

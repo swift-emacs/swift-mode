@@ -62,6 +62,33 @@
                  (integer :tag "Custom offset"))
   :package-version '(swift-mode "0.4.0"))
 
+(defcustom swift-indent-compact-parenthesis nil
+  "Non-nil means saves spaces for parenthesized expressions:
+
+let x = someFunction(
+    a,
+    bbb: b
+    ccc: c
+)
+
+instead of:
+
+let x = someFunction(
+            a,
+            bbb: b
+            ccc: c
+        )"
+  :type 'boolean
+  :group 'swift
+  :package-version '(swift-mode "0.5.0"))
+
+(defcustom swift-indent-parenthesized-expression-offset swift-indent-offset
+  "Defines the indentation offset for parenthesized expressions and array elements."
+  :type 'integer
+  :group 'swift
+  :package-version '(swift-mode "0.5.0"))
+
+
 (defcustom swift-repl-executable
   "xcrun swift"
   "Path to the Swift CLI."
@@ -179,7 +206,7 @@
              value)
     value))
 
-(defvar swift-smie--operators-bare-regexp "[-.!#$%&=^~\\|@+:*<>?]+")
+(defvar swift-smie--operators-bare-regexp "[-/.!#$%&=^~\\|@+:*<>?]+")
 (defvar swift-smie--operators-regexp (concat "\\`" swift-smie--operators-bare-regexp "\\'"))
 
 
@@ -235,7 +262,9 @@
       (not
        (or
         ;; supresses implicit semicolon after operator
-        (looking-back "[-.({[,!#$%&=^~\\|@+:*<>?;]" (- (point) 1) t)
+        ;;
+        ;; swift-smie--operators-bare-regexp with brackets and ";"
+        (looking-back "[-/.({[,!#$%&=^~\\|@+:*<>?;]" (- (point) 1) t)
         ;; supresses implicit semicolon after keyword
         ;; Note that "as?" is already handled by preceeding conditions.
         (save-excursion
@@ -243,7 +272,8 @@
         ;; supresses implicit semicolon before operator
         (progn
           (forward-comment (point-max))
-          (looking-at "[-.,!$%&=^~\\|+:*<>?]"))
+          ;; swift-smie--operators-bare-regexp with ",", without "@"
+          (looking-at "[-/.,!$%&=^~\\|+:*<>?]"))
         ;; supresses implicit semicolon before keyword
         (save-excursion
           ;; note that comments are already skipped by previous condition
@@ -252,8 +282,11 @@
 (defun swift-smie--is-type-colon ()
   "Return t if a colon at the cursor is the colon for supertype declaration or type declaration of let or var."
   (save-excursion
-    (or (equal (smie-default-backward-token) ">")
-        (member (smie-default-backward-token) '("class" "extension" "let" "var")))))
+    (or (looking-back "[[:alnum:]_][])>]*> *" (- (point) 32) nil) ;; Foo<[(a, b)]>:
+
+        (progn
+          (smie-default-backward-token)
+          (member (smie-default-backward-token) '("class" "extension" "let" "var"))))))
 
 (defun swift-smie--forward-token-debug ()
   (let ((token (swift-smie--forward-token)))
@@ -299,6 +332,15 @@
       (forward-char 1)
       "T>")
 
+     ;; colon
+     ((eq (char-after) ?:)
+      (if (swift-smie--is-type-colon)
+          (progn
+            (forward-char 1)
+            "TYPE:")
+        (forward-char 1)
+        ":"))
+
      (t (let
             ((pos-after-comment (point))
              (tok (if (looking-at swift-smie--operators-bare-regexp)
@@ -306,15 +348,6 @@
                              (match-string-no-properties 0))
                     (smie-default-forward-token))))
           (cond
-           ((string-match-p ">+:" tok) ; e.g. class Foo<A: B<C>>:
-            (goto-char pos-after-comment)
-            (forward-char 1)
-            ">")
-           ((equal tok ":")
-            (save-excursion
-              (if (or (equal (smie-default-backward-token) ">:")
-                      (swift-smie--is-type-colon))
-                  "TYPE:" ":")))
            ((equal tok "?")
             ;; heuristic for conditional operator
             (if (memq (char-before (1- (point))) '(?\s ?\t ?\n))
@@ -364,16 +397,16 @@
       (backward-char 1)
       "T>")
 
+     ;; colon
+     ((eq (char-before) ?:)
+      (backward-char 1)
+      (if (swift-smie--is-type-colon)
+          "TYPE:" ":"))
+
      (t (let
             ((pos-before-comment (point))
              (tok (smie-default-backward-token)))
           (cond
-           ((string-match-p ">+:" tok) ; e.g. class Foo<A: B<C>>:
-            (goto-char pos-before-comment)
-            (backward-char 1)
-            "TYPE:")
-           ((equal tok ":")
-            (if (swift-smie--is-type-colon) "TYPE:" ":"))
            ((equal tok "!")
             (let ((pos (point)))
               (if (member (smie-default-backward-token) '("as" "try")) ; "as!"
@@ -473,15 +506,17 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
   (pcase (cons kind token)
     (`(:elem . basic) swift-indent-multiline-statement-offset)
     (`(:after . "{") swift-indent-offset)
-    (`(:after . "(") swift-indent-multiline-statement-offset)
-    (`(:after . "[") swift-indent-offset)
+    (`(:after . "(") swift-indent-parenthesized-expression-offset)
+    (`(:after . "[") swift-indent-parenthesized-expression-offset)
     (`(:before . "{")
      (or
       (swift-smie--rule-for) ; special handling for for-statement.
       (swift-smie--indent-keyword swift-smie--statement-parent-tokens)))
     (`(:before . ,(or "(" "["))
      (swift-smie--indent-keyword
-      swift-smie--expression-parent-tokens
+      (append swift-smie--expression-parent-tokens
+              (if (or (equal token "[") swift-indent-compact-parenthesis)
+                  '() '("=" "?" ":")))
       (if (smie-indent--bolp-1)
           swift-indent-multiline-statement-offset
         0)))
@@ -509,14 +544,17 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
           (parent (swift-smie--backward-sexps-until
                    ;; remove "," to skip "," tokens in case label.
                    (append (remove "," swift-smie--expression-parent-tokens)
-                           '("case" "default")))))
-       (if (member (nth 2 parent) '("case" "default"))
-           (progn
-             (goto-char (nth 1 parent))
-             (cons 'column (+ (current-column) swift-indent-offset)))
+                           '("case" "default" "?")))))
+       (cond
+        ((member (nth 2 parent) '("case" "default"))
+         (goto-char (nth 1 parent))
+         (cons 'column (+ swift-indent-offset (current-column))))
+        ((equal (nth 2 parent) "?")
+         ;; else part of a conditional expression. Aligns with then part.
+         (cons 'column (current-column)))
+        (t
          (goto-char pos)
-         (swift-smie--rule-after-op t))))
-
+         (swift-smie--rule-after-op t)))))
     (`(:before . ":")
      ;; If this is a ":" token of a conditional expression, aligns with the "?"
      ;; token.
@@ -528,8 +566,9 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
           (parent (swift-smie--backward-sexps-until
                    (swift-smie--op-parent-tokens))))
        (if (and bolp (equal (nth 2 parent) "?"))
-           (progn (goto-char (nth 1 parent))
-                  (cons 'column (current-column)))
+           (progn
+             (goto-char (nth 1 parent))
+             (cons 'column (current-column)))
          (goto-char pos)
          (swift-smie--rule-before-op t))))
 
@@ -664,6 +703,7 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
    (swift-smie--rule-for)
    (let
        ((pos (point))
+        (previous (save-excursion (swift-smie--backward-token)))
         (parent (swift-smie--backward-sexps-until
                  (list "{" "(" "[" ":" (if implicit ":" "for"))
                  '("IMP;" ";"))))
@@ -678,6 +718,9 @@ OFFSET is a offset from parent tokens, or 0 if omitted."
                    (goto-char (nth 1 parent))
                    (+ (current-column) swift-indent-offset))
                (current-column)))
+            ((and (equal previous "in") (equal (nth 2 parent) "{"))
+             (goto-char (nth 1 parent))
+             (+ (smie-indent-virtual) swift-indent-offset))
             (t
              (current-column)))))))
 
