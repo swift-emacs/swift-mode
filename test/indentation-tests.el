@@ -1,6 +1,6 @@
 ;;; indentation-tests.el --- Test swift-mode indentation behaviour
 
-;; Copyright (C) 2014 Chris Barrett
+;; Copyright (C) 2014-2016 Chris Barrett
 
 ;; Author: Chris Barrett <chris.d.barrett@me.com>
 ;; Version: 0.1

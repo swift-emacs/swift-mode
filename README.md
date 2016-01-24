@@ -109,7 +109,7 @@ You can find a [full list of those people here](https://github.com/chrisbarrett/
 
 ## License
 
-See [COPYING][]. Copyright (c) 2014 Chris Barrett.
+See [COPYING][]. Copyright (c) 2014-2016 Chris Barrett, Bozhidar Batsov, Arthur Evstifeev.
 
 [badge-license]: https://img.shields.io/badge/license-GPL_3-green.svg
 [badge-travis]: https://travis-ci.org/chrisbarrett/swift-mode.png?branch=master

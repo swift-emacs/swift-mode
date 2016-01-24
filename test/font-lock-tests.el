@@ -1,6 +1,6 @@
 ;;; font-lock-tests.el --- Tests for font-lock behaviours in swift-mode.  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2014 Chris Barrett
+;; Copyright (C) 2014-2016 Chris Barrett
 
 ;; Author: Chris Barrett <chris.d.barrett@me.com>
 ;; Version: 0.1
