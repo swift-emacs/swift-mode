@@ -85,7 +85,13 @@ values of customisable variables."
            (should (equal (point-max) (point)))
            (forward-list -10)
            (should (equal (point-min) (point)))
-           )))))
+
+           (while (< 0 (skip-syntax-forward "^)"))
+             (unless (eobp) (forward-char 1))
+             ;; should not mismatch
+             (should (not (equal (blink-matching-open)
+                                 "Mismatched parentheses")))
+             ))))))
 
 ;; Provide font locking for easier test editing.
 
@@ -411,6 +417,18 @@ case y:
 }
 ")
 
+(check-indentation indents-case-statement-bodies/7
+  "
+switch x {
+case y,z:
+      |x
+}
+" "
+switch x {
+case y,z:
+    |x
+}
+")
 
 (check-indentation indents-default-statements-to-same-level-as-enclosing-switch/1
   "
@@ -632,6 +650,42 @@ enum Foo: Bar {
 }
 ")
 
+(check-indentation indents-case-statements-in-enum/4
+  "
+enum Foo {
+case A(Int, [Int : String]), B, C
+                                |func foo() {
+}
+}
+" "
+enum Foo {
+case A(Int, [Int : String]), B, C
+|func foo() {
+}
+}
+")
+
+(check-indentation indents-declaration-statements-in-enum/5
+  "
+enum OrderViewTableTakeAwayCells: Int {
+case DeliveryCell = 0,
+                    |nameCell = 1,
+     emailCell = 2,
+     phoneCell = 3,
+     couponCodeCell = 4,
+     lastCellIndex
+}
+" "
+enum OrderViewTableTakeAwayCells: Int {
+case DeliveryCell = 0,
+     |nameCell = 1,
+     emailCell = 2,
+     phoneCell = 3,
+     couponCodeCell = 4,
+     lastCellIndex
+}
+")
+
 (check-indentation indents-declaration-statements-in-enum/1
                    "
 enum Foo: Bar {
@@ -837,6 +891,38 @@ class Foo: Foo,
       Bar2,
       Baz {
 |}
+")
+
+(check-indentation indents-class-declaration/11
+  "
+@Foo public class Foo {
+     a
+     |}
+" "
+@Foo public class Foo {
+     a
+|}
+")
+
+(check-indentation indents-class-declaration/12
+  "
+@objc
+class ExampleClass: NSObject {
+    var enabled : Bool {
+    |@objc(isEnabled) get {
+            // Return the appropriate value
+        }
+    }
+}
+" "
+@objc
+class ExampleClass: NSObject {
+    var enabled : Bool {
+        |@objc(isEnabled) get {
+            // Return the appropriate value
+        }
+    }
+}
 ")
 
 (check-indentation indents-public-class-declaration/1
@@ -2273,6 +2359,17 @@ guard let x = y else {
 guard let x = y else {
     |return
 }
+")
+
+(check-indentation indents-do-while-statement/1
+  "
+do {
+|foo
+} while true
+" "
+do {
+    |foo
+} while true
 ")
 
 (provide 'indentation-tests)
