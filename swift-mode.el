@@ -193,11 +193,12 @@
 
 (defun verbose-swift-smie-rules (kind token)
   (let ((value (swift-smie-rules kind token)))
-    (message "%s '%s'; sibling-p:%s parent:%s hanging:%s == %s" kind token
-             (ignore-errors (smie-rule-sibling-p))
-             (ignore-errors smie--parent)
-             (ignore-errors (smie-rule-hanging-p))
-             value)
+    (unless (eq this-command 'ert-run-tests-interactively)
+      (message "%s '%s'; sibling-p:%s parent:%s hanging:%s == %s" kind token
+               (ignore-errors (smie-rule-sibling-p))
+               (ignore-errors smie--parent)
+               (ignore-errors (smie-rule-hanging-p))
+               value))
     value))
 
 (defvar swift-smie--operators
