@@ -340,7 +340,7 @@ We try to constraint those lookups by reasonable number of lines.")
       (goto-char (match-beginning 0)) "->")
 
      ((eq (char-before) ?<) (backward-char 1)
-      (if (looking-at "<[[:upper:]]") "<T" "<"))
+      (if (looking-at "[^\.]<[[:upper:]]") "<T" "<"))
      ((looking-back ">[?!]?" (- (point) 2) t)
       (goto-char (match-beginning 0))
       (if (looking-back "[[:space:]]" 1 t) ">" "T>"))
