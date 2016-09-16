@@ -107,17 +107,17 @@ Thanks to the following users for their contributions:
 - [@syohex](https://github.com/syohex) (Syohei Yoshida)
 - [@uk-ar](https://github.com/uk-ar) (Yuuki Arisawa)
 
-You can find a [full list of those people here](https://github.com/chrisbarrett/swift-mode/graphs/contributors).
+You can find a [full list of those people here](https://github.com/swift-emacs/swift-mode/graphs/contributors).
 
 ## License
 
 See [COPYING][]. Copyright (c) 2014-2016 Chris Barrett, Bozhidar Batsov, Arthur Evstifeev.
 
 [badge-license]: https://img.shields.io/badge/license-GPL_3-green.svg
-[badge-travis]: https://travis-ci.org/chrisbarrett/swift-mode.png?branch=master
-[travis]: https://travis-ci.org/chrisbarrett/swift-mode
-[COPYING]: https://github.com/chrisbarrett/swift-mode/blob/master/COPYING
-[CONTRIBUTING]: https://github.com/chrisbarrett/swift-mode/blob/master/CONTRIBUTING.md
+[badge-travis]: https://travis-ci.org/swift-emacs/swift-mode.png?branch=master
+[travis]: https://travis-ci.org/swift-emacs/swift-mode
+[COPYING]: https://github.com/swift-emacs/swift-mode/blob/master/COPYING
+[CONTRIBUTING]: https://github.com/swift-emacs/swift-mode/blob/master/CONTRIBUTING.md
 [swift]: https://developer.apple.com/swift/
 [cask]: https://github.com/cask/cask
 [rust-mode]: https://github.com/mozilla/rust/tree/master/src/etc/emacs
