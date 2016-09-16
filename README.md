@@ -17,7 +17,8 @@ Major-mode for Apple's [Swift programming language][swift]. Provides:
 This is currently at an early stage of development and there's plenty of work to
 do. Check the issue tracker.
 
-A new [swift3-mode](https://github.com/taku0/swift3-mode) is developing. It will be merged into this swift-mode in the near future.
+A new [swift3-mode](https://github.com/taku0/swift3-mode) is
+under development. It will be merged into `swift-mode` in the near future.
 
 Requires Emacs 24.4 or later.
 
