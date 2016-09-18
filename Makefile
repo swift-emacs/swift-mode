@@ -1,56 +1,56 @@
-CWD          = $(shell pwd)
-DIST         = $(CWD)/dist
-CASK        ?= cask
-EMACS       ?= emacs
-EMACSFLAGS   = --batch -Q
-VERSION     := $(shell EMACS=$(EMACS) $(CASK) version)
-PKG_DIR     := $(shell EMACS=$(EMACS) $(CASK) package-directory)
-USER_EMACS_D = ~/.emacs.d
-USER_ELPA_D  = $(USER_EMACS_D)/elpa
+CASK ?= cask
+EMACS ?= emacs
+VERSION := $(shell EMACS=$(EMACS) $(CASK) version)
+PKG_DIR := $(shell EMACS=$(EMACS) $(CASK) package-directory)
 
-SRCS         = $(filter-out %-pkg.el, $(wildcard *.el))
-TESTS        = $(filter-out %-pkg.el, $(wildcard test/*.el))
-EL          = $(DIST)/swift-mode-$(VERSION).el
+SRC = $(wildcard *.el)
+PACKAGE = dist/swift-mode-$(VERSION).tar
 
-.PHONY: all
-all : deps $(DIST)
+.PHONY: help all deps package install test clean
 
-.PHONY: deps
-deps : $(PKG_DIR)
-$(PKG_DIR) :
+help:
+## Shows this message.
+# Process this Makefile with following filters
+#
+# - Remove empty line.
+# - Remove lien containing ## no-doc.
+# - Remove after colon if the line is not a comment line.
+# - Replace /^## / to "  ".
+# - Remove other comment lines.
+# - Insert newline before rules.
+	@sed -e '/^\s*$$/d; /^[	.A-Z]/d; /## no-doc/d; s/^\([^#][^:]*\):.*/\1/; s/^## /  /; /^#/d; s/^[^ ]/\n&/' Makefile
+
+all: package
+## Builds the package.
+
+$(PKG_DIR): ## no-doc
 	$(CASK) install
 
-.PHONY: check
-check : deps
-	$(CASK) exec $(EMACS) $(EMACSFLAGS)  \
-	$(patsubst %,-l % , $(SRCS))\
-	$(patsubst %,-l % , $(TESTS))\
-	-f ert-run-tests-batch-and-exit
+deps: $(PKG_DIR)
+## Installs the dependencies.
 
-.PHONY: install
-install : $(DIST) $(USER_ELPA_D)
-	$(EMACS) $(EMACSFLAGS) -l package \
-	-f package-initialize  --eval '(package-install-file "$(EL)")'
-
-.PHONY: uninstall
-uninstall :
-	rm -rf $(USER_ELPA_D)/swift-mode-*
-
-.PHONY: reinstall
-reinstall : clean uninstall install
-
-.PHONY: clean-all
-clean-all : clean
-	rm -rf $(PKG_DIR)
-
-.PHONY: clean
-clean :
-	$(CASK) clean-elc
-	rm -f *.elc
-	rm -rf $(DIST)
-
-$(DIST) :
+$(PACKAGE): $(SRC) deps ## no-doc
+	rm -rf dist
 	$(CASK) package
 
-$(USER_ELPA_D) :
-	mkdir -p $(USER_ELPA_D)
+package: $(PACKAGE)
+## Builds the package.
+
+install: package
+## Installs the package.
+	$(CASK) exec $(EMACS) --batch \
+	  -l package \
+	  -f package-initialize \
+	  --eval '(package-install-file "$(PACKAGE)")'
+
+clean:
+## Cleans the dist directory.
+	rm -rf dist
+
+check: deps
+## Tests the package.
+	$(CASK) exec $(EMACS) --batch -q \
+	  --eval "(add-to-list 'load-path \""$(shell realpath .)"\")" \
+	  -l swift-mode.el \
+	  -l test/swift-mode-test-indent.el \
+	  -f swift-mode:run-test:indent

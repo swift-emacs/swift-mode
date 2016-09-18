@@ -1,12 +1,4 @@
-(source melpa)
 (source gnu)
-(source org)
+(source melpa)
 
 (package-file "swift-mode.el")
-
-(development
- (depends-on "s")
- (depends-on "dash")
- (depends-on "cl-lib")
- (depends-on "flycheck")
- (depends-on "flycheck-cask"))
