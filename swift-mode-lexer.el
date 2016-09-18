@@ -511,6 +511,8 @@ Return the token object.  If no more tokens available, return a token with
 type `out-of-buffer'"
 
   (let ((pos (point)))
+    (when (nth 4 (syntax-ppss))
+      (goto-char (nth 8 (syntax-ppss))))
     (forward-comment (point-max))
     (cond
      ;; Outside of buffer
@@ -679,6 +681,8 @@ Return the token object.  If no more tokens available, return a token with
 type `out-of-buffer'."
 
   (let ((pos (point)))
+    (when (nth 4 (syntax-ppss))
+      (goto-char (nth 8 (syntax-ppss))))
     (forward-comment (- (point)))
     (cond
      ;; Outside of buffer
