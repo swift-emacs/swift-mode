@@ -9,7 +9,29 @@ repository. Follow the guidelines below to make sure everything goes smoothly.
 - Check that the issue has not already been reported
 - Check that the issue has not already been fixed in the latest code
 - Open an issue with a clear title
-- Write as grammatically correct as you can in the description.
+- Use concise English.
+- Use code as our common language.
+    - An example is worth a thousand words. For example:
+
+      > It should be indented like this:
+      ```swift
+      guard
+        var x = xx else {
+          foo()
+          foo()
+      }
+      ```
+      > But actually it is indented like this:
+      ```swift
+      guard
+        var x = xx else {
+            foo()
+            foo()
+        }
+      ```
+    - A link to the language specification or other project is also worth a
+      thousand words. For example, “I want this feature (links to a elisp
+      function of other project)”.
 
 ## Pull requests
 
@@ -17,6 +39,7 @@ repository. Follow the guidelines below to make sure everything goes smoothly.
 - Follow the coding conventions already in use
 - Verify Emacs Lisp code with `checkdoc`
 - Add unit tests whenever possible
+- Run `make check` and ensure no errors other than known-bugs.
 - Open a [pull request](https://help.github.com/articles/using-pull-requests)
   relating to a single issue.
 
@@ -24,8 +47,7 @@ repository. Follow the guidelines below to make sure everything goes smoothly.
 
 ### Naming
 
-- Use a `swift-mode-` prefix for all public names.
-- Use a `swift-mode--` prefix for all internal names.
+Use a `swift-mode:` prefix.
 
 ### Docstrings
 
