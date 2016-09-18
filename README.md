@@ -203,5 +203,6 @@ Thanks to [@purcell](https://github.com/purcell) (Steve Purcell) for advices on 
 GPLv3. See [COPYING][] for details. Copyright (C) 2014-2016 taku0, Chris Barrett, Bozhidar Batsov, Arthur Evstifeev.
 
 [badge-license]: https://img.shields.io/badge/license-GPL_3-green.svg
+[badge-travis]: https://travis-ci.org/swift-emacs/swift-mode.png?branch=master
 [travis]: https://travis-ci.org/swift-emacs/swift-mode
 [COPYING]: ./COPYING
