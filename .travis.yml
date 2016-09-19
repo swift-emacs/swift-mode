@@ -17,5 +17,4 @@ before_install:
   - cask --version
 
 script:
-  - make
   - make check
