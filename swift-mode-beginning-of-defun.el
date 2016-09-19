@@ -39,20 +39,46 @@
   (let (result
         pos)
     (if (<= 0 arg)
-        (while (< 0 arg)
-          (setq result (swift-mode:beginning-of-defun-1
-                        #'swift-mode:backward-token-or-list))
-          (setq arg (1- arg)))
+        (progn
+          (setq pos (point))
+          ;; Special handling for the case that the cursor is between the
+          ;; beginning of the defun and the open curly brace of the defun.
+          (when (< (save-excursion
+                     (swift-mode:beginning-of-statement)
+                     (point))
+                   (point))
+            ;; Searches forward { or end of a statement.
+            (while (not
+                    (memq
+                     (swift-mode:token:type (swift-mode:forward-token-or-list))
+                     '({} implicit-\; \; } outside-of-buffer))))
+            (when (eq (char-before) ?})
+              (backward-list))
+            ;; Skips implicit ;
+            (forward-comment (point-max))
+            (if (swift-mode:is-point-before-body-of-defun)
+                (progn
+                  (swift-mode:beginning-of-statement)
+                  (setq result t)
+                  (setq arg (1- arg)))
+              (goto-char pos)))
+          (while (< 0 arg)
+            (setq result (swift-mode:beginning-of-defun-1
+                          #'swift-mode:backward-token-or-list))
+            (setq arg (1- arg))))
       (while (< arg 0)
+        ;; If the cursor is on a defun, ensure the cursor is after the open
+        ;; curly brace of defun.
         (setq pos (point))
-
         (swift-mode:beginning-of-statement)
-
+        ;; swift-mode:beginning-of-statement may forward the cursor if the
+        ;; cursor is on a comment or whitespace. In that case, does not skip
+        ;; the defun.
         (when (<= (point) pos)
           (while (not
                   (memq
                    (swift-mode:token:type (swift-mode:forward-token-or-list))
-                   '({} outside-of-buffer)))))
+                   '({} } outside-of-buffer)))))
 
         (setq result (swift-mode:beginning-of-defun-1
                       (lambda ()
@@ -109,12 +135,23 @@
 Intended for internal use."
   (let ((parent (swift-mode:backward-sexps-until
                  swift-mode:statement-parent-tokens)))
-    (forward-comment (point-max))
-    (swift-mode:goto-non-comment-bol)
-    (when (< (point) (swift-mode:token:end parent))
-      (goto-char (swift-mode:token:end parent)))
-    (swift-mode:skip-whitespaces)))
-
+    (if (and
+         (eq (swift-mode:token:type parent) 'implicit-\;)
+         (save-excursion
+           (goto-char (swift-mode:token:end parent))
+           (eq
+            (swift-mode:token:type (swift-mode:forward-token))
+            '{)))
+        (progn
+          (forward-comment (- (point)))
+          (swift-mode:beginning-of-statement))
+      (goto-char (swift-mode:token:end parent))
+      (setq parent (save-excursion (swift-mode:backward-token)))
+      (forward-comment (point-max))
+      (swift-mode:goto-non-comment-bol)
+      (when (< (point) (swift-mode:token:end parent))
+        (goto-char (swift-mode:token:end parent)))
+      (swift-mode:skip-whitespaces))))
 
 (defun swift-mode:end-of-defun (&optional arg)
   "Move forward to the end of a defun."
