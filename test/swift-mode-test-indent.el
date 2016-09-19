@@ -53,7 +53,7 @@ Return the error-buffer"
   (let ((error-buffer
          (if noninteractive nil (swift-mode:setup-error-buffer)))
         (current-line 0)
-        (error-count 0))
+        (error-counts '((error . 0) (warning . 0) (info . 0) (ok . 0))))
     (setq default-directory
           (concat (file-name-as-directory swift-mode:test:basedir)
                   "swift-files"))
@@ -77,14 +77,23 @@ Return the error-buffer"
            (t
             (when (looking-at ".*//.*swift-mode:test:eval\\(.*\\)")
               (eval-region (match-beginning 1) (match-end 1)))
-            (unless
-                (swift-mode:test-current-line-indent
-                 swift-file current-line error-buffer)
-              (setq error-count (1+ error-count)))))
+            (let*
+                ((status (swift-mode:test-current-line-indent
+                          swift-file current-line error-buffer))
+                 (count-assoc (assq status error-counts)))
+              (setcdr count-assoc (1+ (cdr count-assoc))))))
           (forward-line))))
-    (when (= error-count 0)
-      (swift-mode:print-message error-buffer "no regressions\n"))
-    (when (not noninteractive)
+
+    (swift-mode:print-message
+     error-buffer
+     (concat
+      "Errors: " (prin1-to-string (assoc-default 'error error-counts)) "\n"
+      "Warning: " (prin1-to-string (assoc-default 'warning error-counts)) "\n"
+      "Info: " (prin1-to-string (assoc-default 'info error-counts)) "\n"
+      "OK: " (prin1-to-string (assoc-default 'ok error-counts)) "\n"))
+
+    (if noninteractive
+        (kill-emacs (min 63 (assoc-default 'error error-counts)))
       (compilation-mode))))
 
 (defun swift-mode:test-current-line-indent
@@ -97,7 +106,8 @@ ERROR-BUFFER is the buffer to output errors."
   (back-to-indentation)
   (let ((original-indent (current-column))
         computed-indent
-        (known-bug (looking-at ".*//.*swift-mode:test:known-bug")))
+        (known-bug (looking-at ".*//.*swift-mode:test:known-bug"))
+        (status 'ok))
     (delete-horizontal-space)
     (when (= original-indent 0)
       (indent-line-to 1))
@@ -108,6 +118,8 @@ ERROR-BUFFER is the buffer to output errors."
     (indent-line-to original-indent)
 
     (when (/= original-indent computed-indent)
+      (setq status (if known-bug 'warning 'error))
+
       (swift-mode:show-error
        error-buffer swift-file current-line
        (if known-bug "warning" "error")
@@ -119,12 +131,13 @@ ERROR-BUFFER is the buffer to output errors."
         (prin1-to-string computed-indent))))
 
     (when (and (= original-indent computed-indent) known-bug)
+      (setq status 'info)
       (swift-mode:show-error
        error-buffer swift-file current-line
        "info"
        "known-bug is fixed somehow"))
 
-    (= original-indent computed-indent)))
+    status))
 
 (defun swift-mode:show-error (error-buffer file line level message)
   "Show an error message to the ERROR-BUFFER or stdout.
