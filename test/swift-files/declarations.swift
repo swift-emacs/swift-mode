@@ -29,7 +29,7 @@ class Foo {
       =
       xx
 
-    @ABC
+    @ABC(aaa)
     final
       unowned(safe)
       fileprivate
@@ -229,6 +229,15 @@ func
   foo()
   ->
   @A
+  B {
+    foo()
+    foo()
+}
+
+func
+  foo()
+  ->
+  @A(aaa)
   B {
     foo()
     foo()

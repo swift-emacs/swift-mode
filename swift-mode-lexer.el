@@ -283,7 +283,18 @@
       t)
 
      ;; Supress implicit semicolon after attributes.
-     ((string-prefix-p "@" (swift-mode:token:text previous-token)) nil)
+     ((string-prefix-p "@" (swift-mode:token:text previous-token))
+      nil)
+
+     ;; Supress implicit semicolon after attributes with arguments.
+     ((and
+       (eq (swift-mode:token:type previous-token) '\))
+       (save-excursion
+         (backward-list)
+         (string-prefix-p
+          "@"
+          (swift-mode:token:text (swift-mode:backward-token-simple)))))
+      nil)
 
      ;; Inserts implicit semicolon before keywords that behave like method
      ;; names.
