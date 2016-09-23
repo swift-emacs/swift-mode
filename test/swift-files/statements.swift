@@ -577,17 +577,17 @@ default:
 switch foo {
 case let
        .P(x)
-         where // swift-mode:test:known-bug
+         where
            foo
              .bar(),
      let
        .Q(x)
-         where // swift-mode:test:known-bug
+         where
            foo
              .bar(),
      let
        .R(x)
-         where // swift-mode:test:known-bug
+         where
            foo
              .bar():
     foo()
@@ -601,17 +601,17 @@ switch foo {
 case
   let
     .P(x)
-      where // swift-mode:test:known-bug
+      where
         foo
           .bar(),
   let
     .Q(x)
-      where // swift-mode:test:known-bug
+      where
         foo
           .bar(),
   let
     .R(x)
-      where // swift-mode:test:known-bug
+      where
         foo
           .bar():
     foo()
@@ -625,17 +625,17 @@ switch foo {
 case
   let Foo
     .P(x)
-      where // swift-mode:test:known-bug
+      where
         foo
           .bar(),
   let Foo
     .Q(x)
-      where // swift-mode:test:known-bug
+      where
         foo
           .bar(),
   let Foo
     .R(x)
-      where // swift-mode:test:known-bug
+      where
         foo
           .bar():
     foo()
@@ -657,19 +657,19 @@ case
   let
     Foo
     .P(x)
-      where // swift-mode:test:known-bug
+      where
         foo
           .bar(),
   let
     Foo
     .Q(x)
-      where // swift-mode:test:known-bug
+      where
         foo
           .bar(),
   let
     Foo
     .R(x)
-      where // swift-mode:test:known-bug
+      where
         foo
           .bar():
     foo()
@@ -683,18 +683,18 @@ switch foo {
 case
   is
     Foo
-      where // swift-mode:test:known-bug
+      where
         foo
           .bar(),
   is
     Foo
-      where // swift-mode:test:known-bug
+      where
         foo
           .bar(),
   let Foo
     .Bar
     .Baz
-      where // swift-mode:test:known-bug
+      where
         foo
           .bar():
     foo()

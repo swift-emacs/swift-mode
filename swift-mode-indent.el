@@ -311,11 +311,17 @@
       (let ((parent (save-excursion (swift-mode:backward-sexps-until
                                      (append swift-mode:statement-parent-tokens
                                              '("case"))))))
-        (swift-mode:find-and-align-with-parents
-         (append swift-mode:statement-parent-tokens
-                 '(< "case" "catch" "for")
-                 (if (equal (swift-mode:token:text parent) "case") '(\,) '()))
-         swift-mode:multiline-statement-offset)))
+        (if (equal (swift-mode:token:text parent) "case")
+            (progn
+              (goto-char (swift-mode:token:end previous-token))
+              (swift-mode:backward-token-or-list)
+              (swift-mode:calculate-indent-of-expression
+               swift-mode:multiline-statement-offset
+               swift-mode:multiline-statement-offset))
+          (swift-mode:find-and-align-with-parents
+           (append swift-mode:statement-parent-tokens
+                   '(< "case" "catch" "for"))
+           swift-mode:multiline-statement-offset))))
 
      ;; After {
      ((eq previous-type '{)
