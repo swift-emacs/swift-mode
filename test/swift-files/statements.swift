@@ -493,7 +493,7 @@ case foo:
 default:
     foo()
     foo()
-} // swift-mode:test:known-bug
+}
 
 switch
   foo
@@ -504,7 +504,7 @@ case foo:
 default:
     foo()
     foo()
-} // swift-mode:test:known-bug
+}
 
 
 switch foo {

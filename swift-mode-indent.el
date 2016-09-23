@@ -700,7 +700,7 @@ This function is also used for close-curly-brace."
           (cond
            ((member
              (swift-mode:token:text next-token)
-             '("for" "while" "repeat" "if" "else" "defer" "do" "catch"
+             '("for" "while" "repeat" "switch" "if" "else" "defer" "do" "catch"
                "get" "set" "willSet" "didSet" "func" "init" "subscript"
                "enum" "struct" "class" "extension" "prefix" "postfix" "infix"
                "precedencegroup"))
