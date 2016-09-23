@@ -479,9 +479,9 @@ guard
     )
     =
     ab else {
-    foo() // swift-mode:test:known-bug
     foo()
-} // swift-mode:test:known-bug
+    foo()
+}
 
 // Switch statement
 
