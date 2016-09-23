@@ -61,7 +61,7 @@ To install without MELPA, download [latest release](https://github.com/swift-ema
     ]
   ```
 - `forward-sexp`
-- `beginning-of-defun` and `end-of-defun`
+- `beginning-of-defun` and `end-of-defun`, so `mark-defun` and `narrow-to-defun` work fine.
 - `indent-new-comment-line`
 - [Imenu](https://www.gnu.org/software/emacs/manual/html_node/emacs/Imenu.html)
 - Running Swift REPL in a buffer (`M-x run-swift`)
@@ -87,7 +87,7 @@ Some syntax constructs removed from Swift 3.0 are not supported:
   }
   ```
 
-Indentation may not accurate. For example, `foo(Bar < A, B > (c))` is ambiguous. It is indented like either
+Indentation may not accurate. For example, `foo(Bar < A, B > (c))` is indented like either
 ```swift
 foo(Bar < A,
     B > (c)) // Passing two Boolean arguments to foo
@@ -97,7 +97,7 @@ or
 foo(Bar < A,
           B > (c)) // constructing Bar with two type arguments and a value
 ```
-The Swift compiler disambiguates this case using tokens after `>`, but those tokens may not available in editing time. We use some heuristic for this.
+The Swift compiler disambiguates this case using tokens after `>`, but those tokens may not available at editing time. We use some heuristic for this.
 
 Another example is difficulty of handling of colons. We have to pair all `?` and `:` of conditional operators to decide indentation. This is a future work.
 
