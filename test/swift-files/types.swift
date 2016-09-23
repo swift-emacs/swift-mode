@@ -59,7 +59,7 @@ let foo
 
 class Foo:
   @A
-  A,
+  A, // swift-mode:test:known-bug
   B {
 }
 
@@ -94,7 +94,7 @@ let foo:
 
 class Foo:
   A.
-    B, // swift-mode:test:known-bug
+    B,
   A.
     B,
   A
@@ -103,7 +103,7 @@ class Foo:
 
 class Foo
   : A.
-      B, // swift-mode:test:known-bug
+      B,
     A.
       B,
     A
@@ -111,7 +111,7 @@ class Foo
 }
 
 class Foo: A.
-             B, // swift-mode:test:known-bug
+             B
          , A.
              B
          , A
@@ -121,7 +121,7 @@ class Foo: A.
 
 class Foo
   : A.
-      B // swift-mode:test:known-bug
+      B
   , A.
       B,
   , A

@@ -292,13 +292,13 @@ fileprivate
     B =
       D<E> {
     case A =
-           1, // swift-mode:test:known-bug
+           1,
          B =
            2,
          C =
            3
     case D
-           = 1, // swift-mode:test:known-bug
+           = 1,
          E
            = 2,
          F

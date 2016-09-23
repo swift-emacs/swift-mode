@@ -82,7 +82,7 @@
 ;; - implicit-;
 ;; - < (as an angle bracket)
 ;; - > (as an angle bracket)
-;; - typing-: (colon for supertype declaration or type declaration of let or var)
+;; - supertype-: (colon for supertype declaration or type declaration of let or var)
 ;; - case-: (colon for case or default label)
 ;; - : (part of conditional operator, key-value separator, label-statement separator)
 ;; - anonymous-function-parameter-in ("in" after anonymous function parameter)
@@ -391,38 +391,43 @@
     ;; Otherwise, inserts implicit semicolon.
     (t t))))
 
-(defun swift-mode:type-colon-p ()
-  "Return t if a colon at the cursor is the colon for type annotation.
+(defun swift-mode:supertype-colon-p ()
+  "Return t if a colon at the cursor is the colon for supertype.
 
 That is supertype declaration or type declaration of let or var."
   (save-excursion
     (let ((previous-token (swift-mode:backward-token-simple)))
-      ;; class Foo<T>: Bar ← type colon
-      ;; class Foo<T> : Bar ← type colon
-      ;; class Foo<T where T: Bar<[(Int, String)]>> : Bar ← type colon
-      ;; case Foo: ← not a type colon
-      ;; case Foo where foo: ← not a type colon
-      ;; default: ← not a type colon
-      ;; foo ? bar : baz ← not a type colon
+      ;; class Foo<T>: Bar ← supertype colon
+      ;; class Foo<T> : Bar ← supertype colon
+      ;; class Foo<T where T: Bar<[(Int, String)]>> : Bar ← supertype colon
+      ;; case Foo: ← not a supertype colon
+      ;; case Foo where foo: ← not a supertype colon
+      ;; case let Foo(x) where x is Foo<Int>: ← not a supertype colon
+      ;; default: ← not a supertype colon
+      ;; foo ? bar : baz ← not a supertype colon
       ;; [
-      ;;   foo: ← not a type colon
+      ;;   foo: ← not a supertype colon
       ;;     bar
       ;; ]
-      ;; foo(bar, baz: baz) ← not a type colon
+      ;; foo(bar, baz: baz) ← not a supertype colon
+      ;; protocol Foo {
+      ;;   associatedtype Bar<A>: Baz ← supertype colon
+      ;; }
       (or
+       ;; FIXME case let Foo(x) where x is Foo<Int>
        (eq (swift-mode:token:type previous-token) '>)
-       ;; class Foo: ← type colon
-       ;; extension Foo: ← type colon
-       ;; let foo: ← type colon
-       ;; var foo: ← type colon
+       ;; class Foo: ← supertype colon
+       ;; extension Foo: ← supertype colon
+       ;; let foo: ← not a supertype colon
+       ;; var foo: ← not a supertype colon
        ;; protocol Foo {
-       ;;   typealias Bar: Baz ← type colon
+       ;;   associatedtype Bar: Baz ← supertype colon
        ;; }
        (member (swift-mode:token:text
                 (swift-mode:backquote-identifier-if-after-dot
                  (swift-mode:backward-token-simple)))
                '("class" "extension" "enum" "struct" "protocol" "typealias"
-                 "associatedtype" "let" "var"))))))
+                 "associatedtype"))))))
 
 (defun swift-mode:case-colon-p ()
   "Return t if a colon at the cursor is the colon for case or default label."
@@ -545,7 +550,7 @@ type `out-of-buffer'"
      ;; Colon
      ((eq (char-after) ?:)
       (swift-mode:token (cond
-                         ((swift-mode:type-colon-p) 'typing-:)
+                         ((swift-mode:supertype-colon-p) 'supertype-:)
                          ((swift-mode:case-colon-p) 'case-:)
                          (t ':))
                         ":"
@@ -715,7 +720,7 @@ type `out-of-buffer'."
      ((eq (char-before) ?:)
       (backward-char)
       (swift-mode:token (cond
-                         ((swift-mode:type-colon-p) 'typing-:)
+                         ((swift-mode:supertype-colon-p) 'supertype-:)
                          ((swift-mode:case-colon-p) 'case-:)
                          (t ':))
                         ":"

@@ -365,6 +365,16 @@ if foo() {
     foo()
 }
 
+if foo.bar +++ {
+       foo()
+   },
+   foo.bar +++ {
+       foo()
+   } {
+    foo()
+}
+
+
 // Guard statement
 
 guard
@@ -566,7 +576,7 @@ default:
 
 switch foo {
 case let
-       .P(x) // swift-mode:test:known-bug
+       .P(x)
          where // swift-mode:test:known-bug
            foo
              .bar(),
@@ -590,7 +600,7 @@ default:
 switch foo {
 case
   let
-    .P(x) // swift-mode:test:known-bug
+    .P(x)
       where // swift-mode:test:known-bug
         foo
           .bar(),
@@ -614,7 +624,7 @@ default:
 switch foo {
 case
   let Foo
-    .P(x) // swift-mode:test:known-bug
+    .P(x)
       where // swift-mode:test:known-bug
         foo
           .bar(),
@@ -632,7 +642,7 @@ case
     foo()
 case
   Foo
-    .P, // swift-mode:test:known-bug
+    .P,
   Foo
     .Q,
   Foo
@@ -645,7 +655,7 @@ default:
 switch foo {
 case
   let
-    Foo // swift-mode:test:known-bug
+    Foo
     .P(x)
       where // swift-mode:test:known-bug
         foo
@@ -672,7 +682,7 @@ default:
 switch foo {
 case
   is
-    Foo // swift-mode:test:known-bug
+    Foo
       where // swift-mode:test:known-bug
         foo
           .bar(),
@@ -689,6 +699,15 @@ case
           .bar():
     foo()
     foo()
+default:
+    foo()
+    foo()
+}
+
+switch foo {
+case let .P(x) where x is Foo<Int>:
+    foo() // swift-mode:test:known-bug
+    foo() // swift-mode:test:known-bug
 default:
     foo()
     foo()

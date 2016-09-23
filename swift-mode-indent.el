@@ -89,7 +89,7 @@
 
 (defconst swift-mode:expression-parent-tokens
   (append swift-mode:statement-parent-tokens
-          '(\, < "where" "if" "guard" "while"))
+          '(\, < supertype-: "where" "if" "guard" "while"))
   "Parent tokens for expressions.")
 
 (defun swift-mode:indent-line ()
@@ -158,23 +158,7 @@
      ((and next-is-on-same-line (memq next-type '(\) \])))
       (goto-char (swift-mode:token:end next-token))
       (backward-list)
-      (swift-mode:calculate-indent-of-expression
-       swift-mode:expression-parent-tokens
-       0
-       ;; Stops scanning at BOL:
-       ;;
-       ;; foo
-       ;;   .bar(
-       ;;     1
-       ;;   )
-       ;;
-       ;; rather than
-       ;;
-       ;; foo
-       ;;   .bar(
-       ;;   1
-       ;; )
-       'any))
+      (swift-mode:calculate-indent-of-expression 0))
 
      ;; Before , on the same line
      ((and next-is-on-same-line (eq next-type '\,))
@@ -223,7 +207,7 @@
       ;;       in
       ;;   a
       ;; }
-      (swift-mode:calculate-indent-of-expression '("for" {)))
+      (swift-mode:find-and-align-with-parents '("for" {)))
 
      ;; Before "case" or "default" on the same line, for switch statement
      ((and
@@ -282,7 +266,7 @@
                      '("switch") nil '("case" "default"))))
         (if (equal (swift-mode:token:text parent) "switch")
             ;; Inside a switch-statement. Aligns with the "switch"
-            (swift-mode:calculate-indent-of-expression
+            (swift-mode:find-and-align-with-parents
              swift-mode:statement-parent-tokens
              swift-mode:switch-case-offset)
           ;; Other cases. Aligns with the previous case.
@@ -327,7 +311,7 @@
       (let ((parent (save-excursion (swift-mode:backward-sexps-until
                                      (append swift-mode:statement-parent-tokens
                                              '("case"))))))
-        (swift-mode:calculate-indent-of-expression
+        (swift-mode:find-and-align-with-parents
          (append swift-mode:statement-parent-tokens
                  '(< "case" "catch" "for")
                  (if (equal (swift-mode:token:text parent) "case") '(\,) '()))
@@ -343,23 +327,7 @@
      ((memq previous-type '(\( \[))
       (goto-char (swift-mode:token:start previous-token))
       (swift-mode:calculate-indent-of-expression
-       swift-mode:expression-parent-tokens
        swift-mode:parenthesized-expression-offset
-       ;; Stops scanning at BOL:
-       ;;
-       ;; foo
-       ;;   .bar(
-       ;;     1
-       ;;   )
-       ;;
-       ;; rather than
-       ;;
-       ;; foo
-       ;;   .bar(
-       ;;   1
-       ;; )
-       'any
-       nil
        swift-mode:parenthesized-expression-offset))
 
      ;; After "where"
@@ -435,7 +403,7 @@
                         (swift-mode:backward-sexps-until
                          (append swift-mode:statement-parent-tokens
                                  '("case"))))))
-          (swift-mode:calculate-indent-of-expression
+          (swift-mode:find-and-align-with-parents
            (append swift-mode:statement-parent-tokens
                    '(< "case" "catch" "for")
                    (if (equal (swift-mode:token:text parent) "case") '(\,) '()))
@@ -444,7 +412,7 @@
      ;; After implicit-\; or ;
      ((memq previous-type '(implicit-\; \;))
       (goto-char (swift-mode:token:start previous-token))
-      (swift-mode:calculate-indent-of-expression
+      (swift-mode:find-and-align-with-parents
        (remove '\; (remove 'implicit-\; swift-mode:statement-parent-tokens))
        0
        '(implicit-\; \;)))
@@ -486,20 +454,20 @@
      ;; After case ... : or default:
      ((eq previous-type 'case-:)
       (goto-char (swift-mode:token:start previous-token))
-      (swift-mode:calculate-indent-of-expression
+      (swift-mode:find-and-align-with-parents
        swift-mode:statement-parent-tokens
        swift-mode:basic-offset))
 
      ;; Before ; on the same line
      ((and next-is-on-same-line (eq next-type '\;))
-      (swift-mode:calculate-indent-of-expression
+      (swift-mode:find-and-align-with-parents
        (remove '\; (remove 'implicit-\; swift-mode:statement-parent-tokens))
        0
        '(implicit-\; \;)))
 
      ;; After if, guard, while
      ((member previous-text '("if" "guard" "while"))
-      (swift-mode:calculate-indent-of-expression
+      (swift-mode:find-and-align-with-parents
        swift-mode:statement-parent-tokens
        swift-mode:multiline-statement-offset))
 
@@ -534,21 +502,19 @@
       (goto-char (swift-mode:token:end previous-token))
       (swift-mode:backward-token-or-list)
       (swift-mode:calculate-indent-of-expression
-       swift-mode:expression-parent-tokens
-       swift-mode:multiline-statement-offset
-       'any)))))
+       swift-mode:multiline-statement-offset)))))
 
-(defun swift-mode:calculate-indent-of-expression
+(defun swift-mode:find-and-align-with-parents
     (parents
      &optional
      offset
      stop-at-eol-token-types
      stop-at-bol-token-types
      bol-offset)
-  "Return start column of the current expressions or statement plus OFFSET.
+  "Return start column of the current expressions or statement plus offset.
 
-If OFFSET is omitted, it is assumed to be 0.
 PARENTS is a list of token types that precedes an expression or a statement.
+OFFSET is the offset.  If it is omitted, assumed to be 0.
 See `swift-mode:backward-sexps-until' for the details of
 STOP-AT-EOL-TOKEN-TYPES and STOP-AT-BOL-TOKEN-TYPES.
 If scanning stops at STOP-AT-EOL-TOKEN-TYPES, align with the next token with
@@ -589,6 +555,41 @@ on the previous line."
         ;; The cursor is at the middle of the expression.
         ;; Aligns with this line with bol-offset.
         (swift-mode:align-with-current-line bol-offset)))))
+
+(defun swift-mode:calculate-indent-of-expression
+    (&optional
+     offset
+     bol-offset)
+  "Return start column of the current expressions plus offset.
+
+the cursor is assumed to be on the previous line.
+
+OFFSET is the offset.  If it is omitted, assumed to be 0.
+If scanning stops at eol, align with the next token with BOL-OFFSET."
+  (save-excursion
+    (let* ((pos (point))
+           (parent-of-previous-line
+            (progn (swift-mode:goto-non-comment-bol-with-same-nesting-level)
+                   (swift-mode:backward-token)))
+           (parent (progn (goto-char pos)
+                          (swift-mode:find-parent-of-expression))))
+      (if (<= (swift-mode:token:start parent-of-previous-line)
+              (swift-mode:token:start parent))
+          ;; let x =
+          ;;   1 + // here
+          ;;   2 +
+          ;;   3
+          ;;
+          ;; Aligns with the parent of the expression with offset.
+          (swift-mode:align-with-next-token parent offset)
+        ;; let x =
+        ;;   1 +
+        ;;   2 + // here
+        ;;   3   // or here
+        ;;
+        ;; Aligns with the previous line.
+        (swift-mode:align-with-next-token parent-of-previous-line
+                                          bol-offset)))))
 
 (defun swift-mode:calculate-indent-after-open-curly-brace (offset)
   "Return indentation after open curly braces.
@@ -733,12 +734,11 @@ This function is also used for close-curly-brace."
             (if (< (point) pos)
                 (setq next-token (swift-mode:forward-token-or-list))
               (goto-char (1+ pos))))))))
-    (swift-mode:calculate-indent-of-expression
-     swift-mode:statement-parent-tokens
-     offset
-     (if is-declaration-or-control-statement-body nil 'any)
-     nil
-     offset)))
+    (if is-declaration-or-control-statement-body
+        (swift-mode:find-and-align-with-parents
+         swift-mode:statement-parent-tokens
+         offset)
+      (swift-mode:calculate-indent-of-expression offset offset))))
 
 (defun swift-mode:calculate-indent-of-prefix-comma ()
   "Return indentation for prefix comma.
@@ -781,8 +781,8 @@ This is also known as Utrecht-style in the Haskell community."
 Assuming the cursor is on the comma."
   (swift-mode:align-with-next-token (swift-mode:find-parent-of-list-element nil)))
 
-(defun swift-mode:find-parent-of-list-element (utrecht-sytle)
-  "Move point backward to the parent token of comma under the cursor.
+(defun swift-mode:find-parent-of-list-element (&optional utrecht-sytle)
+  "Move point backward to the parent token of the comma under the cursor.
 If UTRECHT-SYTLE is non-nil, stop at a comma at bol.  Otherwise, stop at a
 comma at eol."
   ;; Various examples:
@@ -904,10 +904,10 @@ comma at eol."
                     '("guard" "while" "let" "var" "case" "where"))
             (setq result next-token))
 
-           ((eq (swift-mode:token:type next-token) 'typing-:)
+           ((eq (swift-mode:token:type next-token) 'supertype-:)
             (goto-char pos)
             (setq result (swift-mode:backward-sexps-until
-                          '(typing-: "where")))))
+                          '(supertype-: "where")))))
 
           (setq next-token (swift-mode:forward-token-or-list)))
         (when (and (> (point) pos)
@@ -915,11 +915,81 @@ comma at eol."
           ;; The comma was inside <> but scanner misunderstood < as
           ;; a binary-operator.
           (swift-mode:backward-token-or-list)
-          (setq result (swift-mode:backward-token)))
+          (setq result (swift-mode:forward-token)))
         (when (null result)
           (setq result parent))
         (goto-char (swift-mode:token:start result))
         result)))))
+
+(defun swift-mode:find-parent-of-expression ()
+  "Move point backward to the parent token of the expression under the cursor."
+  ;; TODO Unify with swift-mode:find-parent-of-list-element
+  (let ((pos (point))
+        (parent (swift-mode:backward-sexps-until
+                 swift-mode:expression-parent-tokens)))
+    (cond
+     ((memq (swift-mode:token:type parent) '(\( \[))
+      parent)
+
+     ((or
+       (memq (swift-mode:token:type parent)
+             swift-mode:statement-parent-tokens)
+       (member (swift-mode:token:text parent)
+               swift-mode:statement-parent-tokens)
+       (eq (swift-mode:token:type parent) 'outside-of-buffer))
+      (goto-char (swift-mode:token:end parent))
+      (let ((next-token (swift-mode:forward-token-or-list))
+            result)
+        (while (and (<= (point) pos) (not result))
+          (cond
+           ((member (swift-mode:token:text next-token)
+                    '("guard" "while" "case" "where"))
+            (setq result next-token))
+
+           ((member (swift-mode:token:text next-token)
+                    '("let" "var"))
+            ;; Special handling for "let" and "var".
+            ;;
+            ;; Declaring multiple variables with single let statement doesn't
+            ;; seem to be popular. Rather, we choose saving columns for the
+            ;; first variable:
+            ;;
+            ;; let x =
+            ;;   foo(),
+            ;;     y =
+            ;;       foo()
+            ;;
+            ;; rather than:
+            ;;
+            ;; let x =
+            ;;       foo(),
+            ;;     y =
+            ;;       foo()
+            ;;
+            ;; TODO make customizable
+            (setq result parent))
+
+           ((eq (swift-mode:token:type next-token) 'supertype-:)
+            parent))
+
+          (forward-comment (point-max))
+          (if (< (point) pos)
+              (setq next-token (swift-mode:forward-token-or-list))
+            (setq next-token (swift-mode:forward-token))))
+        (when (and (> (point) pos)
+                   (eq (swift-mode:token:type next-token) '<>))
+          ;; The expression was inside <> but scanner misunderstood < as
+          ;; a binary-operator.
+          (swift-mode:backward-token-or-list)
+          (setq result (swift-mode:forward-token)))
+        (when (null result)
+          (setq result parent))
+        (goto-char (swift-mode:token:start result))
+        result))
+
+     (t
+      parent))))
+
 
 (defun swift-mode:backward-sexps-until (token-types
                                         &optional
@@ -1201,6 +1271,12 @@ Newlines inside comments are ignored."
       (swift-mode:goto-non-comment-eol)
       (forward-comment (- (point)))
       (<= (point) pos))))
+
+(defun swift-mode:goto-non-comment-bol-with-same-nesting-level ()
+  "Back to the beginning of line that is not inside a comment."
+  (while (not (swift-mode:bol-other-than-comments-p))
+    (swift-mode:backward-token-or-list)))
+
 
 (defun swift-mode:bolp ()
   "Return t if there is nothing in the front of this line.
