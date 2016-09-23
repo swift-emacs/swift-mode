@@ -89,7 +89,7 @@
 
 (defconst swift-mode:expression-parent-tokens
   (append swift-mode:statement-parent-tokens
-          '(\, < supertype-: "where" "if" "guard" "while"))
+          '(\, < supertype-: "where" "if" "guard" "while" "catch"))
   "Parent tokens for expressions.")
 
 (defun swift-mode:indent-line ()
@@ -272,21 +272,31 @@
           ;; Other cases. Aligns with the previous case.
           (swift-mode:align-with-current-line))))
 
+     ;; After "catch"
+     ((equal previous-text "catch")
+      (swift-mode:find-and-align-with-parents
+       swift-mode:statement-parent-tokens
+       swift-mode:multiline-statement-offset))
+
      ;; Before "where" on the same line
      ((and next-is-on-same-line (equal next-text "where"))
       ;; switch {
       ;; case let P(x)
       ;;        where
-      ;;          a,
-      ;;      let Q(x)
-      ;;        where
-      ;;          a:
+      ;;          a
       ;;   aaa
       ;; }
       ;;
       ;; for case (x, y) in xys
-      ;;            where
-      ;;              aaa {
+      ;;     where
+      ;;       aaa {
+      ;; }
+      ;;
+      ;; for (x, y)
+      ;;     in
+      ;;     xys
+      ;;     where
+      ;;       aaa {
       ;; }
       ;;
       ;; do {
@@ -308,20 +318,30 @@
       ;;   where
       ;;     ABC {
       ;; }
-      (let ((parent (save-excursion (swift-mode:backward-sexps-until
-                                     (append swift-mode:statement-parent-tokens
-                                             '("case"))))))
-        (if (equal (swift-mode:token:text parent) "case")
-            (progn
-              (goto-char (swift-mode:token:end previous-token))
-              (swift-mode:backward-token-or-list)
-              (swift-mode:calculate-indent-of-expression
-               swift-mode:multiline-statement-offset
-               swift-mode:multiline-statement-offset))
+      (let* ((parent (save-excursion (swift-mode:backward-sexps-until
+                                      (append swift-mode:statement-parent-tokens
+                                              '("case" "catch" "for")))))
+             (previous-of-parent (save-excursion
+                                   (goto-char (swift-mode:token:start parent))
+                                   (swift-mode:backward-token))))
+        (when (and
+               (equal (swift-mode:token:text parent) "case")
+               (equal (swift-mode:token:text previous-of-parent) "for"))
+          (setq parent previous-of-parent))
+        (cond
+         ((member (swift-mode:token:text parent) '("case" "catch"))
+          (goto-char (swift-mode:token:end previous-token))
+          (swift-mode:backward-token-or-list)
+          (swift-mode:calculate-indent-of-expression
+           swift-mode:multiline-statement-offset
+           swift-mode:multiline-statement-offset))
+         ((equal (swift-mode:token:text parent) "for")
+          (swift-mode:find-and-align-with-parents '("for")))
+         (t
           (swift-mode:find-and-align-with-parents
            (append swift-mode:statement-parent-tokens
-                   '(< "case" "catch" "for"))
-           swift-mode:multiline-statement-offset))))
+                   '(<))
+           swift-mode:multiline-statement-offset)))))
 
      ;; After {
      ((eq previous-type '{)
@@ -408,12 +428,18 @@
         (let ((parent (save-excursion
                         (swift-mode:backward-sexps-until
                          (append swift-mode:statement-parent-tokens
-                                 '("case"))))))
-          (swift-mode:find-and-align-with-parents
-           (append swift-mode:statement-parent-tokens
-                   '(< "case" "catch" "for")
-                   (if (equal (swift-mode:token:text parent) "case") '(\,) '()))
-           swift-mode:multiline-statement-offset))))
+                                 '("case" "catch"))))))
+          (if (member (swift-mode:token:text parent) '("case" "catch"))
+              (progn
+                (goto-char (swift-mode:token:end previous-token))
+                (swift-mode:backward-token-or-list)
+                (swift-mode:calculate-indent-of-expression
+                 swift-mode:multiline-statement-offset
+                 swift-mode:multiline-statement-offset))
+            (swift-mode:find-and-align-with-parents
+             (append swift-mode:statement-parent-tokens
+                     '(< "for"))
+             swift-mode:multiline-statement-offset)))))
 
      ;; After implicit-\; or ;
      ((memq previous-type '(implicit-\; \;))
@@ -471,7 +497,7 @@
        0
        '(implicit-\; \;)))
 
-     ;; After if, guard, while
+     ;; After if, guard, and while
      ((member previous-text '("if" "guard" "while"))
       (swift-mode:find-and-align-with-parents
        swift-mode:statement-parent-tokens
@@ -949,7 +975,7 @@ comma at eol."
         (while (and (<= (point) pos) (not result))
           (cond
            ((member (swift-mode:token:text next-token)
-                    '("guard" "while" "case" "where"))
+                    '("guard" "while" "case" "where" "catch"))
             (setq result next-token))
 
            ((member (swift-mode:token:text next-token)

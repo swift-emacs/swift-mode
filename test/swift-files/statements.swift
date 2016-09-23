@@ -123,7 +123,7 @@ for x
     in
     xs
       .foo // swift-mode:test:known-bug
-    where // swift-mode:test:known-bug
+    where
       aaa
         .bbb(x) {
     foo()
@@ -142,8 +142,8 @@ for x
 for x
     in
     xs
-      where aaa
-        .bbb(x) { // swift-mode:test:known-bug
+    where aaa
+            .bbb(x) {
     foo()
     foo()
 }
@@ -151,18 +151,43 @@ for x
 for x
     in
     xs where aaa
-      .bbb(x) { // swift-mode:test:known-bug
+               .bbb(x) {
     foo()
     foo()
 }
 
 for
   x in xs
+  where
+    aaa.bbb(x) {
+    foo()
+    foo()
+}
+
+for case .P(x)
+    in
+    xs
     where
       aaa.bbb(x) {
     foo()
     foo()
 }
+
+for case .P(x) in xs where
+           aaa
+             .bbb(x) {
+    foo()
+    foo()
+}
+
+for .P(x) in xs where
+      aaa
+        .bbb(x) {
+    foo()
+    foo()
+}
+
+
 
 // While statements
 
@@ -260,16 +285,16 @@ repeat {
     foo()
     foo()
 } while foo
-  .bar() // swift-mode:test:known-bug
-  .baz()
+          .bar()
+          .baz()
 
 repeat {
     foo()
     foo()
 } while
   foo
-  .bar() // swift-mode:test:known-bug
-  .baz()
+    .bar()
+    .baz()
 
 repeat {
     foo()
@@ -277,16 +302,16 @@ repeat {
 }
   while
   foo
-  .bar() // swift-mode:test:known-bug
-  .baz()
+    .bar()
+    .baz()
 
 repeat {
     foo()
     foo()
 }
   while foo
-  .bar() // swift-mode:test:known-bug
-  .baz()
+          .bar()
+          .baz()
 
 // If statement
 
@@ -713,6 +738,38 @@ default:
     foo()
 }
 
+
+switch foo {
+case let .P(x)
+       where
+         foo
+           .bar:
+case let AAA
+       .P(x)
+         where
+           foo
+             .bar:
+case let .P(x) where
+       foo
+         .bar:
+case let AAA
+       .P(x) where
+         foo
+           .bar:
+case let .P(x)
+       where foo
+               .bar:
+case let AAA
+       .P(x)
+         where foo
+                 .bar:
+case let .P(x) where foo
+                       .bar:
+case let AAA
+       .P(x) where foo
+                     .bar:
+}
+
 // swift-mode:test:eval (setq-local swift-mode:switch-case-offset 2)
 
 switch foo {
@@ -786,27 +843,59 @@ defer {
 
 do {
 } catch Foo
-  .Bar(x)
-    where // swift-mode:test:known-bug
-      foo()
-        .bar() {
+          .Bar(x)
+            where
+              foo()
+                .bar() {
+    foo()
+    foo()
+} catch Foo
+          .Bar(x)
+            where
+              foo()
+                .bar() {
     foo()
     foo()
 } catch
-  Foo // swift-mode:test:known-bug
-  .Bar(x)
-    where
-      foo()
-        .bar() {
+  Foo
+    .Bar(x)
+      where
+        foo()
+          .bar() {
     foo()
     foo()
 } catch
-    where // swift-mode:test:known-bug
-      foo()
-        .bar() {
+  where
+    foo()
+      .bar() {
     foo()
     foo()
 }
+catch Foo
+        .Bar(x)
+          where
+            foo()
+              .bar() {
+    foo()
+    foo()
+}
+catch
+  Foo
+    .Bar(x)
+      where
+        foo()
+          .bar() {
+    foo()
+    foo()
+}
+catch
+  where
+    foo()
+      .bar() {
+    foo()
+    foo()
+}
+
 
 // Conditional control statements
 
