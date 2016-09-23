@@ -53,7 +53,11 @@ Return the error-buffer"
   (let ((error-buffer
          (if noninteractive nil (swift-mode:setup-error-buffer)))
         (current-line 0)
-        (error-counts '((error . 0) (warning . 0) (info . 0) (ok . 0))))
+        (error-counts (list
+                       (cons 'error 0)
+                       (cons 'warning 0)
+                       (cons 'info 0)
+                       (cons 'ok 0))))
     (setq default-directory
           (concat (file-name-as-directory swift-mode:test:basedir)
                   "swift-files"))
