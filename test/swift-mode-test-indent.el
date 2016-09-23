@@ -43,7 +43,7 @@
 Return the error-buffer"
   (switch-to-buffer (get-buffer-create "*swift-mode-test-indent*"))
   (fundamental-mode)
-  (setq view-read-only nil)
+  (setq buffer-read-only nil)
   (erase-buffer)
   (current-buffer))
 
