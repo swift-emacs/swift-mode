@@ -247,7 +247,7 @@ let x = [ aaa:
                       + aaa,
           aaa:
             aaa
-            + aaa
+            + aaa,
           aaa
             : aaa
             + aaa,

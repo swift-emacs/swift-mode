@@ -764,75 +764,14 @@ var x = 1
   , z = 3
 
 This is also known as Utrecht-style in the Haskell community."
-  (let* ((comma-type-and-statement-parent (swift-mode:detect-type-of-comma))
-         (comma-type (nth 0 comma-type-and-statement-parent))
-         (statement-parent (nth 1 comma-type-and-statement-parent)))
-    (if (eq comma-type 'condition-list)
-        (swift-mode:calculate-indent-of-prefix-comma-of-condition-list
-         statement-parent)
-      (let* ((parents (swift-mode:parents-of-comma comma-type))
-             (parent (swift-mode:backward-sexps-until parents
-                                                      nil
-                                                      '(\,)))
-             (parent-end (swift-mode:token:end parent))
-             (stopped-at-parent
-              (or (memq (swift-mode:token:type parent) parents)
-                  (member (swift-mode:token:text parent) parents)
-                  (eq (swift-mode:token:type parent) 'outside-of-buffer))))
-        (if stopped-at-parent
-            (progn
-              ;; Aligns with the end of the parent.
-              (goto-char parent-end)
-              (backward-char)
-              (current-column))
-          ;; Aligns with the previous comma.
-          (swift-mode:align-with-current-line))))))
-
-(defun swift-mode:calculate-indent-of-prefix-comma-of-condition-list
-    (statement-parent)
-  ;; The comma is in a condition-list but not in an enum-case-pattern-list.
-  ;;
-  ;; Example:
-  ;;
-  ;; if case let P(x)
-  ;;       , let Q(x)     // comma for enum-case-pattern-list
-  ;;       , let R(x) = a // comma for enum-case-pattern-list
-  ;;  , let x = x         // comma for condition-list
-  ;;  , foo == bar        // comma for condition-list
-  ;;
-  ;; We scan from beginning of the statement and remembers last anchor token,
-  ;; i.e. "if", "guard", "while", or comma at the beginning of the line.
-  (let ((pos (point))
-        next-token
-        (anchor statement-parent)
-        in-case-pattern-list)
-    (goto-char (swift-mode:token:end statement-parent))
-    (setq next-token (swift-mode:forward-token-or-list))
-    (while (< (point) pos)
-      (cond
-       ((equal (swift-mode:token:text next-token) "case")
-        (setq in-case-pattern-list t))
-
-       ((equal (swift-mode:token:text next-token) "=")
-        (setq in-case-pattern-list nil))
-
-       ((member (swift-mode:token:text next-token) '("if" "guard" "while"))
-        (setq anchor next-token))
-
-       ((and (not in-case-pattern-list)
-             (eq (swift-mode:token:type next-token) '\,)
-             (save-excursion
-               (goto-char (swift-mode:token:start next-token))
-               (swift-mode:bol-other-than-comments-p)))
-        (setq anchor next-token)))
-      (setq next-token (swift-mode:forward-token-or-list)))
-    (if (eq (swift-mode:token:type anchor) '\,)
+  (let ((parent (swift-mode:find-parent-of-list-element t)))
+    (if (eq (swift-mode:token:type parent) '\,)
+        ;; The comma was the 2nd or the following commas.
         ;; Aligns with the previous comma.
-        (progn
-          (goto-char (swift-mode:token:start anchor))
-          (swift-mode:align-with-current-line))
-      ;; Aligns with the end of the anchor
-      (goto-char (swift-mode:token:end anchor))
+        (swift-mode:align-with-current-line)
+      ;; The comma was the 1st comma.
+      ;; Aligns with the end of the parent.
+      (goto-char (swift-mode:token:end parent))
       (backward-char)
       (current-column))))
 
@@ -840,74 +779,12 @@ This is also known as Utrecht-style in the Haskell community."
   "Return indentation after comma.
 
 Assuming the cursor is on the comma."
-  (let* ((comma-type-and-statement-parent (swift-mode:detect-type-of-comma))
-         (comma-type (nth 0 comma-type-and-statement-parent))
-         (statement-parent (nth 1 comma-type-and-statement-parent)))
-    (if (eq comma-type 'condition-list)
-        (swift-mode:calculate-indent-after-comma-of-condition-list
-         statement-parent)
-      (swift-mode:align-with-next-token
-       (swift-mode:backward-sexps-until
-        (swift-mode:parents-of-comma comma-type)
-        '(\,))))))
+  (swift-mode:align-with-next-token (swift-mode:find-parent-of-list-element nil)))
 
-(defun swift-mode:calculate-indent-after-comma-of-condition-list
-    (statement-parent)
-  ;; The comma is in a condition-list but not in an enum-case-pattern-list.
-  ;;
-  ;; Example:
-  ;;
-  ;; if
-  ;;   case let P(x),     // comma for enum-case-pattern-list
-  ;;        let Q(x),     // comma for enum-case-pattern-list
-  ;;        let R(x) = a, // comma for condition-list
-  ;;   let x = x,         // comma for condition-list
-  ;;   foo == bar
-  ;;
-  ;; We scan from beginning of the statement and remembers last parent token,
-  ;; i.e. "if", "guard", "while", or comma at the end of the line.
-  (let ((pos (point))
-        next-token
-        (parent statement-parent)
-        in-case-pattern-list)
-    (goto-char (swift-mode:token:end statement-parent))
-    (setq next-token (swift-mode:forward-token-or-list))
-    (while (< (point) pos)
-      (cond
-       ((equal (swift-mode:token:text next-token) "case")
-        (setq in-case-pattern-list t))
-
-       ((equal (swift-mode:token:text next-token) "=")
-        (setq in-case-pattern-list nil))
-
-       ((member (swift-mode:token:text next-token) '("if" "guard" "while"))
-        (setq parent next-token))
-
-       ((and (not in-case-pattern-list)
-             (eq (swift-mode:token:type next-token) '\,)
-             (swift-mode:eol-other-than-comments-p))
-        (setq parent next-token)))
-      (setq next-token (swift-mode:forward-token-or-list)))
-    (swift-mode:align-with-next-token parent)))
-
-(defun swift-mode:detect-type-of-comma ()
-  "Return type of comma token under the cursor.
-
-Comma type is a list where:
-0th element is one of the following:
-
-- tuple-or-array (inside () or [])
-- type-parameters-or-requirements (inside <>)
-- enum-case-pattern-list (e.g. if case P, Q, R = x)
-- condition-list (e.g. if let x = x, let y = y)
-- variable-declarations (e.g. let x = 1, y = 2)
-- switch-case-or-enum-case-item-list (e.g. switch {case P, Q, R: a} or
-  enum {case A, B, C})
-- class-like-declarations (supertypes of class, or where clause after
-  super types)
-
-1st element is the token before the beginning of the statement.
-"
+(defun swift-mode:find-parent-of-list-element (utrecht-sytle)
+  "Move point backward to the parent token of comma under the cursor.
+If UTRECHT-SYTLE is non-nil, stop at a comma at bol.  Otherwise, stop at a
+comma at eol."
   ;; Various examples:
   ;;
   ;; let x = ( // simple case
@@ -949,10 +826,7 @@ Comma type is a list where:
   ;;   let x = x, // "let" is a part of an element
   ;;   let y = y,
   ;;   let z = z,
-  ;;   case P(a, b, c), // "case" is a part of an element of condition-list
-  ;;        Q(a, b, c) = abc, // "case" is not a part of elements of
-  ;;                          // enum-case-pattern-list
-  ;;   case (a, b, c) = abc,
+  ;;   case .P(a, b, c) = abc, // "case" is a part of an element.
   ;;   aaa {
   ;;
   ;;   bbb
@@ -961,6 +835,7 @@ Comma type is a list where:
   ;; See also SE-0099 and SE-0043:
   ;; https://github.com/apple/swift-evolution/blob/master/proposals/0099-conditionclauses.md
   ;; https://github.com/apple/swift-evolution/blob/master/proposals/0043-declare-variables-in-case-labels-with-multiple-patterns.md
+  ;; SE-0099 seems precedes SE-0043.
   ;;
   ;; class Foo<T>: A,
   ;;               B,
@@ -1002,90 +877,49 @@ Comma type is a list where:
   ;;      , E
   ;;      , F
   ;; }
-  (save-excursion
-    (let ((pos (point))
-          (parent (swift-mode:backward-sexps-until
-                   (cons '< swift-mode:statement-parent-tokens))))
-      (cond
-       ((memq (swift-mode:token:type parent) '(\( \[))
-        (list 'tuple-or-array parent))
+  (let ((pos (point))
+        (parent (swift-mode:backward-sexps-until
+                 ;; Includes "if" to stop at the last else-if.
+                 (cons "if" (cons '< swift-mode:statement-parent-tokens))
+                 (if utrecht-sytle nil '(\,))
+                 (if utrecht-sytle '(\,) nil))))
+    (cond
+     ((memq (swift-mode:token:type parent) '(\( \[ \,))
+      parent)
 
-       ((eq (swift-mode:token:type parent) '<)
-        (list 'type-parameters-or-requirements parent))
+     ((eq (swift-mode:token:type parent) '<)
+      (goto-char pos)
+      (swift-mode:backward-sexps-until '(< "where")))
 
-       (t
-        (goto-char (swift-mode:token:end parent))
-        (let ((next-token (swift-mode:forward-token-or-list))
-              result)
-          (while (and (<= (point) pos) (not result))
-            (cond
-             ((member (swift-mode:token:text next-token)
-                      '("if" "guard" "while"))
-              ;; Conditions
-              ;;
-              ;; Distinguishes condition-list and enum-case-pattern-list:
-              ;;
-              ;; if
-              ;;   let x = x,
-              ;;   case P(a, b, c),
-              ;;        Q(a, b, c),
-              ;;        R(a, b, c) = abc,
-              ;;   let x = x,
-              ;;   foo == bar,
-              ;;   case (a, b, c) = abc {
-              ;; }
-              (goto-char pos)
-              (if (equal
-                   (swift-mode:token:text (swift-mode:backward-sexps-until
-                                           '("if" "guard" "while" "case" "=")))
-                   "case")
-                  (setq result 'enum-case-pattern-list)
-                (setq result 'condition-list)))
+     ((equal (swift-mode:token:text parent) "if")
+      parent)
 
-             ((member (swift-mode:token:text next-token)
-                      '("let" "var"))
-              (setq result 'variable-declarations))
+     (t
+      (goto-char (swift-mode:token:end parent))
+      (let ((next-token (swift-mode:forward-token-or-list))
+            result)
+        (while (and (<= (point) pos) (not result))
+          (cond
+           ((member (swift-mode:token:text next-token)
+                    '("guard" "while" "let" "var" "case" "where"))
+            (setq result next-token))
 
-             ((equal (swift-mode:token:text next-token)
-                     "case")
-              (setq result 'switch-case-or-enum-case-item-list))
+           ((eq (swift-mode:token:type next-token) 'typing-:)
+            (goto-char pos)
+            (setq result (swift-mode:backward-sexps-until
+                          '(typing-: "where")))))
 
-             ((equal (swift-mode:token:text next-token)
-                     "where")
-              (setq result 'type-parameters-or-requirements))
-
-             ((eq (swift-mode:token:type next-token) 'typing-:)
-              (setq result 'class-like-declarations)))
-
-            (setq next-token (swift-mode:forward-token-or-list)))
-          (if (and (> (point) pos) (eq (swift-mode:token:type next-token) '<>))
-              ;; The comma was inside <> but scanner misunderstand < as
-              ;; a binary-operator.
-              (list 'type-parameters-or-requirements parent)
-            (list result parent))))))))
-
-(defun swift-mode:parents-of-comma (comma-type)
-  "Return parent token types of comma token Ffrom COMMA-TYPE."
-  (append
-   swift-mode:statement-parent-tokens
-   (cond
-    ((eq comma-type 'tuple-or-array)
-     '(\( \[))
-
-    ((eq comma-type 'type-parameters-or-requirements)
-     '(< "where"))
-
-    ((eq comma-type 'enum-case-pattern-list)
-     '("case"))
-
-    ((eq comma-type 'variable-declarations)
-     '("let" "var"))
-
-    ((eq comma-type 'switch-case-or-enum-case-item-list)
-     '("case"))
-
-    ((eq comma-type 'class-like-declarations)
-     '(typing-: "where")))))
+          (setq next-token (swift-mode:forward-token-or-list)))
+        (when (and (> (point) pos)
+                   (eq (swift-mode:token:type next-token) '<>))
+          ;; The comma was inside <> but scanner misunderstood < as
+          ;; a binary-operator.
+          (swift-mode:backward-token-or-list)
+          (setq result (swift-mode:backward-token)))
+        (when (null result)
+          (setq result parent))
+        (goto-char (swift-mode:token:start result))
+        result)))))
 
 (defun swift-mode:backward-sexps-until (token-types
                                         &optional
