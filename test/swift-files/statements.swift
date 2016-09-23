@@ -774,10 +774,10 @@ case let AAA
 
 switch foo {
   case foo:
-    foo() // swift-mode:test:known-bug
+    foo()
     foo()
   default:
-    foo() // swift-mode:test:known-bug
+    foo()
     foo()
 }
 

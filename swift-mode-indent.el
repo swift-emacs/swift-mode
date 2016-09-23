@@ -488,7 +488,7 @@
       (goto-char (swift-mode:token:start previous-token))
       (swift-mode:find-and-align-with-parents
        swift-mode:statement-parent-tokens
-       swift-mode:basic-offset))
+       (- swift-mode:basic-offset swift-mode:switch-case-offset)))
 
      ;; Before ; on the same line
      ((and next-is-on-same-line (eq next-type '\;))
