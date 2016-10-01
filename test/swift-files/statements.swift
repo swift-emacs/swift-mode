@@ -40,7 +40,7 @@ for
 for
   x
   in xs
-    .foo() { // swift-mode:test:known-bug
+    .foo() {
     foo()
     foo()
 }
@@ -52,7 +52,7 @@ for
   )
   in
   xs
-    .foo() +++ { z in // swift-mode:test:known-bug
+    .foo() +++ { z in
         bar()
     } {
     foo()
@@ -61,13 +61,13 @@ for
 
 for
   case
-    ( // swift-mode:test:known-bug
+    (
       x,
       y
     )
   in
   xs
-    .foo() +++ { z in // swift-mode:test:known-bug
+    .foo() +++ { z in
         bar()
         bar()
     } {
@@ -76,13 +76,13 @@ for
 }
 
 for case
-      ( // swift-mode:test:known-bug
+      (
         x,
         y
       )
     in
     xs
-      .foo() +++ { z in // swift-mode:test:known-bug
+      .foo() +++ { z in
           bar()
           bar()
       } {
@@ -92,7 +92,7 @@ for case
 
 
 for Foo
-      .Bar(x) // swift-mode:test:known-bug
+      .Bar(x)
     in
     xs {
     foo()
@@ -101,7 +101,7 @@ for Foo
 
 for
   Foo
-    .Bar(x) // swift-mode:test:known-bug
+    .Bar(x)
   in
   xs {
     foo()
@@ -111,7 +111,7 @@ for
 
 
 for x as
-      Foo // swift-mode:test:known-bug
+      Foo
     in
     xs {
     foo()
@@ -122,7 +122,7 @@ for x as
 for x
     in
     xs
-      .foo // swift-mode:test:known-bug
+      .foo
     where
       aaa
         .bbb(x) {
@@ -174,8 +174,8 @@ for case .P(x)
 }
 
 for case .P(x) in xs where
-           aaa
-             .bbb(x) {
+      aaa
+        .bbb(x) {
     foo()
     foo()
 }
@@ -187,6 +187,102 @@ for .P(x) in xs where
     foo()
 }
 
+for case .P(x) in xs
+    where
+      aaa
+        .bbb(x) {
+    foo()
+    foo()
+}
+
+for .P(x) in xs
+    where
+      aaa
+        .bbb(x) {
+    foo()
+    foo()
+}
+
+for case .P(x)
+    in xs
+    where
+      aaa
+        .bbb(x) {
+    foo()
+    foo()
+}
+
+for .P(x)
+    in xs
+    where
+      aaa
+        .bbb(x) {
+    foo()
+    foo()
+}
+
+for
+  case .P(x)
+  in
+  xs
+  where
+    aaa.bbb(x) {
+    foo()
+    foo()
+}
+
+for
+  case .P(x) in xs where
+    aaa
+      .bbb(x) {
+    foo()
+    foo()
+}
+
+for .P(x) in xs where
+      aaa
+        .bbb(x) {
+    foo()
+    foo()
+}
+
+for
+  case .P(x) in xs
+  where
+    aaa
+      .bbb(x) {
+    foo()
+    foo()
+}
+
+for
+  .P(x) in xs
+  where
+    aaa
+      .bbb(x) {
+    foo()
+    foo()
+}
+
+for
+  case .P(x)
+  in xs
+  where
+    aaa
+      .bbb(x) {
+    foo()
+    foo()
+}
+
+for
+  .P(x)
+  in xs
+  where
+    aaa
+      .bbb(x) {
+    foo()
+    foo()
+}
 
 
 // While statements

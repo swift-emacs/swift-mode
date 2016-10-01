@@ -89,7 +89,7 @@
 
 (defconst swift-mode:expression-parent-tokens
   (append swift-mode:statement-parent-tokens
-          '(\, < supertype-: "where" "if" "guard" "while" "catch"))
+          '(\, < supertype-: "where" "if" "guard" "while" "for" "catch"))
   "Parent tokens for expressions.")
 
 (defun swift-mode:indent-line ()
@@ -282,31 +282,37 @@
      ((and next-is-on-same-line (equal next-text "where"))
       ;; switch {
       ;; case let P(x)
-      ;;        where
+      ;;        where // Aligns with the pattern.
       ;;          a
+      ;;   aaa
+      ;; }
+      ;; case let A
+      ;;        .P(x)
+      ;;          where // Aligns with the last line of the pattern.
+      ;;            a
       ;;   aaa
       ;; }
       ;;
       ;; for case (x, y) in xys
-      ;;     where
+      ;;     where // Aligns with the next token of the "for" token.
       ;;       aaa {
       ;; }
       ;;
       ;; for (x, y)
       ;;     in
       ;;     xys
-      ;;     where
+      ;;     where // Aligns with the next token of the "for" token.
       ;;       aaa {
       ;; }
       ;;
       ;; do {
       ;; } catch let P(x)
-      ;;           where
+      ;;           where // Aligns with the pattern.
       ;;             aaa
       ;;
       ;; func foo<A: AAA,
       ;;          B: BBB
-      ;;            where
+      ;;            where // Aligns with the start of the type parameters.
       ;;              ABC>() {
       ;; }
       ;;
@@ -315,7 +321,7 @@
       ;;           C>: AAA,
       ;;               BBB,
       ;;               CCC
-      ;;   where
+      ;;   where // Aligns with the "class" token.
       ;;     ABC {
       ;; }
       (let* ((parent (save-excursion (swift-mode:backward-sexps-until
@@ -359,50 +365,51 @@
      ;; After "where"
      ((equal previous-text "where")
       ;; switch {
-      ;; case let P(x) where
-      ;;        A,
-      ;;      let Q(x) where
-      ;;        A:
+      ;; case let .P(x) where
+      ;;        A, // Aligns with the pattern.
+      ;;      let A
+      ;;        .Q(x) where // Aligns with the last line of the pattern.
+      ;;          A:
       ;;   aaa
-      ;; case let P(x)
+      ;; case let .P(x)
       ;;        where
-      ;;          a,
-      ;;      let Q(x)
-      ;;        where
-      ;;          a:
+      ;;          A, // Aligns with the "where" token.
+      ;;      let .Q(x)
+      ;;        where // Aligns with the "where" token.
+      ;;          A:
       ;;   aaa
-      ;; case let P(x), let Q(x) where
-      ;;                  a
+      ;; case let .P(x), let .Q(x) where // Aligns with the pattern.
+      ;;                   a
       ;; }
       ;;
       ;; for case let (x, y) in xys where
-      ;;            aaa {
+      ;;       aaa { // Aligns with the next token of the "for" token.
       ;; }
       ;;
       ;; for case let (x, y) in xys
-      ;;            where
-      ;;              aaa {
+      ;;     where
+      ;;       aaa { // Aligns with the "where" token
       ;; }
       ;;
       ;; do {
-      ;; } catch let P(x) where
-      ;;           aaa
+      ;; } catch let .P(x) where
+      ;;           aaa // Aligns with the pattern.
       ;; do {
-      ;; } catch let P(x)
+      ;; } catch let .P(x)
       ;;           where
-      ;;             aaa
+      ;;             aaa // Aligns with the "where" token.
       ;;
       ;;
       ;;
       ;; func foo<A: AAA,
       ;;          B: BBB where
-      ;;            ABC>() {
+      ;;            ABC>() { // Aligns with the start of the type parameters.
       ;; }
       ;;
       ;; func foo<A: AAA,
       ;;          B: BBB
       ;;            where
-      ;;              ABC>() {
+      ;;              ABC>() { // Aligns with the "where" token.
       ;; }
       ;;
       ;; class Foo<A,
@@ -410,7 +417,7 @@
       ;;           C> A,
       ;;              B,
       ;;              C where
-      ;;   ABC {
+      ;;   ABC { // Aligns with the "class" token"
       ;; }
       ;;
       ;; class Foo<A,
@@ -419,7 +426,7 @@
       ;;               B,
       ;;               C
       ;;   where
-      ;;     ABC {
+      ;;     ABC { // Aligns with the "where" token"
       ;; }
       (goto-char (swift-mode:token:start previous-token))
       (if (swift-mode:bol-other-than-comments-p)
@@ -431,7 +438,6 @@
                                  '("case" "catch"))))))
           (if (member (swift-mode:token:text parent) '("case" "catch"))
               (progn
-                (goto-char (swift-mode:token:end previous-token))
                 (swift-mode:backward-token-or-list)
                 (swift-mode:calculate-indent-of-expression
                  swift-mode:multiline-statement-offset
@@ -693,8 +699,9 @@ This function is also used for close-curly-brace."
         ;; }
         (setq is-declaration-or-control-statement-body nil)
       (save-excursion
-        (swift-mode:backward-sexps-until swift-mode:statement-parent-tokens)
-        (swift-mode:forward-token)
+        (goto-char (swift-mode:token:end
+                    (swift-mode:backward-sexps-until
+                     swift-mode:statement-parent-tokens)))
         (setq next-token (swift-mode:forward-token-or-list))
         (while (<= (point) pos)
           (cond
@@ -959,10 +966,18 @@ comma at eol."
   ;; TODO Unify with swift-mode:find-parent-of-list-element
   (let ((pos (point))
         (parent (swift-mode:backward-sexps-until
-                 swift-mode:expression-parent-tokens)))
+                 swift-mode:expression-parent-tokens
+                 '("in") '("in"))))
     (cond
      ((memq (swift-mode:token:type parent) '(\( \[))
       parent)
+
+     ((equal (swift-mode:token:text parent) "in")
+      (goto-char (swift-mode:token:end parent))
+      (if (swift-mode:eol-other-than-comments-p)
+          parent
+        (goto-char (swift-mode:token:start parent))
+        (swift-mode:backward-token-or-list)))
 
      ((or
        (memq (swift-mode:token:type parent)
@@ -975,8 +990,7 @@ comma at eol."
             result)
         (while (and (<= (point) pos) (not result))
           (cond
-           ((member (swift-mode:token:text next-token)
-                    '("guard" "while" "case" "where" "catch"))
+           ((equal (swift-mode:token:text next-token) "case")
             (setq result next-token))
 
            ((member (swift-mode:token:text next-token)
