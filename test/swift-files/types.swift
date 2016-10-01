@@ -15,26 +15,30 @@ let foo
   :A = abc
 
 class Foo:
-  A,
+  A
+    .A,
   B, C,
   D {
 }
 
 class Foo
-  : A,
+  : A
+      .A,
     B, C,
     D {
 }
 
 
 class Foo: A
+             .A
          , B , C
          , D
 {
 }
 
 class Foo
-  : A
+  : A.
+      A
   , B , C
   , D
 {
@@ -59,18 +63,21 @@ let foo
 
 class Foo:
   @A
-  A, // swift-mode:test:known-bug
+  A // swift-mode:test:known-bug
+    .A, // swift-mode:test:known-bug
   B {
 }
 
 class Foo
   : @A
-    A, // swift-mode:test:known-bug
+    A // swift-mode:test:known-bug
+      .A, // swift-mode:test:known-bug
     B {
 }
 
 class Foo: @A
            A // swift-mode:test:known-bug
+             .A // swift-mode:test:known-bug
          , B
 {
 }
@@ -78,6 +85,7 @@ class Foo: @A
 class Foo
   : @A
     A // swift-mode:test:known-bug
+      .A // swift-mode:test:known-bug
   , B
 {
 }

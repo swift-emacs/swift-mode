@@ -1014,10 +1014,7 @@ comma at eol."
             ;;       foo()
             ;;
             ;; TODO make customizable
-            (setq result parent))
-
-           ((eq (swift-mode:token:type next-token) 'supertype-:)
-            parent))
+            (setq result parent)))
 
           (forward-comment (point-max))
           (if (< (point) pos)

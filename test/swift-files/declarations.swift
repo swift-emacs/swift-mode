@@ -323,6 +323,7 @@ enum Foo
 }
 
 // Struct declarations
+// See also types.swift
 
 @A
 fileprivate

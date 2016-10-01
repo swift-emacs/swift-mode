@@ -108,6 +108,25 @@ for
     foo()
 }
 
+for case
+      Foo
+      .Bar(x)
+    in
+    xs {
+    foo()
+    foo()
+}
+
+for
+  case
+    Foo
+    .Bar(x)
+  in
+  xs {
+    foo()
+    foo()
+}
+
 
 
 for x as
