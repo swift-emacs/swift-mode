@@ -70,6 +70,9 @@
 ;;; `foward-sexp-function'
 
 (defun swift-mode:forward-sexp (&optional arg)
+  "Move forward/backward a token or list.
+
+See `forward-sexp for ARG."
   (setq arg (or arg 1))
   (if (< 0 arg)
       (while (< 0 arg)

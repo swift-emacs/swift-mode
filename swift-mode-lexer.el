@@ -46,7 +46,12 @@
                    stop-at-bol-token-types))
 
 (defun swift-mode:token (type text start end)
-  "Construct and returns a token."
+  "Construct and return a token.
+
+TYPE is the type of the token such as `inix-operator' or {.
+TEXT is the text of the token.
+START is the start position of the token.
+END is the point after the token."
   (list type text start end))
 
 (defun swift-mode:token:type (token)
@@ -448,7 +453,9 @@ That is supertype declaration or type declaration of let or var."
      '{)))
 
 (defun swift-mode:fix-operator-type (token)
-  "Return new operator token with proper token type."
+  "Return new operator token with proper token type.
+
+Other properties are the same as the TOKEN."
   ;; Operator type (i.e. prefix, postfix, infix) is decided from spaces or
   ;; comments around the operator.
   ;; https://developer.apple.com/library/ios/documentation/Swift/Conceptual/Swift_Programming_Language/LexicalStructure.html#//apple_ref/doc/uid/TP40014097-CH30-ID410
@@ -491,7 +498,7 @@ That is supertype declaration or type declaration of let or var."
     (swift-mode:token type text start end)))
 
 (defun swift-mode:backquote-identifier-if-after-dot (token)
-  "Backquote identifiers including keywords if it is after dot.
+  "Backquote identifier TOKEN, including keywords, if it is after a dot.
 
 See SE-0071:
 https://github.com/apple/swift-evolution/blob/master/proposals/0071-member-keywords.md"
@@ -561,8 +568,9 @@ type `out-of-buffer'"
         token)))))
 
 (defun swift-mode:forward-token-simple ()
-  "Like `swift-mode:forward-token' without recursion, and never produces
-`implicit-;' or `type-:'."
+  "Like `swift-mode:forward-token' without recursion.
+
+This function does not return `implicit-;' or `type-:'."
   (forward-comment (point-max))
   (cond
    ;; Outside of buffer
@@ -748,8 +756,9 @@ type `out-of-buffer'."
         token)))))
 
 (defun swift-mode:backward-token-simple ()
-  "Like `swift-mode:backward-token' without recursion, and never produces
-`implicit-;' or `type-:'."
+  "Like `swift-mode:backward-token' without recursion.
+
+This function does not return `implicit-;' or `type-:'."
   (forward-comment (- (point)))
   (cond
    ;; Outside of buffer

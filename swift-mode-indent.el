@@ -93,6 +93,7 @@
   "Parent tokens for expressions.")
 
 (defun swift-mode:indent-line ()
+  "Indent the current line."
   (let ((indent (save-excursion (swift-mode:calculate-indent)))
         (current-indent
          (save-excursion (back-to-indentation) (current-column))))
@@ -103,6 +104,7 @@
       (save-excursion (indent-line-to indent)))))
 
 (defun swift-mode:calculate-indent ()
+  "Return the indentation of the current line."
   (back-to-indentation)
 
   (if (nth 4 (syntax-ppss))
@@ -115,6 +117,7 @@
     (swift-mode:calculate-indent-of-code)))
 
 (defun swift-mode:calculate-indent-of-multiline-comment ()
+  "Return the indentation of the current line inside a multiline comment."
   (back-to-indentation)
   (let ((comment-beginning-position (nth 8 (syntax-ppss))))
     (forward-line -1)
@@ -134,6 +137,7 @@
         (current-column)))))
 
 (defun swift-mode:calculate-indent-of-code ()
+  "Return the indentation of the current line outside multiline comments."
   (back-to-indentation)
   (let* ((previous-token (save-excursion (swift-mode:backward-token)))
          (previous-type (swift-mode:token:type previous-token))
@@ -591,8 +595,7 @@ If scanning stops at eol, align with the next token with BOL-OFFSET.
 If AFTER-ATTRIBUTES is nil, skip lines with only attributes at the start of
 the expression."
   (save-excursion
-    (let* ((pos (point))
-           (parent-of-previous-line
+    (let* ((parent-of-previous-line
             (save-excursion
               (swift-mode:goto-non-comment-bol-with-same-nesting-level)
               (swift-mode:backward-token)))
@@ -1069,12 +1072,12 @@ with  one of those token types.
 STOP-AT-EOL-TOKEN-TYPES is a list of token types that if we skipped the end of
 a line just after a token with one of given toke typen, the function returns.
 Typically, this is a list of token types that separates list elements
-\(e.g. ',', ';'). If STOP-AT-EOL-TOKEN-TYPES is the symbol `any', it matches
+\(e.g.  ',', ';').  If STOP-AT-EOL-TOKEN-TYPES is the symbol `any', it matches
 all tokens.
 STOP-AT-BOL-TOKEN-TYPES is a list of token types that if we hit
 the beginning of a line just before a token with one of given token types,
-the function returns. Typically, this is a list of token types that starts
-list element (e.g. 'case' of switch statement body). If STOP-AT-BOL-TOKEN-TYPES
+the function returns.  Typically, this is a list of token types that starts
+list element (e.g. 'case' of switch statement body).  If STOP-AT-BOL-TOKEN-TYPES
 is the symbol `any', it matches all tokens."
   (let*
       ((parent (swift-mode:backward-token-or-list))
@@ -1128,6 +1131,7 @@ is the symbol `any', it matches all tokens."
     parent))
 
 (defun swift-mode:align-with-next-token (parent &optional offset)
+  "Return indentation with the PARENT and OFFSET."
   (let ((parent-end (swift-mode:token:end parent)))
     (goto-char parent-end)
     (forward-comment (point-max))
@@ -1138,6 +1142,7 @@ is the symbol `any', it matches all tokens."
     (+ (or offset 0) (current-column))))
 
 (defun swift-mode:align-with-current-line (&optional offset)
+  "Return indentation of the current line with OFFSET."
   (swift-mode:goto-non-comment-bol)
   (swift-mode:skip-whitespaces)
   (+ (or offset 0) (current-column)))
@@ -1275,6 +1280,11 @@ It is a Generic parameter list if:
 
 (defun swift-mode:try-skip-generic-parameters
     (skip-token-or-list-function matching-bracket-text unmatching-bracket-text)
+  "Skip generic parameters if the point is just before/after one.
+
+SKIP-TOKEN-OR-LIST-FUNCTION skips forward/backward a token or a list.
+MATCHING-BRACKET-TEXT is a text of the matching bracket.
+UNMATCHING-BRACKET-TEXT is a text of the current bracket."
   (let ((pos (point))
         (prohibited-tokens (append
                             unmatching-bracket-text
@@ -1356,6 +1366,9 @@ Return nil otherwise."
   (skip-syntax-forward " >"))
 
 (defun swift-mode:incomplete-comment-p ()
+  "Return t if the point is inside an incomplete comment.
+
+Return nil otherwise."
   (and (nth 4 (syntax-ppss))
        (save-excursion
          (goto-char (nth 8 (syntax-ppss)))
@@ -1364,9 +1377,10 @@ Return nil otherwise."
 (defun swift-mode:indent-new-comment-line (&optional soft)
   "Break the line at the point and indent the new line.
 
-If the point is inside a comment, continue the comment. If the comment is a
+If the point is inside a comment, continue the comment.  If the comment is a
 multiline comment, close the previous comment and start new one if
-`comment-multi-line' is nil."
+`comment-multi-line' is nil.
+See `indent-new-comment-line' for SOFT."
   (interactive)
   (let* ((parser-state (syntax-ppss))
          (is-inside-comment (nth 4 parser-state))
@@ -1422,6 +1436,9 @@ multiline comment, close the previous comment and start new one if
         (indent-according-to-mode)))))
 
 (defun swift-mode:post-self-insert ()
+  "Miscellaneous logic for electric indentation."
+  ;; Indents electrically and insert a space when "*" is inserted at the
+  ;; beginning of a line inside a multiline comment.
   (cond
    ((and
      (= last-command-event ?*)
@@ -1430,6 +1447,8 @@ multiline comment, close the previous comment and start new one if
     (when swift-mode:insert-space-after-asterisk-in-comment
       (insert-before-markers-and-inherit " "))
     (indent-according-to-mode))
+
+   ;; Fixes "* /" at the end of a multiline comment to "*/".
    ((and
      (= last-command-event ?/)
      swift-mode:fix-comment-close
