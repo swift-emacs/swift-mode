@@ -509,31 +509,14 @@
        swift-mode:statement-parent-tokens
        swift-mode:multiline-statement-offset))
 
-     ;; After attributes at the beginning of a statement, without arguments
-     ((and
-       (string-prefix-p "@" previous-text)
-       (memq (save-excursion
-               (goto-char (swift-mode:token:start previous-token))
-               (swift-mode:token:type (swift-mode:backward-token)))
-             swift-mode:statement-parent-tokens))
-      ;; Aligns with the attribute.
-      (goto-char (swift-mode:token:start previous-token))
-      (swift-mode:align-with-next-token (swift-mode:backward-token)))
-
-     ;; After attributes at the beginning of a statement, with arguments
-     ((and
-       (eq previous-type '\))
-       (save-excursion
-         (backward-list)
-         (and
-          (string-prefix-p
-           "@"
-           (swift-mode:token:text (swift-mode:backward-token)))
-          (memq  (swift-mode:token:type (swift-mode:backward-token))
-                 swift-mode:statement-parent-tokens))))
-      (backward-list)
-      (swift-mode:backward-token)
-      (swift-mode:align-with-next-token (swift-mode:backward-token)))
+     ;; After attributes
+     ((eq previous-type 'attribute)
+      (goto-char (swift-mode:token:end previous-token))
+      (swift-mode:backward-token-or-list)
+      (swift-mode:calculate-indent-of-expression
+       swift-mode:multiline-statement-offset
+       0
+       t))
 
      ;; Otherwise, it is continuation of the previous line
      (t
@@ -597,20 +580,41 @@ on the previous line."
 (defun swift-mode:calculate-indent-of-expression
     (&optional
      offset
-     bol-offset)
+     bol-offset
+     after-attributes)
   "Return start column of the current expressions plus offset.
 
 the cursor is assumed to be on the previous line.
 
 OFFSET is the offset.  If it is omitted, assumed to be 0.
-If scanning stops at eol, align with the next token with BOL-OFFSET."
+If scanning stops at eol, align with the next token with BOL-OFFSET.
+If AFTER-ATTRIBUTES is nil, skip lines with only attributes at the start of
+the expression."
   (save-excursion
     (let* ((pos (point))
            (parent-of-previous-line
-            (progn (swift-mode:goto-non-comment-bol-with-same-nesting-level)
-                   (swift-mode:backward-token)))
-           (parent (progn (goto-char pos)
-                          (swift-mode:find-parent-of-expression))))
+            (save-excursion
+              (swift-mode:goto-non-comment-bol-with-same-nesting-level)
+              (swift-mode:backward-token)))
+           (parent (swift-mode:find-parent-of-expression)))
+
+      (when (not after-attributes)
+        (goto-char (swift-mode:token:end parent))
+        (swift-mode:forward-attributes)
+        (swift-mode:goto-non-comment-bol-with-same-nesting-level)
+        (when (< (point) (swift-mode:token:end parent))
+          (goto-char (swift-mode:token:end parent)))
+        (setq parent (swift-mode:backward-token)))
+
+      ;; When indenting a token after an attribute at the start of the
+      ;; expression, aligns with it.
+      (when (and after-attributes
+                 (save-excursion
+                   (goto-char (swift-mode:token:end parent))
+                   (eq (swift-mode:token:type (swift-mode:forward-token))
+                       'attribute)))
+        (setq offset 0))
+
       (if (<= (swift-mode:token:start parent-of-previous-line)
               (swift-mode:token:start parent))
           ;; let x =
@@ -628,6 +632,23 @@ If scanning stops at eol, align with the next token with BOL-OFFSET."
         ;; Aligns with the previous line.
         (swift-mode:align-with-next-token parent-of-previous-line
                                           bol-offset)))))
+
+(defun swift-mode:forward-attributes ()
+  "Skip forward comments, whitespaces, and attributes."
+  (while
+      (not
+       (eq (point)
+           (progn
+             (forward-comment (point-max))
+             (when (eq (char-after) ?@)
+               (forward-symbol 1)
+               (forward-comment (point-max))
+               (when (eq (char-after) ?\()
+                 (condition-case nil
+                     (forward-list)
+                   (scan-error nil))))
+             (point))))))
+
 
 (defun swift-mode:calculate-indent-after-open-curly-brace (offset)
   "Return indentation after open curly braces.

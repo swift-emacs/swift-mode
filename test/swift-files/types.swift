@@ -51,41 +51,44 @@ let foo: @A A
   = abc
 
 let foo: @A
-  A = abc
+  A =
+  abc
 
 let foo:
   @A
-  A = abc
+  A =
+  abc
 
 let foo
   :@A
-  A = abc
+  A =
+  abc
 
 class Foo:
   @A
-  A // swift-mode:test:known-bug
-    .A, // swift-mode:test:known-bug
+  A
+    .A,
   B {
 }
 
 class Foo
   : @A
-    A // swift-mode:test:known-bug
-      .A, // swift-mode:test:known-bug
+    A
+      .A,
     B {
 }
 
 class Foo: @A
-           A // swift-mode:test:known-bug
-             .A // swift-mode:test:known-bug
+           A
+             .A
          , B
 {
 }
 
 class Foo
   : @A
-    A // swift-mode:test:known-bug
-      .A // swift-mode:test:known-bug
+    A
+      .A
   , B
 {
 }

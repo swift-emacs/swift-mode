@@ -70,6 +70,7 @@
 ;; - prefix-operator (including try, try?, and try!)
 ;; - postfix-operator
 ;; - binary-operator (including as, as?, as!, is, =, ., and ->)
+;; - attribute (e.g. @objc, @abc(def))
 ;; - identifier (including keywords, numbers, implicit parameters, and unknown tokens)
 ;; - [
 ;; - ]
@@ -283,17 +284,7 @@
       t)
 
      ;; Supress implicit semicolon after attributes.
-     ((string-prefix-p "@" (swift-mode:token:text previous-token))
-      nil)
-
-     ;; Supress implicit semicolon after attributes with arguments.
-     ((and
-       (eq (swift-mode:token:type previous-token) '\))
-       (save-excursion
-         (backward-list)
-         (string-prefix-p
-          "@"
-          (swift-mode:token:text (swift-mode:backward-token-simple)))))
+     ((eq (swift-mode:token:type previous-token) 'attribute)
       nil)
 
      ;; Inserts implicit semicolon before keywords that behave like method
@@ -340,10 +331,6 @@
                      (swift-mode:forward-token-simple)
                      (swift-mode:forward-token-simple)))
                   "<")))
-
-    ;; Inserts implicit semicolon before attributes unless other condtions
-    ;; met.
-    ((string-prefix-p "@" (swift-mode:token:text previous-token)) t)
 
     ;; Inserts implicit semicolon before open square bracket.
     ;;
@@ -571,7 +558,6 @@ type `out-of-buffer'"
                  "in"
                  (swift-mode:token:start token)
                  (swift-mode:token:end token))))
-
         token)))))
 
 (defun swift-mode:forward-token-simple ()
@@ -647,6 +633,24 @@ type `out-of-buffer'"
       (goto-char (scan-sexps (point) 1))
       (swift-mode:token
        'identifier
+       (buffer-substring-no-properties pos-after-comment (point))
+       pos-after-comment
+       (point))))
+
+   ;; Attribute
+   ((eq (char-after) ?@)
+    (let ((pos-after-comment (point)))
+      (forward-symbol 1)
+      (let ((pos (point)))
+        (forward-comment (point-max))
+        (if (eq (char-after) ?\()
+            (condition-case nil
+                (progn
+                  (forward-list 1))
+              (scan-error (goto-char pos)))
+          (goto-char pos)))
+      (swift-mode:token
+       'attribute
        (buffer-substring-no-properties pos-after-comment (point))
        pos-after-comment
        (point))))
@@ -751,6 +755,23 @@ type `out-of-buffer'."
    ;; Outside of buffer
    ((bobp)
     (swift-mode:token 'outside-of-buffer "" (point) (point)))
+
+   ;; Attribute or close-parenthesis
+   ((eq (char-before) ?\))
+     (let ((pos-before-comment (point)))
+       (condition-case nil
+           (progn
+             (backward-list)
+             (forward-comment (- (point)))
+             (forward-symbol -1)
+             (unless (eq (char-after) ?@)
+               (goto-char (1- pos-before-comment))))
+         (scan-error (goto-char (1- pos-before-comment))))
+       (swift-mode:token
+        (if (eq (char-after) ?@) 'attribute '\))
+        (buffer-substring-no-properties (point) pos-before-comment)
+        (point)
+        pos-before-comment)))
 
    ;; Separators and parentheses
    ((memq (char-before) '(?, ?\; ?\{ ?\} ?\[ ?\] ?\( ?\) ?:))
@@ -864,6 +885,11 @@ type `out-of-buffer'."
                           (+ (point) (length text))))
        ((equal text "try")
         (swift-mode:token 'prefix-operator
+                          text
+                          (point)
+                          (+ (point) (length text))))
+       ((string-prefix-p "@" text)
+        (swift-mode:token 'attribute
                           text
                           (point)
                           (+ (point) (length text))))

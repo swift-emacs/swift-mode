@@ -341,6 +341,25 @@ fileprivate
     func foo()
 }
 
+
+@A
+@B
+struct A {
+    func foo() {
+    }
+    func foo() {
+    }
+}
+
+@A(a)
+@B(b)
+struct A {
+    func foo() {
+    }
+    func foo() {
+    }
+}
+
 // Protocol declarations
 
 protocol Foo {
