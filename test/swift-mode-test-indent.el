@@ -41,14 +41,14 @@
   "Initialize and switch to the error buffer.
 
 Return the error-buffer"
-  (switch-to-buffer (get-buffer-create "*swift-mode-test-indent*"))
+  (pop-to-buffer (get-buffer-create "*swift-mode-test-indent*"))
   (fundamental-mode)
   (setq buffer-read-only nil)
   (erase-buffer)
   (current-buffer))
 
 (defun swift-mode:run-test:indent ()
-  "Run indentation test for swift-mode."
+  "Run indentation test for `swift-mode'."
   (interactive)
   (let ((error-buffer
          (if noninteractive nil (swift-mode:setup-error-buffer)))
@@ -57,18 +57,23 @@ Return the error-buffer"
                        (cons 'error 0)
                        (cons 'warning 0)
                        (cons 'info 0)
-                       (cons 'ok 0))))
+                       (cons 'ok 0)))
+        (progress-reporter (unless noninteractive
+                             (make-progress-reporter "Running tests..."))))
     (setq default-directory
           (concat (file-name-as-directory swift-mode:test:basedir)
                   "swift-files"))
 
     (dolist (swift-file (file-expand-wildcards "*.swift"))
+      (redisplay)
       (with-temp-buffer
         (switch-to-buffer (current-buffer))
         (insert-file-contents-literally swift-file)
         (swift-mode)
         (setq current-line 0)
         (while (not (eobp))
+          (when (not noninteractive)
+            (progress-reporter-update progress-reporter))
           (setq current-line (1+ current-line))
           (cond
            ((looking-at ".*//.*swift-mode:test:keep-indent")
@@ -87,6 +92,9 @@ Return the error-buffer"
                  (count-assoc (assq status error-counts)))
               (setcdr count-assoc (1+ (cdr count-assoc))))))
           (forward-line))))
+
+    (when (not noninteractive)
+      (progress-reporter-done progress-reporter))
 
     (swift-mode:print-message
      error-buffer
@@ -174,6 +182,7 @@ Otherwise, MESSAGE is appended to the ERROR-BUFFER."
   (if noninteractive
       (princ message)
     (with-current-buffer error-buffer
+      (goto-char (point-max))
       (insert-and-inherit message))))
 
 (provide 'swift-mode-test-indent)
