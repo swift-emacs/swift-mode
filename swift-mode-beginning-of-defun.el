@@ -99,7 +99,7 @@
 
 (defun swift-mode:is-point-before-body-of-defun ()
   (and
-   (= (char-after) ?{)
+   (eq (char-after) ?{)
    (progn
      ;; Skips implicit ;
      (forward-comment (- (point)))
@@ -176,7 +176,7 @@ Intended for internal use."
   (catch 'swift-mode:found-defun
     (while (not (eq (swift-mode:token:type (funcall next-token-function))
                     'outside-of-buffer))
-      (when (and (= (char-before) ?})
+      (when (and (eq (char-before) ?})
                  (save-excursion
                    (backward-list)
                    (swift-mode:is-point-before-body-of-defun)))
