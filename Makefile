@@ -47,10 +47,9 @@ clean:
 ## Cleans the dist directory.
 	rm -rf dist
 
-check: deps
+test: deps
 ## Tests the package.
 	$(CASK) exec $(EMACS) --batch -q \
-	  --eval "(add-to-list 'load-path \""$(shell realpath .)"\")" \
-	  -l swift-mode.el \
+	  --eval "(add-to-list 'load-path \""$(shell readlink -f .)"\")" \
 	  -l test/swift-mode-test-indent.el \
 	  -f swift-mode:run-test:indent
