@@ -1535,13 +1535,16 @@ See `indent-new-comment-line' for SOFT."
   (when swift-mode:anchor-overlay-timer
     (cancel-timer swift-mode:anchor-overlay-timer))
 
-  (setq swift-mode:anchor-overlay-timer
-        (run-at-time
-         "1 sec"
-         nil
-         (lambda ()
-           (delete-overlay swift-mode:anchor-overlay)
-           (setq swift-mode:anchor-overlay-timer nil)))))
+  (let ((buffer (current-buffer)))
+    (setq swift-mode:anchor-overlay-timer
+          (run-at-time
+           "1 sec"
+           nil
+           (lambda ()
+             (when (buffer-live-p buffer)
+               (with-current-buffer buffer
+                 (delete-overlay swift-mode:anchor-overlay)
+                 (setq swift-mode:anchor-overlay-timer nil))))))))
 
 (provide 'swift-mode-indent)
 
