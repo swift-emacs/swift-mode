@@ -658,6 +658,7 @@ the expression."
       (when (and after-attributes
                  (save-excursion
                    (goto-char (swift-mode:token:end parent))
+                   (forward-comment (point-max))
                    (eq (swift-mode:token:type (swift-mode:forward-token))
                        'attribute)))
         (setq offset 0))
