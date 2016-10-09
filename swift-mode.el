@@ -150,7 +150,12 @@ See `forward-sexp for ARG."
   (setq-local imenu-generic-expression swift-mode:imenu-generic-expression)
 
   (setq-local beginning-of-defun-function #'swift-mode:beginning-of-defun)
-  (setq-local end-of-defun-function #'swift-mode:end-of-defun))
+  (setq-local end-of-defun-function #'swift-mode:end-of-defun)
+
+  (setq-local swift-mode:anchor-overlay
+              (make-overlay (point-min) (point-min) nil t))
+
+  (delete-overlay swift-mode:anchor-overlay))
 
 ;;;###autoload (add-to-list 'auto-mode-alist '("\\.swift\\'" . swift-mode))
 

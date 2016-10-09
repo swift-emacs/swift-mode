@@ -34,6 +34,8 @@
 
 (require 'swift-mode-lexer)
 
+;;; Customizations
+
 ;;;###autoload
 (defcustom swift-mode:basic-offset 4
   "Amount of indentation for block contents."
@@ -83,6 +85,17 @@
   :group 'swift
   :safe 'booleanp)
 
+;;;###autoload
+(defcustom swift-mode:highlight-anchor nil
+  "Highlight anchor point for indentation if non-nil.
+
+Intended for debugging."
+  :type 'boolean
+  :group 'swift
+  :safe 'booleanp)
+
+;;; Constants and variables
+
 (defconst swift-mode:statement-parent-tokens
   '(implicit-\; \; case-: { \( \[ anonymous-function-parameter-in)
   "Parent tokens for statements.")
@@ -92,16 +105,47 @@
           '(\, < supertype-: "where" "if" "guard" "while" "for" "catch"))
   "Parent tokens for expressions.")
 
+(defvar-local swift-mode:anchor-overlay nil)
+(defvar-local swift-mode:anchor-overlay-timer nil)
+
+;;; Indentation struct
+
+(defun swift-mode:indentation (point offset)
+  "Construct and return a indentation.
+
+POINT is the position of the anchor point, such as the start of the previous
+line or the start of the class declaration.
+OFFSET is the offset from the anchor point.  For example, when indenting the
+first line of a class body, its anchor point is the start of the class
+declaration and its offset is `swift-mode:basic-offset'."
+  (list point offset))
+
+(defun swift-mode:indentation:point (indentation)
+  "Return the point of INDENTATION."
+  (nth 0 indentation))
+
+(defun swift-mode:indentation:offset (indentation)
+  "Return the offset of INDENTATION."
+  (nth 1 indentation))
+
+;;; Indentation logics
+
 (defun swift-mode:indent-line ()
   "Indent the current line."
-  (let ((indent (save-excursion (swift-mode:calculate-indent)))
-        (current-indent
-         (save-excursion (back-to-indentation) (current-column))))
+  (let* ((indentation (save-excursion (swift-mode:calculate-indent)))
+         (indentation-column
+          (save-excursion
+            (goto-char (swift-mode:indentation:point indentation))
+            (+ (current-column) (swift-mode:indentation:offset indentation))))
+         (current-indent
+          (save-excursion (back-to-indentation) (current-column))))
     (if (<= (current-column) current-indent)
         ;; The cursor is on the left margin. Moving to the new indent.
-        (indent-line-to indent)
+        (indent-line-to indentation-column)
       ;; Keeps current relative position.
-      (save-excursion (indent-line-to indent)))))
+      (save-excursion (indent-line-to indentation-column)))
+    (when swift-mode:highlight-anchor
+      (swift-mode:highlight-anchor indentation))))
 
 (defun swift-mode:calculate-indent ()
   "Return the indentation of the current line."
@@ -128,13 +172,13 @@
         (progn
           (goto-char comment-beginning-position)
           (forward-char)
-          (current-column))
+          (swift-mode:indentation (point) 0))
       ;; The cursor was on the 3rd or following lines of the comment, so aligns
       ;; with a non-empty preceding line.
       (if (eolp)
           ;; The cursor is on an empty line, so seeks a non-empty-line.
           (swift-mode:calculate-indent-of-multiline-comment)
-        (current-column)))))
+        (swift-mode:indentation (point) 0)))))
 
 (defun swift-mode:calculate-indent-of-code ()
   "Return the indentation of the current line outside multiline comments."
@@ -150,7 +194,7 @@
     (cond
      ;; Beginning of the buffer
      ((eq previous-type 'outside-of-buffer)
-      0)
+      (swift-mode:indentation (point-min) 0))
 
      ;; Before } on the same line
      ((and next-is-on-same-line (eq next-type '}))
@@ -837,7 +881,7 @@ This is also known as Utrecht-style in the Haskell community."
       ;; Aligns with the end of the parent.
       (goto-char (swift-mode:token:end parent))
       (backward-char)
-      (current-column))))
+      (swift-mode:indentation (point) 0))))
 
 (defun swift-mode:calculate-indent-after-comma ()
   "Return indentation after comma.
@@ -1139,13 +1183,13 @@ is the symbol `any', it matches all tokens."
     (when (< (point) parent-end)
       (goto-char parent-end))
     (swift-mode:skip-whitespaces)
-    (+ (or offset 0) (current-column))))
+    (swift-mode:indentation (point) (or offset 0))))
 
 (defun swift-mode:align-with-current-line (&optional offset)
   "Return indentation of the current line with OFFSET."
   (swift-mode:goto-non-comment-bol)
   (swift-mode:skip-whitespaces)
-  (+ (or offset 0) (current-column)))
+  (swift-mode:indentation (point) (or offset 0)))
 
 (defun swift-mode:backward-token-or-list ()
   "Move point to the start position of the previous token or list.
@@ -1463,6 +1507,26 @@ See `indent-new-comment-line' for SOFT."
     (backward-char)
     (delete-horizontal-space)
     (forward-char))))
+
+(defun swift-mode:highlight-anchor (indentation)
+  "Highlight the anchor point of the INDENTATION."
+  (move-overlay
+   swift-mode:anchor-overlay
+   (swift-mode:indentation:point indentation)
+   (1+ (swift-mode:indentation:point indentation)))
+
+  (overlay-put swift-mode:anchor-overlay 'face 'highlight)
+
+  (when swift-mode:anchor-overlay-timer
+    (cancel-timer swift-mode:anchor-overlay-timer))
+
+  (setq swift-mode:anchor-overlay-timer
+        (run-at-time
+         "1 sec"
+         nil
+         (lambda ()
+           (delete-overlay swift-mode:anchor-overlay)
+           (setq swift-mode:anchor-overlay-timer nil)))))
 
 (provide 'swift-mode-indent)
 
