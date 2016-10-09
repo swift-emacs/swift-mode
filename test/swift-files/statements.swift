@@ -897,6 +897,13 @@ default:
     }
 }
 
+switch foo {
+case 1:
+    return
+case 2:
+    bar()
+}
+
 // swift-mode:test:eval (setq-local swift-mode:switch-case-offset 2)
 
 switch foo {

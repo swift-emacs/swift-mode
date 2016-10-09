@@ -258,7 +258,7 @@ END is the point after the token."
      ;; Suppress implicit semicolon after keywords that cannot end statements.
      ((member (swift-mode:token:text previous-token)
               '("while" "for" "switch" "case" "default" "catch" "if" "guard"
-                "let" "var" "throw" "import" "return"))
+                "let" "var" "throw" "import"))
       nil)
 
      ;; Inserts implicit semicolon before keywords that starts a new
@@ -267,6 +267,10 @@ END is the point after the token."
               '("for" "repeat" "switch"  "case" "default" "defer" "do" "if"
                 "guard" "let" "var" "throw" "import" "return"))
       t)
+
+     ;; Suppress implicit semicolon after return.
+     ((equal (swift-mode:token:text previous-token) "return")
+      nil)
 
      ;; Inserts implicit semicolon before `while' unless it is part of
      ;; `repeat...while'.
