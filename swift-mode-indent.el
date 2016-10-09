@@ -262,10 +262,24 @@ declaration and its offset is `swift-mode:basic-offset'."
        next-is-on-same-line
        (member next-text '("case" "default"))
        (save-excursion
-         (equal (swift-mode:token:text
-                 (swift-mode:backward-sexps-until
-                  '("switch" "enum" "for" "while" "if" "guard")))
-                "switch")))
+         (let ((head
+                (swift-mode:backward-sexps-until
+                 '(implicit-\; \; "switch" "enum" "for" "while" "if" "guard"))))
+           (or
+            (equal (swift-mode:token:text head) "switch")
+            (and
+             ;; If we got a semicolon, the statement is either switch or enum:
+             ;;
+             ;; switch foo {
+             ;; case 1:
+             ;;   if aaa {
+             ;;   }; // implicit semicolon
+             ;; case 2:
+             ;; }
+             (memq (swift-mode:token:type head) '(implicit-\; \;))
+             (equal (swift-mode:token:text
+                     (swift-mode:backward-sexps-until '("switch" "enum")))
+                    "switch"))))))
       ;; "case" is used for "switch", "enum", "for", "while", "if", and "guard".
       ;; Only switch statement has special indentation rule.
       ;;

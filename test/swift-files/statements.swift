@@ -885,6 +885,18 @@ case let AAA
                      .bar:
 }
 
+switch foo {
+case 1:
+    if aaa {
+    }
+case 2:
+    if bbb {
+    }
+default:
+    if ccc {
+    }
+}
+
 // swift-mode:test:eval (setq-local swift-mode:switch-case-offset 2)
 
 switch foo {
