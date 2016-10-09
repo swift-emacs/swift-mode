@@ -302,17 +302,6 @@ END is the point after the token."
               '("get" "set" "willSet" "didSet" "subscript" "init" "deinit"))
       t)
 
-     ;; Suppress implicit semicolon after keywords that behave like method
-     ;; names.
-     ;;
-     ;; Note that binary operators take precedence over this:
-     ;;
-     ;; self . // not insert semicolon here
-     ;;   init
-     ((member (swift-mode:token:text previous-token)
-              '("set" "willSet" "didSet" "subscript" "init" "deinit"))
-      nil)
-
      ;; Suppress implicit semicolon after declaration starters.
      ((member (swift-mode:token:text previous-token)
               '("class" "struct" "protocol" "enum" "extension" "func"
@@ -340,6 +329,42 @@ END is the point after the token."
                      (swift-mode:forward-token-simple)
                      (swift-mode:forward-token-simple)))
                   "<")))
+
+    ;; Inserts semicolon before open curly bracket.
+    ;;
+    ;; Open curly bracket may continue the previous line, but we do not indent
+    ;; there. For example, the code below is parsed as `(foo() { x in ... })'
+    ;; by the Swift compiler, but we indent it like `foo(); { x in ... }'.
+    ;;
+    ;; foo()
+    ;; { // does not indent here
+    ;;   x in
+    ;;   ...
+    ;; }
+    ((eq (swift-mode:token:type next-token) '\{) t)
+
+    ;; Suppress implicit semicolon after keywords that behave like method
+    ;; names.
+    ;;
+    ;; Note that binary operators take precedence over this:
+    ;;
+    ;; self . // not insert semicolon here
+    ;;   init
+    ;;
+    ;; var x {
+    ;;   set // not insert semicolon here
+    ;;     (x) {
+    ;;   }
+    ;; }
+    ;;
+    ;; var x {
+    ;;   set // inserts semicolon here
+    ;;   {
+    ;;   }
+    ;; }
+    ((member (swift-mode:token:text previous-token)
+             '("set" "willSet" "didSet" "subscript" "init" "deinit"))
+     nil)
 
     ;; Inserts implicit semicolon before open square bracket.
     ;;
@@ -370,19 +395,6 @@ END is the point after the token."
     ;;     1
     ;;   )
     ((eq (swift-mode:token:type next-token) '\() t)
-
-    ;; Inserts semicolon before open curly bracket.
-    ;;
-    ;; Open curly bracket may continue the previous line, but we do not indent
-    ;; there. For example, the code below is parsed as `(foo() { x in ... })'
-    ;; by the Swift compiler, but we indent it like `foo(); { x in ... }'.
-    ;;
-    ;; foo()
-    ;; { // does not indent here
-    ;;   x in
-    ;;   ...
-    ;; }
-    ((eq (swift-mode:token:type next-token) '\{) t)
 
     ;; Otherwise, inserts implicit semicolon.
     (t t))))

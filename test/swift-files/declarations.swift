@@ -180,6 +180,28 @@ class Foo {
             foo()
         }
     }
+
+    var x {
+        get {
+            1
+        }
+
+        set {
+            foo()
+        }
+    }
+
+    var x {
+        get
+        {
+            1
+        }
+
+        set
+        {
+            foo()
+        }
+    }
 }
 
 // Type alias declaration
