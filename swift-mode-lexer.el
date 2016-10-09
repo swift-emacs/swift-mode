@@ -211,6 +211,10 @@ END is the point after the token."
                     '("#file" "#line" "column" "#function"))))
       t)
 
+     ;; Supress implicit semicolon after attributes.
+     ((eq (swift-mode:token:type previous-token) 'attribute)
+      nil)
+
      ;; Suppress implicit semicolon after modifiers.
      ((member (swift-mode:token:text previous-token)
               '("indirect" "convenience" "dynamic" "final" "infix" "lazy"
@@ -291,10 +295,6 @@ END is the point after the token."
        (equal (swift-mode:token:text previous-token) "else")
        (equal (swift-mode:token:text next-token) "else"))
       t)
-
-     ;; Supress implicit semicolon after attributes.
-     ((eq (swift-mode:token:type previous-token) 'attribute)
-      nil)
 
      ;; Inserts implicit semicolon before keywords that behave like method
      ;; names.
