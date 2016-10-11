@@ -904,6 +904,12 @@ case 2:
     bar()
 }
 
+switch foo {
+case 1:
+    var x: Int = 1
+    var y: Int = 2
+}
+
 // swift-mode:test:eval (setq-local swift-mode:switch-case-offset 2)
 
 switch foo {
