@@ -456,7 +456,7 @@ That is supertype declaration or type declaration of let or var."
      ;; FIXME: mutual dependency
      (swift-mode:token:text
       (swift-mode:backward-sexps-until
-       '(implicit-\; \; { \( \[ "case" "default" case-:)))
+       '(implicit-\; \; { \( \[ "case" "default" ":")))
      '("case" "default"))))
 
 (defun swift-mode:anonyous-parameter-in-p ()
