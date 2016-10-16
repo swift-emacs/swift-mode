@@ -437,27 +437,38 @@ That is supertype declaration or type declaration of let or var."
                '("class" "extension" "enum" "struct" "protocol" "typealias"
                  "associatedtype"))))))
 
-(defun swift-mode:case-colon-p ()
-  "Return t if a colon at the cursor is the colon for case or default label."
-  (save-excursion
-    (member
-     ;; This function can be confused by conditional operator.
-     ;;
-     ;;
-     ;; switch foo {
-     ;; case let x where x is Foo ?
-     ;;                    a : // This function should return nil but it
-     ;;                       // actually retuns t.
-     ;;                    b: // This function should return t but it
-     ;;                       // actually return nil.
-     ;;   let y = a ? b : c // This function returns nil correctly for this.
-     ;; }
+(defvar swift-mode:in-recursive-call-of-case-colon-p nil
+  "Non-nil if `case-colon-p' is being evaluated.")
 
-     ;; FIXME: mutual dependency
-     (swift-mode:token:text
-      (swift-mode:backward-sexps-until
-       '(implicit-\; \; { \( \[ "case" "default" ":")))
-     '("case" "default"))))
+(defun swift-mode:case-colon-p ()
+  "Return non-nil if the colon at the cursor follows case or default label.
+
+Return nil otherwise."
+  (if swift-mode:in-recursive-call-of-case-colon-p
+      nil
+    (save-excursion
+      (setq swift-mode:in-recursive-call-of-case-colon-p t)
+
+      (unwind-protect
+          (member
+           ;; FIXME:
+           ;; This function can be confused by conditional operator.
+           ;;
+           ;; switch foo {
+           ;; case let x where x is Foo ?
+           ;;                    a : // This function should return nil but it
+           ;;                       // actually retuns t.
+           ;;                    b: // This function should return t but it
+           ;;                       // actually return nil.
+           ;;   let y = a ? b : c // This function returns nil correctly for this.
+           ;; }
+
+           ;; FIXME: mutual dependency
+           (swift-mode:token:text
+            (swift-mode:backward-sexps-until
+             '(implicit-\; \; { \( \[ "case" "default" ":")))
+           '("case" "default"))
+        (setq swift-mode:in-recursive-call-of-case-colon-p nil)))))
 
 (defun swift-mode:anonyous-parameter-in-p ()
   "Return t if a 'in' token at the cursor is for anonymous function parameters."
