@@ -1455,7 +1455,10 @@ See `indent-new-comment-line' for SOFT."
       (insert-before-markers-and-inherit
        (cond
         (is-single-line-comment
-         "// ")
+         (save-excursion
+           (goto-char comment-beginning-position)
+           (looking-at "/+")
+           (concat (match-string-no-properties 0) space-after-asterisk)))
 
         (comment-multi-line
          (save-excursion
