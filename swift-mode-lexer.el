@@ -194,6 +194,19 @@ END is the point after the token."
                '("inout" "throws" "rethrows" "in" "where")))
       nil)
 
+     ;; Inserts semicolon before open curly bracket.
+     ;;
+     ;; Open curly bracket may continue the previous line, but we do not indent
+     ;; there. For example, the code below is parsed as `(foo() { x in ... })'
+     ;; by the Swift compiler, but we indent it like `foo(); { x in ... }'.
+     ;;
+     ;; foo()
+     ;; { // does not indent here
+     ;;   x in
+     ;;   ...
+     ;; }
+     ((eq (swift-mode:token:type next-token) '\{) t)
+
      ;; Inserts implicit semicolon around #... directives.
      ;;
      ;; Note that we cannot split #if line; the following code is not allowed.
@@ -329,19 +342,6 @@ END is the point after the token."
                      (swift-mode:forward-token-simple)
                      (swift-mode:forward-token-simple)))
                   "<")))
-
-    ;; Inserts semicolon before open curly bracket.
-    ;;
-    ;; Open curly bracket may continue the previous line, but we do not indent
-    ;; there. For example, the code below is parsed as `(foo() { x in ... })'
-    ;; by the Swift compiler, but we indent it like `foo(); { x in ... }'.
-    ;;
-    ;; foo()
-    ;; { // does not indent here
-    ;;   x in
-    ;;   ...
-    ;; }
-    ((eq (swift-mode:token:type next-token) '\{) t)
 
     ;; Suppress implicit semicolon after keywords that behave like method
     ;; names.

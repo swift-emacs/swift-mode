@@ -1035,7 +1035,11 @@ catch
     foo()
     foo()
 }
-
+catch
+{
+    foo()
+    foo()
+}
 
 // Conditional control statements
 
