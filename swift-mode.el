@@ -60,10 +60,18 @@
         :help "Swift-specific Features"
         ["Run REPL" swift-mode-run-repl
          :help "Run Swift REPL"]
-        ["Send buffer to REPL" swift-mode-send-buffer
+        ["Send buffer to REPL" swift-mode:send-buffer
          :help "Send the current buffer's contents to the REPL"]
-        ["Send region to REPL" swift-mode-send-region
-         :help "Send currently selected region to the REPL"]))
+        ["Send region to REPL" swift-mode:send-region
+         :help "Send currently selected region to the REPL"]
+        ["Build Swift module" swift-mode:build-swift-module
+         :help "Build current Swift module"]
+        ["Build iOS app" swift-mode:build-ios-app
+         :help "Build current iOS app"]
+        ["Debug Swift module" swift-mode:debug-swift-module
+         :help "Debug current Swift module"]
+        ["Debug iOS app" swift-mode:debug-ios-app
+         :help "Debug current iOS app with simulator"]))
     map)
   "Swift mode key map.")
 
