@@ -65,6 +65,10 @@ To install without MELPA, download [latest release](https://github.com/swift-ema
 - `indent-new-comment-line`
 - [Imenu](https://www.gnu.org/software/emacs/manual/html_node/emacs/Imenu.html)
 - Running Swift REPL in a buffer (`M-x run-swift`)
+- Build Swift module (`M-x swift-mode:build-swift-module`)
+- Build iOS app (`M-x swift-mode:build-ios-app`)
+- Running debugger on Swift module (`M-x swift-mode:debug-swift-module`)
+- Running debugger on iOS app in simulator (`M-x swift-mode:debug-ios-app`)
 
 This package does not provide flycheck. See [flycheck-swift](https://github.com/swift-emacs/flycheck-swift).
 
