@@ -152,6 +152,81 @@ END is the point after the token."
 
     table))
 
+(defun swift-mode:syntax-propertize (start end)
+  "Update text properties for multiline strings.
+Mark the beginning of and the end of multiline strings as general string
+delimiters between position START and END.
+Intended for `syntax-propertize-function'"
+  (remove-text-properties start end '(syntax-table nil))
+  (let* ((parser-state (syntax-ppss start))
+         (inside-string (nth 3 parser-state))
+         (comment-nesting (nth 4 parser-state))
+         (comment-beginning-position (nth 8 parser-state)))
+    (cond
+     ((eq inside-string t)
+      (swift-mode:syntax-propertize:end-of-multiline-string end))
+
+     (inside-string
+      (swift-mode:syntax-propertize:end-of-single-line-string end))
+
+     (comment-nesting
+      (goto-char comment-beginning-position)
+      (forward-comment (point-max)))))
+
+  (while (search-forward-regexp
+          (mapconcat #'regexp-quote '("\"\"\"" "\"" "//" "/*") "\\|")
+          end t)
+    (cond
+     ((equal "\"\"\"" (match-string-no-properties 0))
+      (put-text-property (match-beginning 0) (1+ (match-beginning 0))
+                         'syntax-table
+                         (string-to-syntax "|"))
+      (swift-mode:syntax-propertize:end-of-multiline-string end))
+
+     ((equal "\"" (match-string-no-properties 0))
+      (swift-mode:syntax-propertize:end-of-single-line-string end))
+
+     ((equal "//" (match-string-no-properties 0))
+      (goto-char (match-beginning 0))
+      (forward-comment (point-max)))
+
+     ((equal "/*" (match-string-no-properties 0))
+      (goto-char (match-beginning 0))
+      (forward-comment (point-max))))))
+
+(defun swift-mode:syntax-propertize:end-of-multiline-string (end)
+  "Move point to the end of multiline string.
+Assuming the cursor is on a multiline string.
+If the end of the string found, put a text property on it.
+If the multiline string go beyond END, stop there."
+  ;; FIXME string interpolation
+  (if (search-forward "\"\"\"" end t)
+      (if (swift-mode:escaped-p (match-beginning 0))
+          (swift-mode:syntax-propertize:end-of-multiline-string end)
+        (put-text-property (1- (point)) (point)
+                           'syntax-table
+                           (string-to-syntax "|")))
+    (goto-char end)))
+
+(defun swift-mode:syntax-propertize:end-of-single-line-string (end)
+  "Move point to the end of string.
+Assuming the cursor is on a string.
+If the multiline string go beyond END, stop there."
+  ;; FIXME string interpolation
+  (if (search-forward "\"" end t)
+      (when (swift-mode:escaped-p (match-beginning 0))
+        (swift-mode:syntax-propertize:end-of-single-line-string end))
+    (goto-char end)))
+
+(defun swift-mode:escaped-p (position)
+  "Return t if the POSITION is proceeded by odd number of backslashes.
+Return nil otherwise."
+  (let ((p position)
+        (count 0))
+    (while (eq (char-before p) ?\\)
+      (setq count (1+ count))
+      (setq p (1- p)))
+    (= (mod count 2) 1)))
 
 ;;; Lexers
 

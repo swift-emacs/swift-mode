@@ -145,6 +145,9 @@ See `forward-sexp for ARG."
   (setq-local adaptive-fill-regexp comment-start-skip)
   (setq-local comment-multi-line t)
 
+  (setq-local parse-sexp-lookup-properties t)
+  (setq-local syntax-propertize-function #'swift-mode:syntax-propertize)
+
   (setq-local indent-tabs-mode nil)
   (setq-local indent-line-function #'swift-mode:indent-line)
 

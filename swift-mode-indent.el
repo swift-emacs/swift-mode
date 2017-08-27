@@ -151,14 +151,20 @@ declaration and its offset is `swift-mode:basic-offset'."
   "Return the indentation of the current line."
   (back-to-indentation)
 
-  (if (nth 4 (syntax-ppss))
+  (let ((parser-state (syntax-ppss)))
+    (cond
+     ((nth 4 parser-state)
       ;; If the 4th element of `(syntax-ppss)' is non-nil, the cursor is on
       ;; the 2nd or following lines of a multiline comment, because:
       ;;
       ;; - The 4th element of `(syntax-ppss)' is nil on the comment starter.
       ;; - We have called `back-to-indentation`.
-      (swift-mode:calculate-indent-of-multiline-comment)
-    (swift-mode:calculate-indent-of-code)))
+      (swift-mode:calculate-indent-of-multiline-comment))
+
+     ((eq (nth 3 parser-state) t)
+      (swift-mode:calculate-indent-of-multiline-string))
+     (t
+      (swift-mode:calculate-indent-of-code)))))
 
 (defun swift-mode:calculate-indent-of-multiline-comment ()
   "Return the indentation of the current line inside a multiline comment."
@@ -179,6 +185,32 @@ declaration and its offset is `swift-mode:basic-offset'."
           ;; The cursor is on an empty line, so seeks a non-empty-line.
           (swift-mode:calculate-indent-of-multiline-comment)
         (swift-mode:indentation (point) 0)))))
+
+(defun swift-mode:calculate-indent-of-multiline-string ()
+  "Return the indentation of the current line inside a multiline string."
+  (back-to-indentation)
+  (let ((string-beginning-position (nth 8 (syntax-ppss))))
+    (if (looking-at "\"\"\"")
+        ;; The last line.
+        (progn
+          (goto-char string-beginning-position)
+          (swift-mode:calculate-indent-of-expression
+           swift-mode:multiline-statement-offset))
+      (forward-line -1)
+      (back-to-indentation)
+      (if (<= (point) string-beginning-position)
+          ;; The cursor was on the 2nd line of the comment, so aligns with
+          ;; that line with offset.
+          (progn
+            (goto-char string-beginning-position)
+            (swift-mode:calculate-indent-of-expression
+             swift-mode:multiline-statement-offset))
+        ;; The cursor was on the 3rd or following lines of the comment, so
+        ;; aligns with a non-empty preceding line.
+        (if (eolp)
+            ;; The cursor is on an empty line, so seeks a non-empty-line.
+            (swift-mode:calculate-indent-of-multiline-string)
+          (swift-mode:indentation (point) 0))))))
 
 (defun swift-mode:calculate-indent-of-code ()
   "Return the indentation of the current line outside multiline comments."
