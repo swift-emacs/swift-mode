@@ -282,23 +282,6 @@ Return nil otherwise."
      ;; }
      ((eq (swift-mode:token:type next-token) '\{) t)
 
-     ;; Inserts implicit semicolon around #... directives.
-     ;;
-     ;; Note that we cannot split #if line; the following code is not allowed.
-     ;;
-     ;; #if
-     ;;   true
-     ;; #end if
-     ((and
-       (or
-        (string-prefix-p "#" (swift-mode:token:text previous-token))
-        (string-prefix-p "#" (swift-mode:token:text next-token)))
-       (not (member (swift-mode:token:text previous-token)
-                    '("#file" "#line" "column" "#function")))
-       (not (member (swift-mode:token:text next-token)
-                    '("#file" "#line" "column" "#function"))))
-      t)
-
      ;; Supress implicit semicolon after attributes.
      ((eq (swift-mode:token:type previous-token) 'attribute)
       nil)
