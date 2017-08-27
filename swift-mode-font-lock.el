@@ -68,15 +68,20 @@ Return nil otherwise."
 
     ;; Keywords that begin with a number sign (#)
     ("#available\\>" . font-lock-preprocessor-face)
+    ("#colorLiteral\\>" . font-lock-preprocessor-face)
     ("#column\\>" . font-lock-preprocessor-face)
-    ("#elseif\\>" . font-lock-preprocessor-face)
     ("#else\\>" . font-lock-preprocessor-face)
+    ("#elseif\\>" . font-lock-preprocessor-face)
     ("#endif\\>" . font-lock-preprocessor-face)
+    ("#fileLiteral\\>" . font-lock-preprocessor-face)
     ("#file\\>" . font-lock-preprocessor-face)
     ("#function\\>" . font-lock-preprocessor-face)
     ("#if\\>" . font-lock-preprocessor-face)
+    ("#imageLiteral\\>" . font-lock-preprocessor-face)
+    ("#keypath\\>" . font-lock-preprocessor-face)
     ("#line\\>" . font-lock-preprocessor-face)
     ("#selector\\>" . font-lock-preprocessor-face)
+    ("#sourceLocation\\>" . font-lock-preprocessor-face)
 
     ;; Keywords used in declarations
     "\\<associatedtype\\>"
