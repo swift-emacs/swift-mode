@@ -631,7 +631,7 @@ CODESIGNING-FOLDER-PATH is the path of the app."
                     "install"
                     device-identifier
                     codesigning-folder-path))
-      (error "%s: %s","Cannot install app" (buffer-string)))))
+      (error "%s: %s" "Cannot install app" (buffer-string)))))
 
 (defun swift-mode:launch-ios-app (device-identifier
                                   product-bundle-identifier
