@@ -92,6 +92,8 @@ END is the point after the token."
 ;; - case-: (colon for case or default label)
 ;; - : (part of conditional operator, key-value separator, label-statement separator)
 ;; - anonymous-function-parameter-in ("in" after anonymous function parameter)
+;; - string-chunk-after-interpolation (part of a string ending with ")")
+;; - string-chunk-before-interpolation (part of a string ending with "\\(")
 ;; - outside-of-buffer
 ;;
 ;; Additionaly, `swift-mode:backward-token-or-list' may return a parenthesized
@@ -152,12 +154,30 @@ END is the point after the token."
 
     table))
 
+(defun swift-mode:syntax-propertize-extend-region (start end)
+  "Return region to be propertized.
+The returned region contains the region (START . END).
+If the region is not modified, return nil.
+Intended for `syntax-propertize-extend-region-functions'."
+  (when (get-text-property (max (point-min) (1- start)) 'swift-mode:string)
+    (cons (or (previous-single-property-change
+               (max (point-min) (1- start))
+               'swift-mode:string)
+              (point-min))
+          end)))
+
 (defun swift-mode:syntax-propertize (start end)
-  "Update text properties for multiline strings.
-Mark the beginning of and the end of multiline strings as general string
-delimiters between position START and END.
-Intended for `syntax-propertize-function'"
-  (remove-text-properties start end '(syntax-table nil))
+  "Update text properties for strings.
+Mark the beginning of and the end of single-line/multiline strings between
+the position START and END as general string delimiters.
+Intended for `syntax-propertize-function'."
+  (remove-text-properties start end
+                          '(syntax-table
+                            nil
+                            swift-mode:string
+                            nil
+                            swift-mode:matching-parenthesis
+                            nil))
   (let* ((parser-state (syntax-ppss start))
          (inside-string (nth 3 parser-state))
          (comment-nesting (nth 4 parser-state))
@@ -173,50 +193,112 @@ Intended for `syntax-propertize-function'"
       (goto-char comment-beginning-position)
       (forward-comment (point-max)))))
 
-  (while (search-forward-regexp
-          (mapconcat #'regexp-quote '("\"\"\"" "\"" "//" "/*") "\\|")
-          end t)
-    (cond
-     ((equal "\"\"\"" (match-string-no-properties 0))
-      (put-text-property (match-beginning 0) (1+ (match-beginning 0))
-                         'syntax-table
-                         (string-to-syntax "|"))
-      (swift-mode:syntax-propertize:end-of-multiline-string end))
+  (swift-mode:syntax-propertize:scan end 0))
 
-     ((equal "\"" (match-string-no-properties 0))
-      (swift-mode:syntax-propertize:end-of-single-line-string end))
+(defun swift-mode:syntax-propertize:scan (end nesting-level)
+  "Update text properties for strings.
+Mark the beginning of and the end of single-line/multiline strings between
+the current position and END as general string delimiters.
+Assuming the cursor is not on strings nor comments.
+If NESTING-LEVEL is non-zero, nesting of parentheses are tracked and the scan
+stops where the level becomes zero."
+  (let ((found-matching-parenthesis nil)
+        (pattern (mapconcat #'regexp-quote
+                            '("\"\"\"" "\"" "//" "/*" "(" ")")
+                            "\\|")))
+    (while (and (not found-matching-parenthesis)
+                (search-forward-regexp pattern end t))
+      (cond
+       ((equal "\"\"\"" (match-string-no-properties 0))
+        (put-text-property (match-beginning 0) (1+ (match-beginning 0))
+                           'syntax-table
+                           (string-to-syntax "|"))
+        (let ((start (match-beginning 0)))
+          (swift-mode:syntax-propertize:end-of-multiline-string end)
+          (put-text-property start (point) 'swift-mode:string t)))
 
-     ((equal "//" (match-string-no-properties 0))
-      (goto-char (match-beginning 0))
-      (forward-comment (point-max)))
+       ((equal "\"" (match-string-no-properties 0))
+        (put-text-property (match-beginning 0) (1+ (match-beginning 0))
+                           'syntax-table
+                           (string-to-syntax "|"))
+        (let ((start (match-beginning 0)))
+          (swift-mode:syntax-propertize:end-of-single-line-string end)
+          (put-text-property start (point) 'swift-mode:string t)))
 
-     ((equal "/*" (match-string-no-properties 0))
-      (goto-char (match-beginning 0))
-      (forward-comment (point-max))))))
+       ((equal "//" (match-string-no-properties 0))
+        (goto-char (match-beginning 0))
+        (forward-comment (point-max)))
+
+       ((equal "/*" (match-string-no-properties 0))
+        (goto-char (match-beginning 0))
+        (forward-comment (point-max)))
+
+       ((and (equal "(" (match-string-no-properties 0))
+             (/= nesting-level 0))
+        (setq nesting-level (1+ nesting-level)))
+
+       ((and (equal ")" (match-string-no-properties 0))
+             (/= nesting-level 0))
+        (setq nesting-level (1- nesting-level))
+        (when (= nesting-level 0)
+          (setq found-matching-parenthesis t)))))
+    (unless found-matching-parenthesis
+      (goto-char end))
+    found-matching-parenthesis))
 
 (defun swift-mode:syntax-propertize:end-of-multiline-string (end)
   "Move point to the end of multiline string.
 Assuming the cursor is on a multiline string.
 If the end of the string found, put a text property on it.
-If the multiline string go beyond END, stop there."
-  ;; FIXME string interpolation
-  (if (search-forward "\"\"\"" end t)
-      (if (swift-mode:escaped-p (match-beginning 0))
-          (swift-mode:syntax-propertize:end-of-multiline-string end)
+If the string go beyond END, stop there."
+  (swift-mode:syntax-propertize:end-of-string end "\"\"\""))
+
+(defun swift-mode:syntax-propertize:end-of-single-line-string (end)
+  "Move point to the end of single-line string.
+Assuming the cursor is on a single-line string.
+If the string go beyond END, stop there."
+  (swift-mode:syntax-propertize:end-of-string end "\""))
+
+(defun swift-mode:syntax-propertize:end-of-string (end quotation)
+  "Move point to the end of single-line/multiline string.
+Assuming the cursor is on a string.
+If the string go beyond END, stop there.
+The string should be terminated with QUOTATION."
+  (if (search-forward-regexp (concat (regexp-quote quotation) "\\|(") end t)
+      (cond
+       ((and (equal quotation (match-string-no-properties 0))
+             (not (swift-mode:escaped-p (match-beginning 0))))
         (put-text-property (1- (point)) (point)
                            'syntax-table
                            (string-to-syntax "|")))
+       ((and (equal "(" (match-string-no-properties 0))
+             (swift-mode:escaped-p (match-beginning 0)))
+        ;; Found string interpolation. Skips the expression.
+        ;; We cannot use `scan-sexps' because multiline strings are not yet
+        ;; propertized.
+        (let ((start (- (point) 2)))
+          (put-text-property start (1+ start)
+                             'syntax-table
+                             (string-to-syntax "w"))
+          (put-text-property (1+ start) (+ 2 start)
+                             'syntax-table
+                             (string-to-syntax "|"))
+          (when (swift-mode:syntax-propertize:scan end 1)
+            ;; Found matching parenthesis. Going further.
+            (put-text-property (1- (point)) (point)
+                               'syntax-table
+                               (string-to-syntax "|"))
+            (put-text-property (1- (point)) (point)
+                               'swift-mode:matching-parenthesis
+                               start)
+            (put-text-property start (+ 2 start)
+                               'swift-mode:matching-parenthesis
+                               (1- (point)))
+            (swift-mode:syntax-propertize:end-of-string end quotation))))
+       (t
+        (swift-mode:syntax-propertize:end-of-string end quotation)))
     (goto-char end)))
 
-(defun swift-mode:syntax-propertize:end-of-single-line-string (end)
-  "Move point to the end of string.
-Assuming the cursor is on a string.
-If the multiline string go beyond END, stop there."
-  ;; FIXME string interpolation
-  (if (search-forward "\"" end t)
-      (when (swift-mode:escaped-p (match-beginning 0))
-        (swift-mode:syntax-propertize:end-of-single-line-string end))
-    (goto-char end)))
 
 (defun swift-mode:escaped-p (position)
   "Return t if the POSITION is proceeded by odd number of backslashes.
@@ -239,7 +321,7 @@ Return nil otherwise."
        (next-token (save-excursion
                      (swift-mode:backquote-identifier-if-after-dot
                       (swift-mode:forward-token-simple)))))
-    ;; If the cursor is on the empty line, pretend an identifier is the line.
+    ;; If the cursor is on the empty line, pretend an identifier is on the line.
     (when (and
            (< (swift-mode:token:end previous-token) (line-beginning-position))
            (< (line-end-position) (swift-mode:token:start next-token)))
@@ -361,7 +443,7 @@ Return nil otherwise."
                      (swift-mode:backward-token-simple)))
                    "repeat"))))))
 
-     ;; Inserts implicit around else
+     ;; Inserts implicit semicolon around else
      ((or
        (equal (swift-mode:token:text previous-token) "else")
        (equal (swift-mode:token:text next-token) "else"))
@@ -453,6 +535,12 @@ Return nil otherwise."
     ;;     1
     ;;   )
     ((eq (swift-mode:token:type next-token) '\() t)
+
+    ;; Suppress implicit semicolon after the beginning of a string
+    ;; interpolation.
+    ((eq (swift-mode:token:type previous-token)
+         'string-chunk-before-interpolation)
+     nil)
 
     ;; Otherwise, inserts implicit semicolon.
     (t t))))
@@ -662,6 +750,18 @@ This function does not return `implicit-;' or `type-:'."
    ((eobp)
     (swift-mode:token 'outside-of-buffer "" (point) (point)))
 
+   ;; End of string interpolation
+   ((and (eq (char-after) ?\))
+         (equal (get-text-property (point) 'syntax-table)
+                (string-to-syntax "|")))
+    (let ((pos-after-comment (point)))
+      (swift-mode:forward-string-chunk)
+      (swift-mode:token
+       'string-chunk-after-interpolation
+       (buffer-substring-no-properties pos-after-comment (point))
+       pos-after-comment
+       (point))))
+
    ;; Separators and parentheses
    ((memq (char-after) '(?, ?\; ?\{ ?\} ?\[ ?\] ?\( ?\) ?:))
     (forward-char)
@@ -720,10 +820,21 @@ This function does not return `implicit-;' or `type-:'."
       (swift-mode:fix-operator-type
        (swift-mode:token nil text start end))))
 
-   ;; String and backquoted identifer
-   ((memq (char-after) '(?\" ?`))
+   ;; Backquoted identifer
+   ((eq (char-after) ?`)
     (let ((pos-after-comment (point)))
-      (goto-char (scan-sexps (point) 1))
+      (swift-mode:forward-string-chunk)
+      (swift-mode:token
+       'identifier
+       (buffer-substring-no-properties pos-after-comment (point))
+       pos-after-comment
+       (point))))
+
+   ;; String
+   ((eq (char-after) ?\")
+    (let ((pos-after-comment (point)))
+      (forward-char)
+      (swift-mode:end-of-string)
       (swift-mode:token
        'identifier
        (buffer-substring-no-properties pos-after-comment (point))
@@ -850,6 +961,18 @@ This function does not return `implicit-;' or `type-:'."
    ((bobp)
     (swift-mode:token 'outside-of-buffer "" (point) (point)))
 
+   ;; Beginning of string interpolation
+   ((and (eq (char-before) ?\()
+         (equal (get-text-property (1- (point)) 'syntax-table)
+                (string-to-syntax "|")))
+    (let ((pos-before-comment (point)))
+      (swift-mode:backward-string-chunk)
+      (swift-mode:token
+       'string-chunk-before-interpolation
+       (buffer-substring-no-properties (point) pos-before-comment)
+       (point)
+       pos-before-comment)))
+
    ;; Attribute or close-parenthesis
    ((eq (char-before) ?\))
      (let ((pos-before-comment (point)))
@@ -945,10 +1068,21 @@ This function does not return `implicit-;' or `type-:'."
         (swift-mode:fix-operator-type
          (swift-mode:token nil text start end)))))
 
-   ;; String and backquoted identifer
-   ((memq (char-before) '(?\" ?`))
+   ;; Backquoted identifer
+   ((eq (char-before) ?`)
     (let ((pos-before-comment (point)))
-      (goto-char (scan-sexps (point) -1))
+      (swift-mode:backward-string-chunk)
+      (swift-mode:token
+       'identifier
+       (buffer-substring-no-properties (point) pos-before-comment)
+       (point)
+       pos-before-comment)))
+
+   ;; String
+   ((eq (char-before) ?\")
+    (let ((pos-before-comment (point)))
+      (backward-char)
+      (swift-mode:beginning-of-string)
       (swift-mode:token
        'identifier
        (buffer-substring-no-properties (point) pos-before-comment)
@@ -992,6 +1126,49 @@ This function does not return `implicit-;' or `type-:'."
                           text
                           (point)
                           (+ (point) (length text)))))))))
+
+(defun swift-mode:forward-string-chunk ()
+  "Skip forward a string chunk.
+A string chunk is a part of single-line/multiline string delimited with
+quotation marks or string interpolations."
+  (condition-case nil
+      (goto-char (scan-sexps (point) 1))
+    (scan-error (goto-char (point-max)))))
+
+(defun swift-mode:backward-string-chunk ()
+  "Skip backward a string chunk.
+A string chunk is a part of single-line/multiline string delimited with
+quotation marks or string interpolations."
+  (condition-case nil
+      (goto-char (scan-sexps (point) -1))
+    (scan-error (goto-char (point-min)))))
+
+(defun swift-mode:beginning-of-string ()
+  "Move point to the beginning of single-line/multiline string.
+Assuming the cursor is on a string."
+  (goto-char (or (nth 8 (syntax-ppss)) (point)))
+  (let (matching-parenthesis)
+    (while (setq matching-parenthesis
+                 (get-text-property
+                  (point)
+                  'swift-mode:matching-parenthesis))
+      (goto-char matching-parenthesis)
+      (goto-char (nth 8 (syntax-ppss))))
+    (point)))
+
+(defun swift-mode:end-of-string ()
+  "Move point to the end of single-line/multiline string.
+Assuming the cursor is on a string."
+  (goto-char (or (nth 8 (syntax-ppss)) (point)))
+  (let (matching-parenthesis)
+    (swift-mode:forward-string-chunk)
+    (while (setq matching-parenthesis
+                 (get-text-property
+                  (1- (point))
+                  'swift-mode:matching-parenthesis))
+      (goto-char matching-parenthesis)
+      (swift-mode:forward-string-chunk)))
+  (point))
 
 (defun swift-mode:goto-non-comment-bol ()
   "Back to the beginning of line that is not inside a comment."

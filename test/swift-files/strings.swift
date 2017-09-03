@@ -33,4 +33,66 @@ func f() {
         aaa
       """ +
       "abc"
+
+    let x = """
+      aaa
+      \(
+        abc +
+          def(a, b()) +
+          """
+          aaa
+          \(
+            bbb() +
+              ccc()
+          )
+          aaa
+          """
+      )
+      aaa
+      \(
+        foo)
+      aaa
+      \(foo)
+      aaa
+      \(foo
+      )
+      aaa
+      aaa\(
+        foo() +
+          bar()
+      )aaa
+      aaa
+      """ +
+      "abc"
+
+    foo()
+
+    let x = "aaa\(
+      foo() +
+        bar() +
+        "abc"
+    )aaa\(
+      foo() +
+        bar()
+    )aaa"
+
+    let x = ("aaa\(
+               foo() +
+                 bar() +
+                 "abc"
+             )aaa\(
+               foo() +
+                 bar()
+             )aaa")
+
+    let x = (
+      "aaa\(
+        foo() +
+          bar() +
+          "abc"
+      )aaa\(
+        foo() +
+          bar()
+      )aaa"
+    )
 }

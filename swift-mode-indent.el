@@ -102,7 +102,8 @@ Intended for debugging."
 
 (defconst swift-mode:expression-parent-tokens
   (append swift-mode:statement-parent-tokens
-          '(\, < supertype-: "where" "if" "guard" "while" "for" "catch"))
+          '(\, < supertype-: "where" "if" "guard" "while" "for" "catch"
+            string-chunk-before-interpolation))
   "Parent tokens for expressions.")
 
 (defvar-local swift-mode:anchor-overlay nil)
@@ -163,6 +164,7 @@ declaration and its offset is `swift-mode:basic-offset'."
 
      ((eq (nth 3 parser-state) t)
       (swift-mode:calculate-indent-of-multiline-string))
+
      (t
       (swift-mode:calculate-indent-of-code)))))
 
@@ -189,14 +191,17 @@ declaration and its offset is `swift-mode:basic-offset'."
 (defun swift-mode:calculate-indent-of-multiline-string ()
   "Return the indentation of the current line inside a multiline string."
   (back-to-indentation)
-  (let ((string-beginning-position (nth 8 (syntax-ppss))))
+  (let ((string-beginning-position
+         (save-excursion (swift-mode:beginning-of-string))))
     (if (looking-at "\"\"\"")
         ;; The last line.
         (progn
           (goto-char string-beginning-position)
           (swift-mode:calculate-indent-of-expression
            swift-mode:multiline-statement-offset))
-      (forward-line -1)
+      (forward-line 0)
+      (backward-char)
+      (swift-mode:goto-non-string-interpolation-bol)
       (back-to-indentation)
       (if (<= (point) string-beginning-position)
           ;; The cursor was on the 2nd line of the comment, so aligns with
@@ -212,6 +217,20 @@ declaration and its offset is `swift-mode:basic-offset'."
             (swift-mode:calculate-indent-of-multiline-string)
           (swift-mode:indentation (point) 0))))))
 
+(defun swift-mode:goto-non-string-interpolation-bol ()
+  "Back to the beginning of line that is not inside a string interpolation."
+  (let ((string-beginning-position (nth 8 (syntax-ppss)))
+        (matching-parenthesis t))
+    (while (and matching-parenthesis
+                (< (line-beginning-position) string-beginning-position))
+      (setq matching-parenthesis
+            (get-text-property
+             string-beginning-position 'swift-mode:matching-parenthesis))
+      (when matching-parenthesis
+        (goto-char matching-parenthesis)
+        (setq string-beginning-position (nth 8 (syntax-ppss)))))
+    (forward-line 0)))
+
 (defun swift-mode:calculate-indent-of-code ()
   "Return the indentation of the current line outside multiline comments."
   (back-to-indentation)
@@ -222,7 +241,7 @@ declaration and its offset is `swift-mode:basic-offset'."
          (next-type (swift-mode:token:type next-token))
          (next-text (swift-mode:token:text next-token))
          (next-is-on-same-line
-          (<= (swift-mode:token:end next-token) (line-end-position))))
+          (<= (swift-mode:token:start next-token) (line-end-position))))
     (cond
      ;; Beginning of the buffer
      ((eq previous-type 'outside-of-buffer)
@@ -239,6 +258,16 @@ declaration and its offset is `swift-mode:basic-offset'."
       (goto-char (swift-mode:token:end next-token))
       (backward-list)
       (swift-mode:calculate-indent-of-expression 0))
+
+     ;; Before end of a string interpolation on the same line
+     ((and next-is-on-same-line
+           (eq next-type 'string-chunk-after-interpolation))
+      (goto-char (get-text-property
+                  (swift-mode:token:start next-token)
+                  'swift-mode:matching-parenthesis))
+      (forward-char 2)
+      (swift-mode:backward-string-chunk)
+      (swift-mode:calculate-indent-after-beginning-of-string-interpolation 0))
 
      ;; Before , on the same line
      ((and next-is-on-same-line (eq next-type '\,))
@@ -343,6 +372,12 @@ declaration and its offset is `swift-mode:basic-offset'."
       (goto-char (swift-mode:token:start previous-token))
       (swift-mode:calculate-indent-of-expression
        swift-mode:parenthesized-expression-offset
+       swift-mode:parenthesized-expression-offset))
+
+     ;; After beginning of a string interpolation
+     ((eq previous-type 'string-chunk-before-interpolation)
+      (goto-char (swift-mode:token:start previous-token))
+      (swift-mode:calculate-indent-after-beginning-of-string-interpolation
        swift-mode:parenthesized-expression-offset))
 
      ;; Before "in" on the same line
@@ -934,7 +969,8 @@ This is also known as Utrecht-style in the Haskell community."
   "Return indentation after comma.
 
 Assuming the cursor is on the comma."
-  (swift-mode:align-with-next-token (swift-mode:find-parent-of-list-element nil)))
+  (swift-mode:align-with-next-token
+   (swift-mode:find-parent-of-list-element nil)))
 
 (defun swift-mode:find-parent-of-list-element (&optional utrecht-sytle)
   "Move point backward to the parent token of the comma under the cursor.
@@ -1149,6 +1185,19 @@ comma at eol."
      (t
       parent))))
 
+(defun swift-mode:calculate-indent-after-beginning-of-string-interpolation
+    (offset)
+  "Return indentation with OFFSET after the beginning of a string interpolation.
+
+Assuming the cursor is before the string chunk."
+  (let ((pos (point)))
+    (swift-mode:forward-string-chunk)
+    (if (< pos (line-beginning-position))
+        (progn
+          (back-to-indentation)
+          (swift-mode:indentation (point) offset))
+      (goto-char pos)
+      (swift-mode:calculate-indent-of-expression offset offset))))
 
 (defun swift-mode:backward-sexps-until (token-types
                                         &optional
@@ -1531,9 +1580,9 @@ See `indent-new-comment-line' for SOFT."
 
 (defun swift-mode:post-self-insert ()
   "Miscellaneous logic for electric indentation."
-  ;; Indents electrically and insert a space when "*" is inserted at the
-  ;; beginning of a line inside a multiline comment.
   (cond
+   ;; Indents electrically and insert a space when "*" is inserted at the
+   ;; beginning of a line inside a multiline comment.
    ((and
      (= last-command-event ?*)
      (nth 4 (syntax-ppss))
@@ -1556,7 +1605,14 @@ See `indent-new-comment-line' for SOFT."
           (swift-mode:incomplete-comment-p)))))
     (backward-char)
     (delete-horizontal-space)
-    (forward-char))))
+    (forward-char))
+
+   ;; Indents electrically when ")" is inserted at bol as the end of a string
+   ;; interpolation.
+   ((and
+     (= last-command-event ?\))
+     (save-excursion (backward-char) (skip-syntax-backward " ") (bolp)))
+    (indent-according-to-mode))))
 
 (defun swift-mode:highlight-anchor (indentation)
   "Highlight the anchor point of the INDENTATION."

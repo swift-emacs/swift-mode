@@ -146,6 +146,9 @@ See `forward-sexp for ARG."
   (setq-local comment-multi-line t)
 
   (setq-local parse-sexp-lookup-properties t)
+  (add-hook 'syntax-propertize-extend-region-functions
+            #'swift-mode:syntax-propertize-extend-region
+            nil t)
   (setq-local syntax-propertize-function #'swift-mode:syntax-propertize)
 
   (setq-local indent-tabs-mode nil)
