@@ -1,7 +1,6 @@
 CASK ?= cask
 EMACS ?= emacs
 VERSION := $(shell EMACS=$(EMACS) $(CASK) version)
-PKG_DIR := $(shell EMACS=$(EMACS) $(CASK) package-directory)
 
 SRC = $(wildcard *.el)
 PACKAGE = dist/swift-mode-$(VERSION).tar
@@ -23,11 +22,9 @@ help:
 all: package
 ## Builds the package.
 
-$(PKG_DIR): ## no-doc
-	$(CASK) install
-
-deps: $(PKG_DIR)
+deps:
 ## Installs the dependencies.
+	$(CASK) install
 
 $(PACKAGE): $(SRC) deps ## no-doc
 	rm -rf dist
@@ -41,13 +38,14 @@ install: package
 	$(CASK) exec $(EMACS) --batch \
 	  -l package \
 	  -f package-initialize \
+	  -f package-refresh-contents \
 	  --eval '(package-install-file "$(PACKAGE)")'
 
 clean:
 ## Cleans the dist directory.
 	rm -rf dist
 
-test: deps
+test:
 ## Tests the package.
 	$(CASK) exec $(EMACS) --batch -q \
 	  --eval "(add-to-list 'load-path \""$(shell readlink -f .)"\")" \

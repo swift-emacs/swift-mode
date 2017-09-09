@@ -8,7 +8,7 @@
 ;;       Arthur Evstifeev <lod@pisem.net>
 ;;
 ;; Version: 2.4.0
-;; Package-Requires: ((emacs "24.4"))
+;; Package-Requires: ((emacs "24.4") (seq "2.3"))
 ;; Keywords: languages swift
 ;; URL: https://github.com/swift-emacs/swift-mode
 

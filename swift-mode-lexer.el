@@ -8,7 +8,7 @@
 ;;       Arthur Evstifeev <lod@pisem.net>
 ;;
 ;; Version: 2.4.0
-;; Package-Requires: ((emacs "24.4"))
+;; Package-Requires: ((emacs "24.4") (seq "2.3"))
 ;; Keywords: languages swift
 
 ;; This file is not part of GNU Emacs.
@@ -250,6 +250,7 @@ stops where the level becomes zero."
                             '("\"\"\"" "\"" "//" "/*" "(" ")")
                             "\\|")))
     (while (and (not found-matching-parenthesis)
+                (< (point) end)
                 (search-forward-regexp pattern end t))
       (cond
        ((equal "\"\"\"" (match-string-no-properties 0))
@@ -307,7 +308,9 @@ If the string go beyond END, stop there."
 Assuming the cursor is on a string.
 If the string go beyond END, stop there.
 The string should be terminated with QUOTATION."
-  (if (search-forward-regexp (concat (regexp-quote quotation) "\\|(") end t)
+  (if (and
+       (< (point) end)
+       (search-forward-regexp (concat (regexp-quote quotation) "\\|(") end t))
       (cond
        ((and (equal quotation (match-string-no-properties 0))
              (not (swift-mode:escaped-p (match-beginning 0))))

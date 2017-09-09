@@ -5,7 +5,7 @@
 ;; Authors: taku0 (http://github.com/taku0)
 ;;
 ;; Version: 2.4.0
-;; Package-Requires: ((emacs "24.4"))
+;; Package-Requires: ((emacs "24.4") (seq "2.3"))
 ;; Keywords: languages swift
 
 ;; This file is not part of GNU Emacs.

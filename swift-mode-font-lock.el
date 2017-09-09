@@ -8,7 +8,7 @@
 ;;       Arthur Evstifeev <lod@pisem.net>
 ;;
 ;; Version: 2.4.0
-;; Package-Requires: ((emacs "24.4"))
+;; Package-Requires: ((emacs "24.4") (seq "2.3"))
 ;; Keywords: languages swift
 
 ;; This file is not part of GNU Emacs.
@@ -48,6 +48,7 @@ Others includes enum, struct, class, protocol name.
 Set `match-data', and return t if a function name found before position LIMIT.
 Return nil otherwise."
   (and
+   (< (point) limit)
    (re-search-forward "\\<\\(\\sw\\|\\s_\\)+\\>" limit t)
    (or
     (swift-mode:function-name-pos-p (match-beginning 0))
