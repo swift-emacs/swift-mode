@@ -39,7 +39,7 @@ repository. Follow the guidelines below to make sure everything goes smoothly.
 - Follow the coding conventions already in use
 - Verify Emacs Lisp code with `checkdoc`
 - Add unit tests whenever possible
-- Run `make check` and ensure no errors other than known-bugs.
+- Run `make test` and ensure no errors other than known-bugs.
 - Open a [pull request](https://help.github.com/articles/using-pull-requests)
   relating to a single issue.
 

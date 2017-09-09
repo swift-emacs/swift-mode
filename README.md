@@ -11,7 +11,7 @@ Major-mode for Apple's [Swift programming language](https://developer.apple.com/
 
 Install `swift-mode` package from MELPA.
 
-To install without MELPA, download [latest release](https://github.com/swift-emacs/swift-mode/releases) and execute `M-x package-install-file`.
+To install without MELPA, download [latest release](https://github.com/swift-emacs/swift-mode/releases) and execute `M-x package-install-file` for the .tar archive.
 
 ## Features
 
@@ -91,7 +91,7 @@ Some syntax constructs removed from Swift 3.0 are not supported:
   }
   ```
 
-Indentation may not accurate. For example, `foo(Bar < A, B > (c))` is indented like either
+Indentation may not accurate. For example, `foo(Bar < A, B > (c))` can be indented like either
 ```swift
 foo(Bar < A,
     B > (c)) // Passing two Boolean arguments to foo
@@ -99,11 +99,11 @@ foo(Bar < A,
 or
 ```swift
 foo(Bar < A,
-          B > (c)) // constructing Bar with two type arguments and a value
+          B > (c)) // Passing a new Bar with two type arguments and a value
 ```
 The Swift compiler disambiguates this case using tokens after `>`, but those tokens may not available at editing time. We use some heuristic for this.
 
-Another example is difficulty of handling of colons. We have to pair all `?` and `:` of conditional operators to decide indentation. This is a future work.
+Another example is difficulty of handling of colons. We have to pair all `?` and `:` of conditional operators to decide indentation of the below snippet. This is a future work.
 
 ```swift
 switch foo {
@@ -128,7 +128,7 @@ var x = foo
   }
 ```
 
-while we also want to indent if body like this:
+while we also want to indent the body of `if` like this:
 
 ```swift
 if anotherVeryLongVariableName
@@ -137,7 +137,9 @@ if anotherVeryLongVariableName
 }
 ```
 
-Then, how should we indent this when the cursor is before `@`?
+That is, we have to indent the closing brace with offset if it is a part of expressions while it should be aligned with the beginning of the statement/declaration if it is a part of a statement/declaration.
+
+Then, how should we indent the following code when the cursor is before `@`?
 
 ```swift
 var x = foo
@@ -153,6 +155,7 @@ var x = foo
         aaa
     }
 }
+// property declaration
 ```
 or
 ```swift
@@ -161,6 +164,7 @@ var x = foo
       @abc var x = 1
       x
   }
+// property initialization
 ```
 
 Both are syntactically correct code. We cannot handle this case properly. This is also a future work.
@@ -177,9 +181,9 @@ For other commands, run `make help`.
 
 ## Related projects
 
-- [Official swift-mode.el by Apple](https://github.com/apple/swift/blob/master/utils/swift-mode.el) Seems still in very early stage for now. We cannot contribute to it due to the license incompatibility.
-- [company-sourcekit](https://github.com/nathankot/company-sourcekit) Completion for Swift projects via SourceKit with the help of SourceKitten.
-- [flycheck-swift](https://github.com/swift-emacs/flycheck-swift) Flycheck extensions for Swift.
+- [Official swift-mode.el by Apple](https://github.com/apple/swift/blob/master/utils/swift-mode.el): Seems still in very early stage for now. We cannot contribute to it due to the license incompatibility.
+- [company-sourcekit](https://github.com/nathankot/company-sourcekit): Completion for Swift projects via SourceKit with the help of SourceKitten.
+- [flycheck-swift](https://github.com/swift-emacs/flycheck-swift): Flycheck extensions for Swift.
 
 ## Contributing
 

@@ -103,7 +103,7 @@ Intended for debugging."
 (defconst swift-mode:expression-parent-tokens
   (append swift-mode:statement-parent-tokens
           '(\, < supertype-: "where" "if" "guard" "while" "for" "catch"
-            string-chunk-before-interpolation))
+            string-chunk-before-interpolated-expression))
   "Parent tokens for expressions.")
 
 (defvar-local swift-mode:anchor-overlay nil)
@@ -201,7 +201,7 @@ declaration and its offset is `swift-mode:basic-offset'."
            swift-mode:multiline-statement-offset))
       (forward-line 0)
       (backward-char)
-      (swift-mode:goto-non-string-interpolation-bol)
+      (swift-mode:goto-non-interpolated-expression-bol)
       (back-to-indentation)
       (if (<= (point) string-beginning-position)
           ;; The cursor was on the 2nd line of the comment, so aligns with
@@ -217,8 +217,8 @@ declaration and its offset is `swift-mode:basic-offset'."
             (swift-mode:calculate-indent-of-multiline-string)
           (swift-mode:indentation (point) 0))))))
 
-(defun swift-mode:goto-non-string-interpolation-bol ()
-  "Back to the beginning of line that is not inside a string interpolation."
+(defun swift-mode:goto-non-interpolated-expression-bol ()
+  "Back to the beginning of line that is not inside a interpolated expression."
   (let ((string-beginning-position (nth 8 (syntax-ppss)))
         (matching-parenthesis t))
     (while (and matching-parenthesis
@@ -240,37 +240,37 @@ declaration and its offset is `swift-mode:basic-offset'."
          (next-token (save-excursion (swift-mode:forward-token)))
          (next-type (swift-mode:token:type next-token))
          (next-text (swift-mode:token:text next-token))
-         (next-is-on-same-line
+         (next-is-on-current-line
           (<= (swift-mode:token:start next-token) (line-end-position))))
     (cond
      ;; Beginning of the buffer
      ((eq previous-type 'outside-of-buffer)
       (swift-mode:indentation (point-min) 0))
 
-     ;; Before } on the same line
-     ((and next-is-on-same-line (eq next-type '}))
+     ;; Before } on the current line
+     ((and next-is-on-current-line (eq next-type '}))
       (goto-char (swift-mode:token:end next-token))
       (backward-list)
       (swift-mode:calculate-indent-after-open-curly-brace 0))
 
-     ;; Before ) or ] on the same line
-     ((and next-is-on-same-line (memq next-type '(\) \])))
+     ;; Before ) or ] on the current line
+     ((and next-is-on-current-line (memq next-type '(\) \])))
       (goto-char (swift-mode:token:end next-token))
       (backward-list)
       (swift-mode:calculate-indent-of-expression 0))
 
-     ;; Before end of a string interpolation on the same line
-     ((and next-is-on-same-line
-           (eq next-type 'string-chunk-after-interpolation))
+     ;; Before end of a interpolated expression on the current line
+     ((and next-is-on-current-line
+           (eq next-type 'string-chunk-after-interpolated-expression))
       (goto-char (get-text-property
                   (swift-mode:token:start next-token)
                   'swift-mode:matching-parenthesis))
       (forward-char 2)
       (swift-mode:backward-string-chunk)
-      (swift-mode:calculate-indent-after-beginning-of-string-interpolation 0))
+      (swift-mode:calculate-indent-after-beginning-of-interpolated-expression 0))
 
-     ;; Before , on the same line
-     ((and next-is-on-same-line (eq next-type '\,))
+     ;; Before , on the current line
+     ((and next-is-on-current-line (eq next-type '\,))
       (swift-mode:calculate-indent-of-prefix-comma))
 
      ;; After ,
@@ -278,9 +278,9 @@ declaration and its offset is `swift-mode:basic-offset'."
       (goto-char (swift-mode:token:start previous-token))
       (swift-mode:calculate-indent-after-comma))
 
-     ;; Before "case" or "default" on the same line, for switch statement
+     ;; Before "case" or "default" on the current line, for switch statement
      ((and
-       next-is-on-same-line
+       next-is-on-current-line
        (member next-text '("case" "default"))
        (save-excursion
          (let ((head
@@ -374,14 +374,14 @@ declaration and its offset is `swift-mode:basic-offset'."
        swift-mode:parenthesized-expression-offset
        swift-mode:parenthesized-expression-offset))
 
-     ;; After beginning of a string interpolation
-     ((eq previous-type 'string-chunk-before-interpolation)
+     ;; After beginning of a interpolated expression
+     ((eq previous-type 'string-chunk-before-interpolated-expression)
       (goto-char (swift-mode:token:start previous-token))
-      (swift-mode:calculate-indent-after-beginning-of-string-interpolation
+      (swift-mode:calculate-indent-after-beginning-of-interpolated-expression
        swift-mode:parenthesized-expression-offset))
 
-     ;; Before "in" on the same line
-     ((and next-is-on-same-line (equal next-text "in"))
+     ;; Before "in" on the current line
+     ((and next-is-on-current-line (equal next-text "in"))
       ;; When it is for-in statement, align with the token after "for":
       ;;
       ;; for
@@ -420,8 +420,8 @@ declaration and its offset is `swift-mode:basic-offset'."
       ;; }
       (swift-mode:find-and-align-with-parents '("for" {)))
 
-     ;; Before "where" on the same line
-     ((and next-is-on-same-line (equal next-text "where"))
+     ;; Before "where" on the current line
+     ((and next-is-on-current-line (equal next-text "where"))
       ;; switch {
       ;; case let P(x)
       ;;        where // Aligns with the pattern.
@@ -625,8 +625,8 @@ declaration and its offset is `swift-mode:basic-offset'."
        swift-mode:statement-parent-tokens
        (- swift-mode:basic-offset swift-mode:switch-case-offset)))
 
-     ;; Before ; on the same line
-     ((and next-is-on-same-line (eq next-type '\;))
+     ;; Before ; on the current line
+     ((and next-is-on-current-line (eq next-type '\;))
       (swift-mode:find-and-align-with-parents
        (remove '\; (remove 'implicit-\; swift-mode:statement-parent-tokens))
        0
@@ -1185,9 +1185,10 @@ comma at eol."
      (t
       parent))))
 
-(defun swift-mode:calculate-indent-after-beginning-of-string-interpolation
+(defun swift-mode:calculate-indent-after-beginning-of-interpolated-expression
     (offset)
-  "Return indentation with OFFSET after the beginning of a string interpolation.
+  "Return indentation after the beginning of a interpolated expression.
+It has offset specified with OFFSET.
 
 Assuming the cursor is before the string chunk."
   (let ((pos (point)))

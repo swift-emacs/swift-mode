@@ -39,6 +39,29 @@
 
 ;;; Code:
 
+;; Terminology:
+;; (See also docs/string.png)
+;;
+;;   Interpolated string:
+;;     A string containing expressions to be evaluated and inserted into the
+;;     string at run time.
+;;     Example: "1 + 1 = \(1 + 1)" is evaluated to "1 + 1 = 2" at run time.
+;;     https://developer.apple.com/library/content/documentation/Swift/Conceptual/Swift_Programming_Language/StringsAndCharacters.html
+;;     https://developer.apple.com/library/content/documentation/Swift/Conceptual/Swift_Programming_Language/LexicalStructure.html
+;;
+;;   Interpolated expression:
+;;     An expression between \( and ) inside a string.
+;;     Suppose a string "aaa\( foo() )bbb\( bar() )ccc",
+;;     `foo()' and `bar()' are interpolated expression.
+;;     https://developer.apple.com/library/content/documentation/Swift/Conceptual/Swift_Programming_Language/LexicalStructure.html
+;;     Why not interpolating expression?
+;;
+;;   String chunk:
+;;     A part of single-line/multiline string delimited with quotation marks
+;;     or interpolated expressions.
+;;     Suppose a string "aaa\( foo() )bbb\( bar() )ccc",
+;;     "aaa\(, )bbb\(, and )ccc" are string chunks.
+
 (declare-function swift-mode:backward-sexps-until "swift-mode-indent.el"
                   (token-types
                    &optional
@@ -92,8 +115,8 @@ END is the point after the token."
 ;; - case-: (colon for case or default label)
 ;; - : (part of conditional operator, key-value separator, label-statement separator)
 ;; - anonymous-function-parameter-in ("in" after anonymous function parameter)
-;; - string-chunk-after-interpolation (part of a string ending with ")")
-;; - string-chunk-before-interpolation (part of a string ending with "\\(")
+;; - string-chunk-after-interpolated-expression (part of a string ending with ")")
+;; - string-chunk-before-interpolated-expression (part of a string ending with "\\(")
 ;; - outside-of-buffer
 ;;
 ;; Additionaly, `swift-mode:backward-token-or-list' may return a parenthesized
@@ -154,17 +177,37 @@ END is the point after the token."
 
     table))
 
+;;; Text properties
+
+;; (See also docs/string_properties.png)
+;;
+;; Some properties are put by `syntax-propertize-function', that is
+;; `swift-mode:syntax-propertize'.
+;;
+;; The beginning of and end of strings are marked with text property
+;; '(syntax-table (15)), which indicates generic string delimiters. Both
+;; single-line strings and multiline strings are marked with it. The
+;; parentheses surrounding interpolated expressions are also marked with
+;; '(syntax-table (15)). The property helps font-lock and the tokenizer to
+;; recognize strings.
+;;
+;; The entire string, including interpolated expressions, are marked with text
+;; property '(syntax-multiline t). The property is used by
+;; `swift-mode:syntax-propertize-extend-region' to avoid scanning from the
+;; middle of strings.
+;;
+;; The parentheses surrounding interpolated expressions have text property
+;; '(swift-mode:matching-parenthesis POS), where POS is the position of the
+;; matching parenthesis. Strictly speaking, the POS on the closing parenthesis
+;; refers to the backslash before the opening parenthesis. The property speeds
+;; up the indentation logic.
+
 (defun swift-mode:syntax-propertize-extend-region (start end)
   "Return region to be propertized.
 The returned region contains the region (START . END).
 If the region is not modified, return nil.
 Intended for `syntax-propertize-extend-region-functions'."
-  (when (get-text-property (max (point-min) (1- start)) 'swift-mode:string)
-    (cons (or (previous-single-property-change
-               (max (point-min) (1- start))
-               'swift-mode:string)
-              (point-min))
-          end)))
+  (syntax-propertize-multiline start end))
 
 (defun swift-mode:syntax-propertize (start end)
   "Update text properties for strings.
@@ -174,7 +217,7 @@ Intended for `syntax-propertize-function'."
   (remove-text-properties start end
                           '(syntax-table
                             nil
-                            swift-mode:string
+                            syntax-multiline
                             nil
                             swift-mode:matching-parenthesis
                             nil))
@@ -215,7 +258,7 @@ stops where the level becomes zero."
                            (string-to-syntax "|"))
         (let ((start (match-beginning 0)))
           (swift-mode:syntax-propertize:end-of-multiline-string end)
-          (put-text-property start (point) 'swift-mode:string t)))
+          (put-text-property start (point) 'syntax-multiline t)))
 
        ((equal "\"" (match-string-no-properties 0))
         (put-text-property (match-beginning 0) (1+ (match-beginning 0))
@@ -223,7 +266,7 @@ stops where the level becomes zero."
                            (string-to-syntax "|"))
         (let ((start (match-beginning 0)))
           (swift-mode:syntax-propertize:end-of-single-line-string end)
-          (put-text-property start (point) 'swift-mode:string t)))
+          (put-text-property start (point) 'syntax-multiline t)))
 
        ((equal "//" (match-string-no-properties 0))
         (goto-char (match-beginning 0))
@@ -273,7 +316,7 @@ The string should be terminated with QUOTATION."
                            (string-to-syntax "|")))
        ((and (equal "(" (match-string-no-properties 0))
              (swift-mode:escaped-p (match-beginning 0)))
-        ;; Found string interpolation. Skips the expression.
+        ;; Found an interpolated expression. Skips the expression.
         ;; We cannot use `scan-sexps' because multiline strings are not yet
         ;; propertized.
         (let ((start (- (point) 2)))
@@ -284,7 +327,7 @@ The string should be terminated with QUOTATION."
                              'syntax-table
                              (string-to-syntax "|"))
           (when (swift-mode:syntax-propertize:scan end 1)
-            ;; Found matching parenthesis. Going further.
+            ;; Found the matching parenthesis. Going further.
             (put-text-property (1- (point)) (point)
                                'syntax-table
                                (string-to-syntax "|"))
@@ -536,10 +579,10 @@ Return nil otherwise."
     ;;   )
     ((eq (swift-mode:token:type next-token) '\() t)
 
-    ;; Suppress implicit semicolon after the beginning of a string
-    ;; interpolation.
+    ;; Suppress implicit semicolon after the beginning of an interpolated
+    ;; expression.
     ((eq (swift-mode:token:type previous-token)
-         'string-chunk-before-interpolation)
+         'string-chunk-before-interpolated-expression)
      nil)
 
     ;; Otherwise, inserts implicit semicolon.
@@ -603,10 +646,11 @@ Return nil otherwise."
            ;; switch foo {
            ;; case let x where x is Foo ?
            ;;                    a : // This function should return nil but it
-           ;;                       // actually retuns t.
+           ;;                        // actually retuns t.
            ;;                    b: // This function should return t but it
            ;;                       // actually return nil.
-           ;;   let y = a ? b : c // This function returns nil correctly for this.
+           ;;   let y = a ? b : c // This function returns nil correctly for
+           ;;                     // this.
            ;; }
 
            ;; FIXME: mutual dependency
@@ -750,14 +794,14 @@ This function does not return `implicit-;' or `type-:'."
    ((eobp)
     (swift-mode:token 'outside-of-buffer "" (point) (point)))
 
-   ;; End of string interpolation
+   ;; End of interpolated expression
    ((and (eq (char-after) ?\))
          (equal (get-text-property (point) 'syntax-table)
                 (string-to-syntax "|")))
     (let ((pos-after-comment (point)))
       (swift-mode:forward-string-chunk)
       (swift-mode:token
-       'string-chunk-after-interpolation
+       'string-chunk-after-interpolated-expression
        (buffer-substring-no-properties pos-after-comment (point))
        pos-after-comment
        (point))))
@@ -961,14 +1005,14 @@ This function does not return `implicit-;' or `type-:'."
    ((bobp)
     (swift-mode:token 'outside-of-buffer "" (point) (point)))
 
-   ;; Beginning of string interpolation
+   ;; Beginning of interpolated expression
    ((and (eq (char-before) ?\()
          (equal (get-text-property (1- (point)) 'syntax-table)
                 (string-to-syntax "|")))
     (let ((pos-before-comment (point)))
       (swift-mode:backward-string-chunk)
       (swift-mode:token
-       'string-chunk-before-interpolation
+       'string-chunk-before-interpolated-expression
        (buffer-substring-no-properties (point) pos-before-comment)
        (point)
        pos-before-comment)))
@@ -1130,7 +1174,7 @@ This function does not return `implicit-;' or `type-:'."
 (defun swift-mode:forward-string-chunk ()
   "Skip forward a string chunk.
 A string chunk is a part of single-line/multiline string delimited with
-quotation marks or string interpolations."
+quotation marks or interpolated expressions."
   (condition-case nil
       (goto-char (scan-sexps (point) 1))
     (scan-error (goto-char (point-max)))))
@@ -1138,7 +1182,7 @@ quotation marks or string interpolations."
 (defun swift-mode:backward-string-chunk ()
   "Skip backward a string chunk.
 A string chunk is a part of single-line/multiline string delimited with
-quotation marks or string interpolations."
+quotation marks or interpolated expressions."
   (condition-case nil
       (goto-char (scan-sexps (point) -1))
     (scan-error (goto-char (point-min)))))
