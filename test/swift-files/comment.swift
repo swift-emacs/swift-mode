@@ -7,9 +7,12 @@
 // bbb
 // ccc
 /*
- * aa
- * aa
- * aa
+ aa
+ aa
+ aa
+ - aaa
+ - bbb
+ - ccc
  */
 
 /* */ class Foo {

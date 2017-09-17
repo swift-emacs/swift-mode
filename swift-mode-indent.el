@@ -65,6 +65,13 @@
   :safe 'integerp)
 
 ;;;###autoload
+(defcustom swift-mode:prepend-asterisk-to-comment-line nil
+  "Automatically insert a asterisk to each comment line if non-nil."
+  :type 'boolean
+  :group 'swift
+  :safe 'booleanp)
+
+;;;###autoload
 (defcustom swift-mode:insert-space-after-asterisk-in-comment t
   "Automatically insert a space after asterisk in comment if non-nil."
   :type 'boolean
@@ -1528,7 +1535,11 @@ See `indent-new-comment-line' for SOFT."
          (is-single-line-comment (eq (nth 7 parser-state) 1))
          (comment-beginning-position (nth 8 parser-state))
          (space-after-asterisk
-          (if swift-mode:insert-space-after-asterisk-in-comment " " "")))
+          (if swift-mode:insert-space-after-asterisk-in-comment " " ""))
+         (default-line-prefix
+           (if swift-mode:prepend-asterisk-to-comment-line
+               (concat "*" space-after-asterisk)
+             "")))
     (delete-horizontal-space)
     (if soft (insert-and-inherit ?\n) (newline 1))
     (delete-horizontal-space)
@@ -1539,8 +1550,8 @@ See `indent-new-comment-line' for SOFT."
         (is-single-line-comment
          (save-excursion
            (goto-char comment-beginning-position)
-           (looking-at "/+")
-           (concat (match-string-no-properties 0) space-after-asterisk)))
+           (looking-at "/+\\s *")
+           (match-string-no-properties 0)))
 
         (comment-multi-line
          (save-excursion
@@ -1550,13 +1561,14 @@ See `indent-new-comment-line' for SOFT."
            (if (<= (point) comment-beginning-position)
                ;; The cursor was on the 2nd line of the comment.
                ;; Uses default prefix.
-               (concat "*" space-after-asterisk)
+               default-line-prefix
              ;; The cursor was on the 3nd or following lines of
              ;; the comment.
              ;; Use the prefix of the previous line.
              (back-to-indentation)
-             (if (looking-at "\\*+")
-                 (concat (match-string-no-properties 0) space-after-asterisk)
+             (if (and swift-mode:prepend-asterisk-to-comment-line
+                      (looking-at "\\*+\\s *"))
+                 (match-string-no-properties 0)
                ""))))
 
         (t
@@ -1565,8 +1577,8 @@ See `indent-new-comment-line' for SOFT."
          (forward-char)
          (save-excursion
            (goto-char comment-beginning-position)
-           (looking-at "/\\*+")
-           (concat (match-string-no-properties 0) space-after-asterisk))))))
+           (looking-at "/\\*+\\s *")
+           (match-string-no-properties 0))))))
     (indent-according-to-mode)
 
     ;; Closes incomplete multiline comment.
@@ -1585,6 +1597,7 @@ See `indent-new-comment-line' for SOFT."
    ;; Indents electrically and insert a space when "*" is inserted at the
    ;; beginning of a line inside a multiline comment.
    ((and
+     swift-mode:prepend-asterisk-to-comment-line
      (= last-command-event ?*)
      (nth 4 (syntax-ppss))
      (save-excursion (backward-char) (skip-syntax-backward " ") (bolp)))
@@ -1601,7 +1614,7 @@ See `indent-new-comment-line' for SOFT."
        (let ((pos (point)))
          (beginning-of-line)
          (and
-          (looking-at "^[ 	]*\\*[ 	]+/")
+          (looking-at "^\\s *\\*\\s +/")
           (eq (match-end 0) pos)
           (swift-mode:incomplete-comment-p)))))
     (backward-char)
