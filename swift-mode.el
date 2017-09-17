@@ -84,15 +84,42 @@ See `forward-sexp for ARG."
   (setq arg (or arg 1))
   (if (< 0 arg)
       (while (< 0 arg)
-        (while (eq
-                (swift-mode:token:type (swift-mode:forward-token-or-list))
-                'implicit-\;))
+        (while (eq (swift-mode:token:type (swift-mode:forward-sexp-1))
+                   'implicit-\;))
         (setq arg (1- arg))))
   (while (< arg 0)
-    (while (eq
-            (swift-mode:token:type (swift-mode:backward-token-or-list))
-            'implicit-\;))
+    (while (eq (swift-mode:token:type (swift-mode:backward-sexp-1))
+               'implicit-\;))
     (setq arg (1+ arg))))
+
+(defun swift-mode:forward-sexp-1 ()
+  "Move forward a token or list.
+
+Signal `scan-error' if it hits closing parentheses."
+  (let ((token (swift-mode:forward-token-or-list))
+        (pos (point)))
+    (when (memq (swift-mode:token:type token) '(\] \) }))
+      (goto-char pos)
+      (signal 'scan-error
+              (list "Unbalanced parentheses"
+                    (swift-mode:token:start token)
+                    (swift-mode:token:end token))))
+    token))
+
+(defun swift-mode:backward-sexp-1 ()
+  "Move backward a token or list.
+
+Signal `scan-error' if it hits opening parentheses."
+  (let ((token (swift-mode:backward-token-or-list))
+        (pos (point)))
+    (when (memq (swift-mode:token:type token) '(\[ \( {))
+      (goto-char pos)
+      (signal 'scan-error
+              (list "Unbalanced parentheses"
+                    (swift-mode:token:start token)
+                    (swift-mode:token:end token))))
+    token))
+
 
 ;; Imenu
 
