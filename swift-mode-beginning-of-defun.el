@@ -25,68 +25,114 @@
 
 ;;; Commentary:
 
-;; beginning-of-defun and end-of-defun
+;; `beginning-of-defun' and `end-of-defun'
+;;
+;; The end of a defun is just after the close curly brace.
+;;
+;; The beginning of a defun is the beginning of:
+;; - "func" keyword,
+;; - its modifiers or attributes,
+;; - comments on the same line.
+;;
+;; `swift-mode:beginning-of-defun' moves the point to the beginning of a defun
+;; that precedes (if the arg is positive) or follows (if the arg is negative)
+;; the original point and has the same or less nesting level.
+;;
+;; `swift-mode:end-of-defun' moves the point to the end of a defun
+;; that follows (if the arg is positive) or precedes (if the arg is negative)
+;; the original point and has the same or less nesting level.
 
 ;;; Code:
 
 (require 'swift-mode-lexer)
 (require 'swift-mode-indent)
 
+;;;###autoload
+(defcustom swift-mode:mark-defun-preference 'containing
+  "Preference for `swift-mode:mark-defun' for nested declarations.
+
+Suppose the following code with the point located at A:
+
+    func outer() {
+      func inner1() {
+      }
+
+      // A
+
+      func inner2() {
+      }
+    }
+
+If `swift-mode:mark-defun-preference' is `containing', `swift-mode:mark-defun'
+marks the `outer' function.  Likewise, it marks `inner1' if the preference is
+`preceding' and `inner2' if the preference is `following'."
+  :type '(choice (const :tag "Containing" containing)
+                 (const :tag "Preceding" preceding)
+                 (const :tag "Following" following))
+  :group 'swift
+  :safe 'symbolp)
+
 (defun swift-mode:beginning-of-defun (&optional arg)
   "Move backward to the beginning of a defun.
 
-See `beginning-of-defun' for ARG."
-  (interactive)
+See `beginning-of-defun' for ARG.
+
+Return t if a defun is found.  Return nil otherwise.
+
+Push mark at previous position if this is called as a command, not repeatedly,
+and the region is not active."
+  (interactive "p")
   (setq arg (or arg 1))
-  (let (result
-        pos)
-    (if (<= 0 arg)
+  (let ((result t)
+        (pos (point)))
+    (if (< 0 arg)
+        ;; Moving backward
         (progn
-          (setq pos (point))
-          ;; Special handling for the case that the cursor is between the
-          ;; beginning of the defun and the open curly brace of the defun.
-          (when (< (save-excursion
-                     (swift-mode:beginning-of-statement)
-                     (point))
-                   (point))
-            ;; Searches forward { or end of a statement.
-            (while (not
-                    (memq
-                     (swift-mode:token:type (swift-mode:forward-token-or-list))
-                     '({} implicit-\; \; } outside-of-buffer))))
-            (when (eq (char-before) ?})
-              (backward-list))
-            ;; Skips implicit ;
-            (forward-comment (point-max))
-            (if (swift-mode:is-point-before-body-of-defun)
-                (progn
-                  (swift-mode:beginning-of-statement)
-                  (setq result t)
-                  (setq arg (1- arg)))
-              (goto-char pos)))
-          (while (< 0 arg)
+          ;; `swift-mode:beginning-of-defun-1' assumes the point is after
+          ;; the open curly brace of defun. So moving the point to just after
+          ;; the open curly brace if the current statement has one.
+          (while (not
+                  (memq
+                   (swift-mode:token:type (swift-mode:forward-token))
+                   '({ implicit-\; \; } outside-of-buffer))))
+          (backward-char)
+          ;; Skips implicit-;
+          (forward-comment (point-max))
+          (when (eq (char-after) ?{)
+            (forward-char))
+
+          (setq result (swift-mode:beginning-of-defun-1
+                        #'swift-mode:backward-token-or-list))
+          (when (and result (< (point) pos))
+            (setq arg (1- arg)))
+
+          (while (and result (< 0 arg))
             (setq result (swift-mode:beginning-of-defun-1
                           #'swift-mode:backward-token-or-list))
             (setq arg (1- arg))))
-      (while (< arg 0)
-        ;; If the cursor is on a defun, ensure the cursor is after the open
-        ;; curly brace of defun.
-        (setq pos (point))
-        (swift-mode:beginning-of-statement)
-        ;; swift-mode:beginning-of-statement may forward the cursor if the
-        ;; cursor is on a comment or whitespace. In that case, does not skip
-        ;; the defun.
-        (when (<= (point) pos)
-          (while (not
-                  (memq
-                   (swift-mode:token:type (swift-mode:forward-token-or-list))
-                   '({} } outside-of-buffer)))))
-
+      ;; Moving forward
+      (setq result (swift-mode:beginning-of-defun-1
+                    (lambda ()
+                      (prog1 (swift-mode:forward-token-or-list)
+                        (forward-comment (point-max))))))
+      (when (and result (< pos (point)))
+        (setq arg (1+ arg)))
+      (while (and result (< arg 0))
+        ;; Skips the current statement
+        (while (not
+                (memq
+                 (swift-mode:token:type (swift-mode:forward-token-or-list))
+                 '({} implicit-\; \; } outside-of-buffer))))
         (setq result (swift-mode:beginning-of-defun-1
                       (lambda ()
                         (prog1 (swift-mode:forward-token-or-list)
                           (forward-comment (point-max))))))
         (setq arg (1+ arg))))
+    (and result
+         (eq this-command 'swift-mode:beginning-of-defun)
+         (not (eq last-command 'swift-mode:beginning-of-defun))
+         (not (region-active-p))
+         (push-mark pos))
     result))
 
 (defun swift-mode:beginning-of-defun-1 (next-token-function)
@@ -100,7 +146,6 @@ NEXT-TOKEN-FUNCTION skips the preceding/following token."
         (swift-mode:beginning-of-statement)
         (throw 'swift-mode:found-defun t)))
     nil))
-
 
 (defun swift-mode:is-point-before-body-of-defun ()
   "Return t it the point is just before the body of a defun.
@@ -132,8 +177,6 @@ Return nil otherwise."
          (setq previous-token (swift-mode:backward-token-or-list))
          (setq previous-type (swift-mode:token:type previous-token))
          (setq previous-text (swift-mode:token:text previous-token)))
-       (unless (bobp)
-         (swift-mode:forward-token-simple))
        (or (equal previous-text "init")
            (member previous-text defun-keywords))))))
 
@@ -153,7 +196,9 @@ Intended for internal use."
         (progn
           (forward-comment (- (point)))
           (swift-mode:beginning-of-statement))
+      ;; Excludes comments on previous lines.
       (goto-char (swift-mode:token:end parent))
+      (forward-comment (- (point)))
       (setq parent (save-excursion (swift-mode:backward-token)))
       (forward-comment (point-max))
       (swift-mode:goto-non-comment-bol)
@@ -164,15 +209,20 @@ Intended for internal use."
 (defun swift-mode:end-of-defun (&optional arg)
   "Move forward to the end of a defun.
 
-See `end-of-defun' for ARG."
-  (interactive)
+See `end-of-defun' for ARG.
+
+Return t if a defun is found.  Return nil otherwise.
+
+Push mark at previous position if this is called as a command, not repeatedly,
+and the region is not active."
+  (interactive "p")
   (setq arg (or arg 1))
-  (let (result)
+  (let (result
+        (pos (point)))
     (if (<= 0 arg)
         (while (< 0 arg)
           (setq result (swift-mode:end-of-defun-1
-                        #'swift-mode:forward-token-or-list
-                        ))
+                        #'swift-mode:forward-token-or-list))
           (setq arg (1- arg)))
       (while (< arg 0)
         (setq result (swift-mode:end-of-defun-1
@@ -180,6 +230,11 @@ See `end-of-defun' for ARG."
                         (prog1 (swift-mode:backward-token-or-list)
                           (forward-comment (- (point)))))))
         (setq arg (1+ arg))))
+    (and result
+         (eq this-command 'swift-mode:end-of-defun)
+         (not (eq last-command 'swift-mode:end-of-defun))
+         (not (region-active-p))
+         (push-mark pos))
     result))
 
 (defun swift-mode:end-of-defun-1 (next-token-function)
@@ -196,6 +251,156 @@ NEXT-TOKEN-FUNCTION skips the preceding/following token."
         (throw 'swift-mode:found-defun t)))
     nil))
 
+(defun swift-mode:mark-defun (&optional allow-extend)
+  "Put mark at the end of defun, point at the beginning of defun.
+
+If the point is between defuns, mark depend on
+`swift-mode:mark-defun-preference'.
+
+If ALLOW-EXTEND is non-nil or called interactively, and the command is repeated
+or the region is active, mark the following (if the point is before the mark)
+or preceding (if the point is after the mark) defun.  If that defun has lesser
+nesting level, mark the whole outer defun."
+  (interactive (list t))
+  (if (and allow-extend
+           (or
+            (and (eq last-command this-command) (mark t))
+            (region-active-p)))
+      ;; Extends region.
+      (let ((forward-p (<= (point) (mark))))
+        (set-mark
+         (save-excursion
+           (goto-char (mark))
+           (if forward-p
+               (swift-mode:end-of-defun)
+             (swift-mode:beginning-of-defun))
+           (point)))
+        ;; Marks the whole outer defun if it has lesser nesting level.
+        (if forward-p
+            (goto-char (min (point)
+                            (save-excursion
+                              (goto-char (mark))
+                              (swift-mode:beginning-of-defun)
+                              (point))))
+          (goto-char (max (point)
+                          (save-excursion
+                            (goto-char (mark))
+                            (swift-mode:end-of-defun)
+                            (point))))))
+    ;; Marks new region.
+    (let ((region
+           (cond
+            ((eq swift-mode:mark-defun-preference 'containing)
+             (swift-mode:containing-defun-region))
+            ((eq swift-mode:mark-defun-preference 'preceding)
+             (swift-mode:preceding-defun-region))
+            ((eq swift-mode:mark-defun-preference 'following)
+             (swift-mode:following-defun-region)))))
+      (if region
+          (progn (push-mark (cdr region) nil t)
+                 (goto-char (car region))
+                 region)
+        (when (called-interactively-p 'interactive)
+          (message "No defun found"))
+        nil))))
+
+(defun swift-mode:following-defun-region ()
+  "Return cons representing a region of following defun."
+  (save-excursion
+    (let* ((end (and (swift-mode:end-of-defun) (point)))
+           (beginning (and end (swift-mode:beginning-of-defun) (point))))
+      (and beginning (cons beginning end)))))
+
+(defun swift-mode:preceding-defun-region ()
+  "Return cons representing a region of preceding defun."
+  (save-excursion
+    (let* ((beginning (and (swift-mode:beginning-of-defun) (point)))
+           (end (and beginning (swift-mode:end-of-defun) (point))))
+      (and end (cons beginning end)))))
+
+(defun swift-mode:containing-defun-region ()
+  "Return cons representing a region of containing defun."
+  (let* ((pos (point))
+         (region (swift-mode:following-defun-region))
+         (extended (and region
+                        (swift-mode:extend-defun-region-with-spaces region))))
+    (cond
+     ((and extended (<= (car extended) pos (cdr extended)))
+      region)
+
+     ((progn
+        (setq region (swift-mode:preceding-defun-region))
+        (setq extended (swift-mode:extend-defun-region-with-spaces region))
+        (and extended (<= (car extended) pos (cdr extended))))
+      region)
+
+     (t
+      (catch 'swift-mode:found-defun
+        (while (swift-mode:end-of-defun)
+          (let ((end (point)))
+            (save-excursion
+              (swift-mode:beginning-of-defun)
+              (when (<= (point) pos end)
+                (throw 'swift-mode:found-defun (cons (point) end))))))
+        (cons (point-min) (point-max)))))))
+
+(defun swift-mode:extend-defun-region-with-spaces (region)
+  "Return REGION extended with surrounding spaces."
+  (let ((beginning (car region))
+        (end (cdr region)))
+    (save-excursion
+      (goto-char beginning)
+      (skip-syntax-backward " ")
+      (setq beginning (point)))
+    (save-excursion
+      (goto-char end)
+      (skip-syntax-forward " ")
+      (setq end (point)))
+    (cons beginning end)))
+
+(defun swift-mode:narrow-to-defun (&optional include-comments)
+  "Make text outside current defun invisible.
+
+If the point is between defuns, mark depend on
+`swift-mode:mark-defun-preference'.
+
+Preceding comments are included if INCLUDE-COMMENTS is non-nil.
+Interactively, the behavior depends on ‘narrow-to-defun-include-comments’."
+  (interactive (list narrow-to-defun-include-comments))
+  (let ((restriction (cons (point-min) (point-max)))
+        region
+        extended)
+    (save-excursion
+      (widen)
+
+      (setq region
+            (cond
+             ((eq swift-mode:mark-defun-preference 'containing)
+              (swift-mode:containing-defun-region))
+             ((eq swift-mode:mark-defun-preference 'preceding)
+              (swift-mode:preceding-defun-region))
+             ((eq swift-mode:mark-defun-preference 'following)
+              (swift-mode:following-defun-region))))
+
+      (setq extended
+            (and region (swift-mode:extend-defun-region-with-spaces region)))
+
+      (when (and extended include-comments)
+        (save-excursion
+          (goto-char (car extended))
+          ;; Includes comments.
+          (forward-comment (- (point)))
+          ;; Excludes spaces and line breaks.
+          (skip-syntax-forward " >")
+          ;; Includes indentation.
+          (skip-syntax-backward " ")
+          (setcar extended (point))))
+
+      (if extended
+          (narrow-to-region (car extended) (cdr extended))
+        (when (called-interactively-p 'interactive)
+          (message "No defun found"))
+        (narrow-to-region (car restriction) (cdr restriction))))))
 
 (provide 'swift-mode-beginning-of-defun)
 

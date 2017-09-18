@@ -61,7 +61,7 @@ To install without MELPA, download [latest release](https://github.com/swift-ema
     ]
   ```
 - `forward-sexp`
-- `beginning-of-defun` and `end-of-defun`, so `mark-defun` and `narrow-to-defun` work fine.
+- `beginning-of-defun`, `end-of-defun`, `mark-defun`, and `narrow-to-defun`.
 - `indent-new-comment-line`
 - [Imenu](https://www.gnu.org/software/emacs/manual/html_node/emacs/Imenu.html)
 - Running Swift REPL in a buffer (`M-x run-swift`)

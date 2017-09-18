@@ -55,6 +55,15 @@
     (define-key map (kbd "C-c C-z") #'swift-mode:run-repl)
     (define-key map (kbd "C-c C-f") #'swift-mode:send-buffer)
     (define-key map (kbd "C-c C-r") #'swift-mode:send-region)
+    (define-key map (kbd "C-M-a") #'swift-mode:beginning-of-defun)
+    (define-key map (kbd "C-M-e") #'swift-mode:end-of-defun)
+    (define-key map (kbd "<C-M-home>") #'swift-mode:beginning-of-defun)
+    (define-key map (kbd "<C-M-end>") #'swift-mode:end-of-defun)
+    (define-key map (kbd "ESC <C-home>") #'swift-mode:beginning-of-defun)
+    (define-key map (kbd "ESC <C-end>") #'swift-mode:end-of-defun)
+    (define-key map (kbd "C-M-h") #'swift-mode:mark-defun)
+    (define-key map (kbd "C-x n d") #'swift-mode:narrow-to-defun)
+
     (easy-menu-define swift-menu map "Swift Mode menu"
       `("Swift"
         :help "Swift-specific Features"
