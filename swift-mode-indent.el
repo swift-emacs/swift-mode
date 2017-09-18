@@ -777,14 +777,8 @@ the expression."
            (progn
              (forward-comment (point-max))
              (when (eq (char-after) ?@)
-               (forward-symbol 1)
-               (forward-comment (point-max))
-               (when (eq (char-after) ?\()
-                 (condition-case nil
-                     (forward-list)
-                   (scan-error nil))))
+               (swift-mode:forward-token-simple))
              (point))))))
-
 
 (defun swift-mode:calculate-indent-after-open-curly-brace (offset)
   "Return indentation after open curly braces.

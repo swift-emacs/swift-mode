@@ -52,9 +52,9 @@
     (set-keymap-parent map prog-mode-map)
     (define-key map (kbd "M-j") #'swift-mode:indent-new-comment-line)
     (define-key map (kbd "C-M-j") #'swift-mode:indent-new-comment-line)
-    (define-key map (kbd "C-c C-z") 'swift-mode:run-repl)
-    (define-key map (kbd "C-c C-f") 'swift-mode:send-buffer)
-    (define-key map (kbd "C-c C-r") 'swift-mode:send-region)
+    (define-key map (kbd "C-c C-z") #'swift-mode:run-repl)
+    (define-key map (kbd "C-c C-f") #'swift-mode:send-buffer)
+    (define-key map (kbd "C-c C-r") #'swift-mode:send-region)
     (easy-menu-define swift-menu map "Swift Mode menu"
       `("Swift"
         :help "Swift-specific Features"
@@ -75,7 +75,7 @@
     map)
   "Swift mode key map.")
 
-;;; `foward-sexp-function'
+;;; `forward-sexp-function'
 
 (defun swift-mode:forward-sexp (&optional arg)
   "Move forward/backward a token or list.
