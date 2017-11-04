@@ -104,12 +104,12 @@ Intended for debugging."
 ;;; Constants and variables
 
 (defconst swift-mode:statement-parent-tokens
-  '(implicit-\; \; case-: { \( \[ anonymous-function-parameter-in)
+  '(implicit-\; \; case-: { anonymous-function-parameter-in)
   "Parent tokens for statements.")
 
 (defconst swift-mode:expression-parent-tokens
   (append swift-mode:statement-parent-tokens
-          '(\, < supertype-: "where" "if" "guard" "while" "for" "catch"
+          '(\, < \( \[ supertype-: "where" "if" "guard" "while" "for" "catch"
             string-chunk-before-interpolated-expression))
   "Parent tokens for expressions.")
 
@@ -274,7 +274,8 @@ declaration and its offset is `swift-mode:basic-offset'."
                   'swift-mode:matching-parenthesis))
       (forward-char 2)
       (swift-mode:backward-string-chunk)
-      (swift-mode:calculate-indent-after-beginning-of-interpolated-expression 0))
+      (swift-mode:calculate-indent-after-beginning-of-interpolated-expression
+       0))
 
      ;; Before , on the current line
      ((and next-is-on-current-line (eq next-type '\,))
@@ -494,8 +495,7 @@ declaration and its offset is `swift-mode:basic-offset'."
           (swift-mode:find-and-align-with-parents '("for")))
          (t
           (swift-mode:find-and-align-with-parents
-           (append swift-mode:statement-parent-tokens
-                   '(<))
+           (append swift-mode:statement-parent-tokens '(<))
            swift-mode:multiline-statement-offset)))))
 
      ;; After "where"
@@ -579,8 +579,7 @@ declaration and its offset is `swift-mode:basic-offset'."
                  swift-mode:multiline-statement-offset
                  swift-mode:multiline-statement-offset))
             (swift-mode:find-and-align-with-parents
-             (append swift-mode:statement-parent-tokens
-                     '(< "for"))
+             (append swift-mode:statement-parent-tokens '(< "for"))
              swift-mode:multiline-statement-offset)))))
 
      ;; After implicit-\; or ;
@@ -1072,7 +1071,7 @@ comma at eol."
   (let ((pos (point))
         (parent (swift-mode:backward-sexps-until
                  ;; Includes "if" to stop at the last else-if.
-                 (cons "if" (cons '< swift-mode:statement-parent-tokens))
+                 (append swift-mode:statement-parent-tokens '("if" \( \[ <))
                  (if utrecht-sytle nil '(\,))
                  (if utrecht-sytle '(\,) nil))))
     (cond
