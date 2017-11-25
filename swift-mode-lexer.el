@@ -389,6 +389,13 @@ Return nil otherwise."
        (memq (swift-mode:token:type previous-token) '({ \( \[))
        (memq (swift-mode:token:type next-token) '(} \) \]))
 
+       ;; Suppress implicit semicolon after/before string chunks inside
+       ;; interpolated expressions.
+       (eq (swift-mode:token:type previous-token)
+           'string-chunk-before-interpolated-expression)
+       (eq (swift-mode:token:type next-token)
+           'string-chunk-after-interpolated-expression)
+
        ;; Suppress implicit semicolon around keywords that cannot start or end
        ;; statements.
        (member (swift-mode:token:text previous-token)
