@@ -43,7 +43,10 @@ func f() {
           aaa
           \(
             bbb() +
-              ccc()
+              ccc() {
+                  ddd()
+              } +
+              eee()
           )
           aaa
           """
