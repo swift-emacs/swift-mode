@@ -221,19 +221,16 @@ Intended for `syntax-propertize-function'."
                             nil
                             swift-mode:matching-parenthesis
                             nil))
-  (let* ((parser-state (syntax-ppss start))
-         (inside-string (nth 3 parser-state))
-         (comment-nesting (nth 4 parser-state))
-         (comment-beginning-position (nth 8 parser-state)))
+  (let* ((chunk (swift-mode:chunk-after (syntax-ppss start))))
     (cond
-     ((eq inside-string t)
+     ((swift-mode:chunk:multiline-string-p chunk)
       (swift-mode:syntax-propertize:end-of-multiline-string end))
 
-     (inside-string
+     ((swift-mode:chunk:single-line-string-p chunk)
       (swift-mode:syntax-propertize:end-of-single-line-string end))
 
-     (comment-nesting
-      (goto-char comment-beginning-position)
+     ((swift-mode:chunk:comment-p chunk)
+      (goto-char (swift-mode:chunk:start chunk))
       (forward-comment (point-max)))))
 
   (swift-mode:syntax-propertize:scan end 0))
@@ -748,8 +745,9 @@ Return the token object.  If no more tokens available, return a token with
 type `out-of-buffer'"
 
   (let ((pos (point)))
-    (when (nth 4 (syntax-ppss))
-      (goto-char (nth 8 (syntax-ppss))))
+    (let ((chunk (swift-mode:chunk-after)))
+      (when (swift-mode:chunk:comment-p chunk)
+        (goto-char (swift-mode:chunk:start chunk))))
     (forward-comment (point-max))
     (cond
      ;; Outside of buffer
@@ -959,8 +957,9 @@ Return the token object.  If no more tokens available, return a token with
 type `out-of-buffer'."
 
   (let ((pos (point)))
-    (when (nth 4 (syntax-ppss))
-      (goto-char (nth 8 (syntax-ppss))))
+    (let ((chunk (swift-mode:chunk-after)))
+      (when (swift-mode:chunk:comment-p chunk)
+        (goto-char (swift-mode:chunk:start chunk))))
     (forward-comment (- (point)))
     (cond
      ;; Outside of buffer
@@ -1226,28 +1225,99 @@ Assuming the cursor is on a string."
 
 (defun swift-mode:goto-non-comment-bol ()
   "Back to the beginning of line that is not inside a comment."
-  (beginning-of-line)
-  (while (nth 4 (syntax-ppss))
-    ;; The cursor is in a comment. Backs to the beginning of the comment.
-    (goto-char (nth 8 (syntax-ppss)))
-    (beginning-of-line)))
+  (forward-line 0)
+  (let (chunk)
+    (while (progn
+             (setq chunk (swift-mode:chunk-after))
+             (swift-mode:chunk:comment-p chunk))
+      ;; The cursor is in a comment. Backs to the beginning of the comment.
+      (goto-char (swift-mode:chunk:start chunk))
+      (forward-line 0))))
 
 (defun swift-mode:goto-non-comment-eol ()
   "Proceed to the end of line that is not inside a comment.
 
 If this line ends with a single-line comment, goto just before the comment."
   (end-of-line)
-  (while (nth 4 (syntax-ppss))
-    ;; The cursor is in a comment.
-    (if (eq (nth 4 (syntax-ppss)) t)
-        ;; This ia a single-line comment
-        ;; Back to the beginning of the comment.
-        (goto-char (nth 8 (syntax-ppss)))
-      ;; This is a multiline comment
-      ;; Proceed to the end of the comment.
-      (goto-char (nth 8 (syntax-ppss)))
-      (forward-comment 1)
-      (end-of-line))))
+  (let (chunk)
+    (while (progn
+             (setq chunk (swift-mode:chunk-after))
+             (swift-mode:chunk:comment-p chunk))
+      ;; The cursor is in a comment.
+      (if (swift-mode:chunk:single-line-comment-p chunk)
+          ;; This ia a single-line comment
+          ;; Back to the beginning of the comment.
+          (goto-char (swift-mode:chunk:start chunk))
+        ;; This is a multiline comment
+        ;; Proceed to the end of the comment.
+        (goto-char (swift-mode:chunk:start chunk))
+        (forward-comment 1)
+        (end-of-line)))))
+
+;;; Comment or string chunks
+
+;; A chunk is either a string-chunk or a comment.
+;; It have the type and the start position.
+
+(defun swift-mode:chunk (type start)
+  "Return a new chunk with TYPE and START position."
+  (list type start))
+
+(defun swift-mode:chunk:type (chunk)
+  "Return the type of the CHUNK."
+  (nth 0 chunk))
+
+(defun swift-mode:chunk:start (chunk)
+  "Return the start position of the CHUNK."
+  (nth 1 chunk))
+
+(defun swift-mode:chunk:comment-p (chunk)
+  "Return non-nil if the CHUNK is a comment."
+  (memq (swift-mode:chunk:type chunk) '(single-line-comment multiline-comment)))
+
+(defun swift-mode:chunk:string-p (chunk)
+  "Return non-nil if the CHUNK is a string."
+  (memq (swift-mode:chunk:type chunk) '(single-line-string multiline-string)))
+
+(defun swift-mode:chunk:single-line-comment-p (chunk)
+  "Return non-nil if the CHUNK is a single-line comment."
+  (eq (swift-mode:chunk:type chunk) 'single-line-comment))
+
+(defun swift-mode:chunk:multiline-comment-p (chunk)
+  "Return non-nil if the CHUNK is a multiline comment."
+  (eq (swift-mode:chunk:type chunk) 'multiline-comment))
+
+(defun swift-mode:chunk:single-line-string-p (chunk)
+  "Return non-nil if the CHUNK is a single-line string."
+  (eq (swift-mode:chunk:type chunk) 'single-line-string))
+
+(defun swift-mode:chunk:multiline-string-p (chunk)
+  "Return non-nil if the CHUNK is a multiline string."
+  (eq (swift-mode:chunk:type chunk) 'multiline-string))
+
+(defun swift-mode:chunk-after (&optional parser-state)
+  "Return the chunk at the cursor.
+
+If the cursor is outside of strings and comments, return nil.
+
+If PARSER-STATE is given, it is used instead of (syntax-ppss)."
+  (unless parser-state
+    (setq parser-state (syntax-ppss)))
+  (cond
+   ((eq (nth 3 parser-state) t)
+    (swift-mode:chunk 'multiline-string (nth 8 parser-state)))
+   ((nth 3 parser-state)
+    (swift-mode:chunk 'single-line-string (nth 8 parser-state)))
+   ((eq (nth 4 parser-state) t)
+    (swift-mode:chunk 'single-line-comment (nth 8 parser-state)))
+   ((nth 4 parser-state)
+    (swift-mode:chunk 'multiline-comment (nth 8 parser-state)))
+   ((and (eq (char-before) ?/) (eq (char-after) ?/))
+    (swift-mode:chunk 'single-line-comment (1- (point))))
+   ((and (eq (char-before) ?/) (eq (char-after) ?*))
+    (swift-mode:chunk 'multiline-comment (1- (point))))
+   (t
+    nil)))
 
 (provide 'swift-mode-lexer)
 

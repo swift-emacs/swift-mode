@@ -1510,10 +1510,11 @@ Return nil otherwise."
   "Return t if the point is inside an incomplete comment.
 
 Return nil otherwise."
-  (and (nth 4 (syntax-ppss))
-       (save-excursion
-         (goto-char (nth 8 (syntax-ppss)))
-         (not (forward-comment 1)))))
+  (let ((chunk (swift-mode:chunk-after)))
+    (and (swift-mode:chunk:comment-p chunk)
+         (save-excursion
+           (goto-char (swift-mode:chunk:start chunk))
+           (not (forward-comment 1))))))
 
 (defun swift-mode:indent-new-comment-line (&optional soft)
   "Break the line at the point and indent the new line.
@@ -1523,10 +1524,8 @@ multiline comment, close the previous comment and start new one if
 `comment-multi-line' is nil.
 See `indent-new-comment-line' for SOFT."
   (interactive)
-  (let* ((parser-state (syntax-ppss))
-         (is-inside-comment (nth 4 parser-state))
-         (is-single-line-comment (eq (nth 7 parser-state) 1))
-         (comment-beginning-position (nth 8 parser-state))
+  (let* ((chunk (swift-mode:chunk-after))
+         (comment-beginning-position (swift-mode:chunk:start chunk))
          (space-after-asterisk
           (if swift-mode:insert-space-after-asterisk-in-comment " " ""))
          (default-line-prefix
@@ -1537,20 +1536,20 @@ See `indent-new-comment-line' for SOFT."
     (if soft (insert-and-inherit ?\n) (newline 1))
     (delete-horizontal-space)
 
-    (when is-inside-comment
+    (when (swift-mode:chunk:comment-p chunk)
       (insert-before-markers-and-inherit
        (cond
-        (is-single-line-comment
+        ((swift-mode:chunk:single-line-comment-p chunk)
          (save-excursion
            (goto-char comment-beginning-position)
-           (looking-at "/+\\s *")
+           (looking-at "/+\\(\\s *\\)")
            (match-string-no-properties 0)))
 
         (comment-multi-line
          (save-excursion
-           (beginning-of-line)
+           (forward-line 0)
            (forward-char -1)
-           (beginning-of-line)
+           (forward-line 0)
            (if (<= (point) comment-beginning-position)
                ;; The cursor was on the 2nd line of the comment.
                ;; Uses default prefix.
@@ -1576,7 +1575,7 @@ See `indent-new-comment-line' for SOFT."
 
     ;; Closes incomplete multiline comment.
     (when (and swift-mode:auto-close-multiline-comment
-               (not is-single-line-comment)
+               (swift-mode:chunk:multiline-comment-p chunk)
                (swift-mode:incomplete-comment-p))
       (save-excursion
         (end-of-line)
@@ -1592,7 +1591,7 @@ See `indent-new-comment-line' for SOFT."
    ((and
      swift-mode:prepend-asterisk-to-comment-line
      (= last-command-event ?*)
-     (nth 4 (syntax-ppss))
+     (swift-mode:chunk:comment-p (swift-mode:chunk-after))
      (save-excursion (backward-char) (skip-syntax-backward " ") (bolp)))
     (when swift-mode:insert-space-after-asterisk-in-comment
       (insert-before-markers-and-inherit " "))
@@ -1602,10 +1601,10 @@ See `indent-new-comment-line' for SOFT."
    ((and
      (= last-command-event ?/)
      swift-mode:fix-comment-close
-     (nth 4 (syntax-ppss))
+     (swift-mode:chunk:comment-p (swift-mode:chunk-after))
      (save-excursion
        (let ((pos (point)))
-         (beginning-of-line)
+         (forward-line 0)
          (and
           (looking-at "^\\s *\\*\\s +/")
           (eq (match-end 0) pos)
