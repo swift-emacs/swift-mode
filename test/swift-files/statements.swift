@@ -1047,11 +1047,11 @@ func foo() {
     #if foo
     foo()
     foo()
-    #elsif foo
+    #elseif foo
     foo()
     foo()
     #else
     foo()
     foo()
-    #end
+    #endif
 }
