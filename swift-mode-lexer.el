@@ -833,9 +833,9 @@ This function does not return `implicit-;' or `type-:'."
    ;; or another another bracket (e.g. Foo<Bar<[(Int, String)]>>)
    ((and (eq (char-after) ?>)
          (save-excursion
-           ;; You know that regular language can be reversed. Thus you may
-           ;; think that `looking-back' reverse the given regexp and scan
-           ;; chars backwards. Nevertheless, `looking' function does not
+           ;; You know that regular languages can be reversed. Thus you may
+           ;; think that `looking-back' reverses the given regexp and scans
+           ;; chars backwards. Nevertheless, `looking-back' function does not
            ;; do that. It just repeats `looking-at' with decrementing start
            ;; position until it succeeds. The document says that it is not
            ;; recommended to use. So using `skip-chars-backward',
