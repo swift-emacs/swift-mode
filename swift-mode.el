@@ -63,6 +63,8 @@
     (define-key map (kbd "ESC <C-end>") #'swift-mode:end-of-defun)
     (define-key map (kbd "C-M-h") #'swift-mode:mark-defun)
     (define-key map (kbd "C-x n d") #'swift-mode:narrow-to-defun)
+    (define-key map (kbd "M-a") #'swift-mode:backward-sentence)
+    (define-key map (kbd "M-e") #'swift-mode:forward-sentence)
 
     (easy-menu-define swift-menu map "Swift Mode menu"
       `("Swift"

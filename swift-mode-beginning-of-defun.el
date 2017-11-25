@@ -198,6 +198,8 @@ Return nil otherwise."
   "Move backward to the beginning of a statement.
 Statements include comments on the same line.
 
+When called at the beginning of a statement, keep the position.
+
 Intended for internal use."
   (let ((pos (point))
         (previous-token (save-excursion
@@ -262,6 +264,17 @@ Intended for internal use."
     (when (< (point) (swift-mode:token:end parent))
       (goto-char (swift-mode:token:end parent)))
     (swift-mode:skip-whitespaces)))
+
+(defun swift-mode:backward-statement ()
+  "Move backward to the beginning of a statement.
+Statements include comments on the same line.
+
+Intended for internal use."
+  (let ((pos (point)))
+    (swift-mode:beginning-of-statement)
+    (when (eq pos (point))
+      (swift-mode:backward-token-or-list)
+      (swift-mode:beginning-of-statement))))
 
 (defun swift-mode:end-of-statement ()
   "Move forward to the end of a statement.
@@ -453,17 +466,17 @@ nesting level, mark the whole outer defun."
             (and (eq last-command this-command) (mark t))
             (region-active-p)))
       ;; Extends region.
-      (let ((forward-p (<= (point) (mark))))
+      (let ((is-forward (<= (point) (mark))))
         (set-mark
          (save-excursion
            (goto-char (mark))
-           (if forward-p
+           (if is-forward
                (swift-mode:end-of-defun)
              (swift-mode:beginning-of-defun))
            (point)))
         ;; Marks the whole outer defun if the mark got out of the outer defun.
         (goto-char
-         (if forward-p
+         (if is-forward
              (min (point)
                   (save-excursion
                     (goto-char (mark))
@@ -584,6 +597,418 @@ Interactively, the behavior depends on ‘narrow-to-defun-include-comments’."
         (when (called-interactively-p 'interactive)
           (message "No defun found"))
         (narrow-to-region (car restriction) (cdr restriction))))))
+
+(defun swift-mode:forward-sentence (&optional arg)
+  "Skip forward sentences or statements.
+
+In comments or strings, skip a sentence.  Otherwise, skip a stateement.
+
+With ARG, repeat ARG times.  If ARG is negative, Skip backwards."
+  (interactive "p")
+  (setq arg (or arg 1))
+  (if (< arg 0)
+      (swift-mode:backward-sentence (- arg))
+    (while (< 0 arg)
+      (unless (swift-mode:forward-sentence-1)
+        (setq arg 1))
+      (setq arg (1- arg)))))
+
+(defun swift-mode:backward-sentence (&optional arg)
+"Skip backward sentences or statements.
+
+In comments or strings, skip a sentence.  Otherwise, skip a stateement.
+
+With ARG, repeat ARG times.  If ARG is negative, Skip forwards."
+  (interactive "p")
+  (setq arg (or arg 1))
+  (if (< arg 0)
+      (swift-mode:forward-sentence (- arg))
+    (while (< 0 arg)
+      (unless (swift-mode:backward-sentence-1)
+        (setq arg 1))
+      (setq arg (1- arg)))))
+
+(defun swift-mode:forward-sentence-1 ()
+  "Skip forward a sentence or a statement.
+
+In comments or strings, skip a sentence.  Otherwise, skip a stateement."
+  (let ((chunk (swift-mode:chunk-after)))
+    (cond
+     ((swift-mode:chunk:comment-p chunk)
+      (swift-mode:forward-sentence-inside-comment
+       (swift-mode:chunk:single-line-comment-p chunk)))
+     ((swift-mode:chunk:string-p chunk)
+      (swift-mode:forward-sentence-inside-string))
+     ;; Spaces at the beginning of 2nd and following lines.
+     ;;
+     ;; class Foo {
+     ;;   // aaa
+     ;;
+     ;;   // bbb
+     ;;   // ccc ← spaces before //
+     ;;   // ddd ← spaces before //
+     ;;   func foo() { // eee
+     ;;   }
+     ;; }
+     ;;
+     ;; Not including spaces before the first line of blocks.
+     ((save-excursion
+        (skip-syntax-backward " ")
+        (skip-chars-backward "/")
+        (skip-syntax-backward " ")
+        (and (bolp)
+             (looking-at "[ \t]*//")
+             (not (bobp))
+             (progn
+               (backward-char)
+               (swift-mode:chunk:comment-p (swift-mode:chunk-after)))))
+      (forward-line 0)
+      (skip-syntax-forward " ")
+      (forward-char 2)
+      (swift-mode:forward-sentence-inside-comment t))
+     (t
+      (swift-mode:forward-sentence-inside-code)))))
+
+(defun swift-mode:backward-sentence-1 ()
+  "Skip backward a sentence or a statement.
+
+In comments or strings, skip a sentence.  Otherwise, skip a stateement."
+  (let ((chunk (swift-mode:chunk-after)))
+    (cond
+     ((swift-mode:chunk:comment-p chunk)
+      (swift-mode:backward-sentence-inside-comment
+       (swift-mode:chunk:single-line-comment-p chunk)))
+     ((swift-mode:chunk:string-p chunk)
+      (swift-mode:backward-sentence-inside-string))
+     ;; Spaces at the beginning of 2nd and following lines.
+     ;;
+     ;; class Foo {
+     ;;   // aaa
+     ;;
+     ;;   // bbb
+     ;;   // ccc ← spaces before //
+     ;;   // ddd ← spaces before //
+     ;;   func foo() { // eee
+     ;;   }
+     ;; }
+     ;;
+     ;; Not including spaces before the first line of blocks.
+     ((save-excursion
+        (skip-syntax-backward " ")
+        (and (bolp)
+             (looking-at "[ \t]*//")
+             (not (bobp))
+             (progn
+               (backward-char)
+               (nth 4 (syntax-ppss)))))
+      (forward-line 0)
+      (skip-syntax-forward " ")
+      (forward-char 2)
+      (swift-mode:backward-sentence-inside-comment t))
+     (t
+      (swift-mode:backward-sentence-inside-code)))))
+
+(defun swift-mode:forward-sentence-inside-comment (is-single-line)
+  "Skip forward a sentence in a comment.
+
+IS-SINGLE-LINE should be non-nil when called inside a single-line comment."
+  (let ((current-buffer (current-buffer))
+        (pos (point))
+        (comment-block-end-position
+         (if is-single-line
+             (swift-mode:comment-block-end-position-single-line)
+           (swift-mode:comment-block-end-position-multiline)))
+        offset-from-line-end
+        line-count)
+    (swift-mode:with-temp-comment-buffer
+      (insert-buffer-substring current-buffer pos comment-block-end-position)
+      (goto-char (point-min))
+      ;; Removes comment starters.
+      (save-excursion
+        (if is-single-line
+            (while (re-search-forward "^[ \t]*/+[ \t]*" nil t)
+              (replace-match ""))
+          (when (looking-at "\\*+")
+            (replace-match ""))))
+      ;; Forwards sentence.
+      (let ((old-position (point)))
+        (unless (eobp)
+          (forward-sentence))
+        ;; Backwards spaces at end.
+        (when (save-excursion
+                (skip-syntax-forward " >")
+                (eobp))
+          (when (and (not is-single-line)
+                     (eq (char-before) ?/))
+            (backward-char)
+            (skip-chars-backward "*"))
+          (skip-syntax-backward " >")
+          (when (< (point) old-position)
+            (goto-char old-position)))
+        ;; Locates current position.
+        (setq offset-from-line-end (- (line-end-position) (point)))
+        (setq line-count 0)
+        (while (< old-position (line-beginning-position))
+          (forward-line -1)
+          (setq line-count (1+ line-count)))))
+    (forward-line line-count)
+    (goto-char (- (line-end-position) offset-from-line-end))
+    (when (= (point) pos)
+      (goto-char comment-block-end-position)
+      (swift-mode:forward-sentence-inside-code))))
+
+(defun swift-mode:backward-sentence-inside-comment (is-single-line)
+  "Skip backward a sentence in a comment.
+
+IS-SINGLE-LINE should be non-nil when called inside a single-line comment."
+  (when (and (not is-single-line)
+             (eq (char-before) ?*)
+             (eq (char-after) ?/))
+    (backward-char))
+  (let ((current-buffer (current-buffer))
+        (pos (point))
+        (line-end-position (line-end-position))
+        (comment-block-beginning-position
+         (if is-single-line
+             (swift-mode:comment-block-beginning-position-single-line)
+           (swift-mode:comment-block-beginning-position-multiline)))
+        offset-from-line-end
+        line-count)
+    (swift-mode:with-temp-comment-buffer
+      (insert-buffer-substring
+       current-buffer comment-block-beginning-position line-end-position)
+      (goto-char (- (line-end-position) (- line-end-position pos)))
+      ;; Removes comment starters.
+      (save-excursion
+        (goto-char (point-min))
+        (if is-single-line
+            (while (re-search-forward "^[ \t]*/+[ \t]*" nil t)
+              (replace-match ""))
+          (when (looking-at "[ \t]*/\\*+[ \t\n]*")
+            (replace-match "")))
+        ;; Removes empty lines at the beginning.
+        (goto-char (point-min))
+        (when (looking-at "\n+")
+          (replace-match "")))
+      ;; Backwards sentence.
+      (let ((old-position (point)))
+        (backward-sentence)
+        ;; Locates current position.
+        (setq offset-from-line-end (- (line-end-position) (point)))
+        (setq line-count 0)
+        (while (< (line-end-position) old-position)
+          (forward-line 1)
+          (setq line-count (1+ line-count)))))
+    (forward-line (- line-count))
+    (goto-char (- (line-end-position) offset-from-line-end))
+    (when (<= pos (point))
+      (goto-char comment-block-beginning-position)
+      (swift-mode:backward-sentence-inside-code))))
+
+(defmacro swift-mode:with-temp-comment-buffer (&rest body)
+  "Eval BODY inside a temporary buffer keeping sentence related variables."
+  (declare (indent 0) (debug t))
+  (let ((current-sentence-end (make-symbol "current-sentence-end"))
+        (current-paragraph-start (make-symbol "current-paragraph-start"))
+        (current-paragraph-separate (make-symbol "current-paragraph-separate"))
+        (current-paragraph-ignore-fill-prefix
+         (make-symbol "current-paragraph-ignore-fill-prefix"))
+        (current-fill-prefix (make-symbol "current-fill-prefix")))
+    `(let ((,current-sentence-end (sentence-end))
+           (,current-paragraph-start paragraph-start)
+           (,current-paragraph-separate paragraph-separate)
+           (,current-paragraph-ignore-fill-prefix paragraph-ignore-fill-prefix)
+           (,current-fill-prefix fill-prefix))
+       (with-temp-buffer
+         (setq-local sentence-end ,current-sentence-end)
+         (setq-local paragraph-start ,current-paragraph-start)
+         (setq-local paragraph-separate ,current-paragraph-separate)
+         (setq-local paragraph-ignore-fill-prefix
+                     ,current-paragraph-ignore-fill-prefix)
+         (setq-local fill-prefix ,current-fill-prefix)
+         ,@body))))
+
+(defun swift-mode:comment-block-end-position-single-line ()
+  "Return the position of the end of a single-line comment block.
+
+A single-line comment block consists of a single-line comments at the beginning
+of lines.  Empty lines split blocks.  Example:
+    // A block begins here.
+    //
+    // ...
+    //
+    // The block ends here.
+
+    // Another block begins here.
+    //
+    // ...
+    //
+    // The block ends here.
+    foo() // This comment is not a part of the block."
+  (save-excursion
+    (let ((comment-block-end-position nil))
+      (while (and (swift-mode:chunk:single-line-comment-p
+                   (swift-mode:chunk-after))
+                  (not (eobp)))
+        (end-of-line)
+        (setq comment-block-end-position (point))
+        (forward-line)
+        (skip-chars-forward " \t")
+        (skip-chars-forward "/"))
+      comment-block-end-position)))
+
+(defun swift-mode:comment-block-beginning-position-single-line ()
+  "Return the position of the beginning of a single-line comment block.
+
+A single-line comment block consists of a single-line comments at the beginning
+of lines.  Empty lines split blocks.  Example:
+    // A block begins here.
+    //
+    // ...
+    //
+    // The block ends here.
+
+    // Another block begins here.
+    //
+    // ...
+    //
+    // The block ends here.
+    foo() // This comment is not a part of the block."
+  (save-excursion
+    (let (chunk
+          (comment-block-beginning-position nil))
+      (while (progn
+               (setq chunk (swift-mode:chunk-after))
+               (swift-mode:chunk:single-line-comment-p chunk))
+        (goto-char (swift-mode:chunk:start chunk))
+        (setq comment-block-beginning-position (point))
+        (skip-syntax-backward " ")
+        (unless (bobp) (backward-char)))
+      comment-block-beginning-position)))
+
+(defun swift-mode:comment-block-end-position-multiline ()
+  "Return the position of the end of a multiline comment."
+  (save-excursion
+    (goto-char (swift-mode:chunk:start (swift-mode:chunk-after)))
+    (forward-comment 1)
+    (point)))
+
+(defun swift-mode:comment-block-beginning-position-multiline ()
+  "Return the position of the beginning of a multiline comment."
+  (swift-mode:chunk:start (swift-mode:chunk-after)))
+
+(defun swift-mode:forward-sentence-inside-string ()
+  "Skip forward a sentence in a string."
+  (let ((string-end-position
+         (save-excursion
+           (goto-char (swift-mode:chunk:start (swift-mode:chunk-after)))
+           (swift-mode:forward-string-chunk)
+           (point))))
+    (forward-sentence)
+    (when (< string-end-position (point))
+      (goto-char string-end-position)
+      (if (eq (char-before) ?\()
+          (swift-mode:forward-sentence-inside-interpolated-expression)
+        (swift-mode:forward-sentence-inside-code t)))))
+
+(defun swift-mode:backward-sentence-inside-string ()
+  "Skip backward a sentence in a string."
+  ;; Skips quotes at the end.
+  (when (and
+         (eq (char-after) ?\")
+         (save-excursion
+           (skip-chars-forward "\"")
+           (equal (get-text-property (1- (point)) 'syntax-table)
+                  (string-to-syntax "|"))))
+    (skip-chars-backward "\""))
+  (let ((pos (point))
+        (string-beginning-position
+         (swift-mode:chunk:start (swift-mode:chunk-after))))
+    (backward-sentence)
+    (when (< (point) string-beginning-position)
+      (goto-char string-beginning-position)
+      (cond
+       ((and (looking-at "\"\"\"")
+             (save-excursion
+               (skip-chars-forward "\"")
+               (skip-syntax-forward " >")
+               (< (point) pos)))
+        (skip-chars-forward "\"")
+        (skip-syntax-forward " >"))
+       ((eq (char-after) ?\))
+        (swift-mode:backward-sentence-inside-interpolated-expression))
+       (t
+        (swift-mode:backward-sentence-inside-code t))))))
+
+(defun swift-mode:forward-sentence-inside-interpolated-expression ()
+  "Skip forward a sentence in a interpolated expression."
+  (let* ((string-chunk (swift-mode:find-following-string-chunk))
+         (interpolated-expression-end-position
+          (swift-mode:token:start string-chunk)))
+    (swift-mode:forward-statement)
+    (when (< interpolated-expression-end-position (point))
+      (goto-char interpolated-expression-end-position)
+      (forward-char)
+      (swift-mode:forward-sentence-inside-string))))
+
+(defun swift-mode:backward-sentence-inside-interpolated-expression ()
+  "Skip backward a sentence in a interpolated expression."
+  (let* ((string-chunk (swift-mode:find-preceeding-string-chunk))
+         (interpolated-expression-beginning-position
+          (swift-mode:token:end string-chunk)))
+    (swift-mode:backward-statement)
+    (when (< (point) interpolated-expression-beginning-position)
+      (goto-char interpolated-expression-beginning-position)
+      (backward-char)
+      (swift-mode:backward-sentence-inside-string))))
+
+(defun swift-mode:find-following-string-chunk ()
+  "Return the following string-chunk token."
+  (save-excursion
+    (let (token)
+      (while (progn
+               (setq token (swift-mode:forward-token-or-list))
+               (not (memq
+                     (swift-mode:token:type token)
+                     '(outside-of-buffer
+                       string-chunk-after-interpolated-expression)))))
+      token)))
+
+(defun swift-mode:find-preceeding-string-chunk ()
+  "Return the preceeding string-chunk token."
+  (save-excursion
+    (swift-mode:backward-sexps-until
+     '(string-chunk-before-interpolated-expression))))
+
+(defun swift-mode:forward-sentence-inside-code
+    (&optional keep-position-if-at-end-of-statement)
+  "Skip forward a statement.
+
+If KEEP-POSITION-IF-AT-END-OF-STATEMENT is non-nil and the cursor is already at
+the end of a statement, keep the position."
+  (if (and (get-text-property (point) 'syntax-multiline)
+           (not (bobp))
+           ;; Not just before a string.
+           (get-text-property (1- (point)) 'syntax-multiline))
+      (swift-mode:forward-sentence-inside-interpolated-expression)
+    (if keep-position-if-at-end-of-statement
+        (swift-mode:end-of-statement)
+      (swift-mode:forward-statement))))
+
+(defun swift-mode:backward-sentence-inside-code
+    (&optional keep-position-if-at-beginning-of-statement)
+  "Skip backward a statement.
+
+If KEEP-POSITION-IF-AT-BEGINNING-OF-STATEMENT is non-nil and the cursor is
+already at the beginning of a statement, keep the position."
+  (if (and (get-text-property (point) 'syntax-multiline)
+           (not (bobp))
+           ;; Not just before a string.
+           (get-text-property (1- (point)) 'syntax-multiline))
+      (swift-mode:backward-sentence-inside-interpolated-expression)
+    (if keep-position-if-at-beginning-of-statement
+        (swift-mode:beginning-of-statement)
+      (swift-mode:backward-statement))))
 
 (provide 'swift-mode-beginning-of-defun)
 
