@@ -201,6 +201,9 @@ Statements include comments on the same line.
 When called at the beginning of a statement, keep the position.
 
 Intended for internal use."
+  (let ((chunk (swift-mode:chunk-after)))
+    (when chunk
+      (goto-char (swift-mode:chunk:start chunk))))
   (let ((pos (point))
         (previous-token (save-excursion
                           (forward-comment (- (point)))
@@ -258,7 +261,7 @@ Intended for internal use."
     ;; Excludes comments on previous lines but includes comments on the same
     ;; line.
     (forward-comment (- (point)))
-    (setq parent (save-excursion (swift-mode:backward-token)))
+    (setq parent (save-excursion (swift-mode:backward-token-or-list)))
     (forward-comment (point-max))
     (swift-mode:goto-non-comment-bol)
     (when (< (point) (swift-mode:token:end parent))
@@ -279,10 +282,14 @@ Intended for internal use."
 (defun swift-mode:end-of-statement ()
   "Move forward to the end of a statement.
 
-When called at the end of a statement, keep the position.
+When called at the end of a sentence, keep the position.
 
 Return the next token.
 Intended for internal use."
+  (let ((chunk (swift-mode:chunk-after)))
+    (when chunk
+      (goto-char (swift-mode:chunk:start chunk))
+      (forward-comment 1)))
   (let ((pos (point))
         (previous-token (save-excursion (swift-mode:backward-token)))
         next-token)
@@ -312,6 +319,9 @@ Intended for internal use."
 
 Return the next token.
 Intended for internal use."
+  (let ((chunk (swift-mode:chunk-after)))
+    (when chunk
+      (goto-char (swift-mode:chunk:start chunk))))
   (forward-comment (point-max))
   (let ((pos (point))
         token)
@@ -357,18 +367,18 @@ and the region is not active."
   (interactive "p")
   (setq arg (or arg 1))
   (let ((result t)
-        (pos (point)))
+        (pos (point))
+        next-token)
     (if (<= 0 arg)
         ;; Moving forward
         (while (and result (< 0 arg))
-          (swift-mode:forward-statement)
+          (setq next-token (swift-mode:forward-statement))
           (when (save-excursion
                   (swift-mode:beginning-of-statement)
                   (swift-mode:find-defun-keyword))
             (setq arg (1- arg)))
           (when (and (< 0 arg)
-                      (eq (swift-mode:token:type (swift-mode:forward-token))
-                          'outside-of-buffer))
+                     (eq (swift-mode:token:type next-token) 'outside-of-buffer))
             (setq result nil)))
       ;; Moving backward
       (while (and result (< arg 0))
@@ -394,7 +404,7 @@ When called at the end of a statement, find the previous one.
 Intended for internal use."
   (when (save-excursion
           (let ((pos (point))
-                (token (swift-mode:backward-token)))
+                (token (swift-mode:backward-token-or-list)))
             (and
              (memq (swift-mode:token:type token)
                    '(\; anonymous-function-parameter-in))
@@ -461,102 +471,13 @@ or the region is active, mark the following (if the point is before the mark)
 or preceding (if the point is after the mark) defun.  If that defun has lesser
 nesting level, mark the whole outer defun."
   (interactive (list t))
-  (if (and allow-extend
-           (or
-            (and (eq last-command this-command) (mark t))
-            (region-active-p)))
-      ;; Extends region.
-      (let ((is-forward (<= (point) (mark))))
-        (set-mark
-         (save-excursion
-           (goto-char (mark))
-           (if is-forward
-               (swift-mode:end-of-defun)
-             (swift-mode:beginning-of-defun))
-           (point)))
-        ;; Marks the whole outer defun if the mark got out of the outer defun.
-        (goto-char
-         (if is-forward
-             (min (point)
-                  (save-excursion
-                    (goto-char (mark))
-                    (swift-mode:beginning-of-defun)
-                    (point)))
-           (max (point)
-                (save-excursion
-                  (goto-char (mark))
-                  (swift-mode:end-of-defun)
-                  (point))))))
-    ;; Marks new region.
-    (let ((region
-           (cond
-            ((eq swift-mode:mark-defun-preference 'containing)
-             (swift-mode:containing-defun-region))
-            ((eq swift-mode:mark-defun-preference 'preceding)
-             (swift-mode:preceding-defun-region))
-            ((eq swift-mode:mark-defun-preference 'following)
-             (swift-mode:following-defun-region)))))
-      (if region
-          (progn (push-mark (cdr region) nil t)
-                 (goto-char (car region))
-                 region)
-        (when (called-interactively-p 'interactive)
-          (message "No defun found"))
-        nil))))
-
-(defun swift-mode:following-defun-region ()
-  "Return cons representing a region of following defun."
-  (save-excursion
-    (let* ((end (and (swift-mode:end-of-defun) (point)))
-           (beginning (and end (swift-mode:beginning-of-defun) (point))))
-      (and beginning (cons beginning end)))))
-
-(defun swift-mode:preceding-defun-region ()
-  "Return cons representing a region of preceding defun."
-  (save-excursion
-    (let* ((beginning (and (swift-mode:beginning-of-defun) (point)))
-           (end (and beginning (swift-mode:end-of-defun) (point))))
-      (and end (cons beginning end)))))
-
-(defun swift-mode:containing-defun-region ()
-  "Return cons representing a region of containing defun."
-  (let* ((pos (point))
-         (region (swift-mode:following-defun-region))
-         (extended (and region
-                        (swift-mode:extend-defun-region-with-spaces region))))
-    (cond
-     ((and extended (<= (car extended) pos (cdr extended)))
-      region)
-
-     ((progn
-        (setq region (swift-mode:preceding-defun-region))
-        (setq extended (swift-mode:extend-defun-region-with-spaces region))
-        (and extended (<= (car extended) pos (cdr extended))))
-      region)
-
-     (t
-      (catch 'swift-mode:found-defun
-        (while (swift-mode:end-of-defun)
-          (let ((end (point)))
-            (save-excursion
-              (swift-mode:beginning-of-defun)
-              (when (<= (point) pos end)
-                (throw 'swift-mode:found-defun (cons (point) end))))))
-        (cons (point-min) (point-max)))))))
-
-(defun swift-mode:extend-defun-region-with-spaces (region)
-  "Return REGION extended with surrounding spaces."
-  (let ((beginning (car region))
-        (end (cdr region)))
-    (save-excursion
-      (goto-char beginning)
-      (skip-syntax-backward " ")
-      (setq beginning (point)))
-    (save-excursion
-      (goto-char end)
-      (skip-syntax-forward " ")
-      (setq end (point)))
-    (cons beginning end)))
+  (let ((region (swift-mode:mark-generic-block
+                 allow-extend
+                 #'swift-mode:end-of-defun
+                 #'swift-mode:beginning-of-defun)))
+    (if (and  (not region) (called-interactively-p 'interactive))
+        (progn (message "No defun found") nil)
+      region)))
 
 (defun swift-mode:narrow-to-defun (&optional include-comments)
   "Make text outside current defun invisible.
@@ -567,6 +488,172 @@ If the point is between defuns, narrow depend on
 Preceding comments are included if INCLUDE-COMMENTS is non-nil.
 Interactively, the behavior depends on ‘narrow-to-defun-include-comments’."
   (interactive (list narrow-to-defun-include-comments))
+  (let ((region (swift-mode:narrow-to-generic-block
+                 include-comments
+                 #'swift-mode:end-of-defun
+                 #'swift-mode:beginning-of-defun)))
+    (if (and  (not region) (called-interactively-p 'interactive))
+        (progn (message "No defun found") nil)
+      region)))
+
+(defun swift-mode:forward-sentence (&optional arg)
+  "Skip forward sentences or statements.
+
+In comments or strings, skip a sentence.  Otherwise, skip a stateement.
+
+With ARG, repeat ARG times.  If ARG is negative, Skip backwards.
+
+Return t if a sentence is found.  Return nil otherwise."
+  (interactive "p")
+  (setq arg (or arg 1))
+  (if (< arg 0)
+      (swift-mode:backward-sentence (- arg))
+    (let ((result t))
+      (while (and result (< 0 arg))
+        (setq result (swift-mode:forward-sentence-1))
+        (setq arg (1- arg)))
+      result)))
+
+(defun swift-mode:mark-generic-block (allow-extend move-forward move-backward)
+  "Put mark at the end of generic block, point at the beginning of it.
+
+If the point is between generic blocks, mark depend on
+`swift-mode:mark-defun-preference'.
+
+If ALLOW-EXTEND is non-nil or called interactively, and the command is repeated
+or the region is active, mark the following (if the point is before the mark)
+or preceding (if the point is after the mark) block.  If that statement has
+lesser nesting level, mark the whole outer statement.
+
+MOVE-FORWARDS is a function moving the cursor to the next end of block.
+MOVE-BACKWARD is a function moving the cursor to the previous beginning of
+block.
+Both functions return t if succeeded, return nil otherwise."
+  (if (and allow-extend
+           (or
+            (and (eq last-command this-command) (mark t))
+            (region-active-p)))
+      ;; Extends region.
+      (let ((is-forward (<= (point) (mark))))
+        (set-mark
+         (save-excursion
+           (goto-char (mark))
+           (if is-forward
+               (funcall move-forward)
+             (funcall move-backward))
+           (point)))
+        ;; Marks the whole outer block if the mark got out of the outer block.
+        (goto-char
+         (if is-forward
+             (min (point)
+                  (save-excursion
+                    (goto-char (mark))
+                    (funcall move-backward)
+                    (point)))
+           (max (point)
+                (save-excursion
+                  (goto-char (mark))
+                  (funcall move-forward)
+                  (point))))))
+    ;; Marks new region.
+    (let ((region
+           (cond
+            ((eq swift-mode:mark-defun-preference 'containing)
+             (swift-mode:containing-generic-block-region
+              move-forward move-backward))
+            ((eq swift-mode:mark-defun-preference 'preceding)
+             (swift-mode:preceding-generic-block-region
+              move-forward move-backward))
+            ((eq swift-mode:mark-defun-preference 'following)
+             (swift-mode:following-generic-block-region
+              move-forward move-backward)))))
+      (and
+       region
+       (progn (push-mark (cdr region) nil t)
+              (goto-char (car region))
+              region)))))
+
+(defun swift-mode:following-generic-block-region (move-forward move-backward)
+  "Return cons representing a region of following generic block.
+
+MOVE-FORWARDS is a function moving the cursor to the next end of block.
+MOVE-BACKWARD is a function moving the cursor to the previous beginning of
+block.
+Both functions return t if succeeded, return nil otherwise."
+  (save-excursion
+    (let* ((end (and (funcall move-forward) (point)))
+           (beginning (and end (funcall move-backward) (point))))
+      (and beginning (cons beginning end)))))
+
+(defun swift-mode:preceding-generic-block-region (move-forward move-backward)
+  "Return cons representing a region of preceding generic block.
+
+MOVE-FORWARDS is a function moving the cursor to the next end of block.
+MOVE-BACKWARD is a function moving the cursor to the previous beginning of
+block.
+Both functions return t if succeeded, return nil otherwise."
+  (save-excursion
+    (let* ((beginning (and (funcall move-backward) (point)))
+           (end (and beginning (funcall move-forward) (point))))
+      (and end (cons beginning end)))))
+
+(defun swift-mode:containing-generic-block-region (move-forward move-backward)
+  "Return cons representing a region of containing generic block.
+
+MOVE-FORWARDS is a function moving the cursor to the next end of block.
+MOVE-BACKWARD is a function moving the cursor to the previous beginning of
+block.
+Both functions return t if succeeded, return nil otherwise."
+  (let* ((pos (point))
+         (region (swift-mode:following-generic-block-region
+                  move-forward move-backward))
+         (extended (and region
+                        (swift-mode:extend-region-with-spaces region))))
+    (cond
+     ((and extended (<= (car extended) pos (cdr extended)))
+      region)
+
+     ((progn
+        (setq region (swift-mode:preceding-generic-block-region
+                      move-forward move-backward))
+        (setq extended (swift-mode:extend-region-with-spaces region))
+        (and extended (<= (car extended) pos (cdr extended))))
+      region)
+
+     (t
+      (catch 'swift-mode:found-block
+        (while (funcall move-forward)
+          (let ((end (point)))
+            (save-excursion
+              (funcall move-backward)
+              (when (<= (point) pos end)
+                (throw 'swift-mode:found-block (cons (point) end))))))
+        (cons (point-min) (point-max)))))))
+
+(defun swift-mode:extend-region-with-spaces (region)
+  "Return REGION extended with surrounding spaces."
+  (and region
+       (let ((beginning (car region))
+             (end (cdr region)))
+         (save-excursion
+           (goto-char beginning)
+           (skip-syntax-backward " ")
+           (setq beginning (point)))
+         (save-excursion
+           (goto-char end)
+           (skip-syntax-forward " ")
+           (setq end (point)))
+         (cons beginning end))))
+
+(defun swift-mode:narrow-to-generic-block
+    (&optional include-comments move-forward move-backward)
+  "Make text outside current generic block invisible.
+
+If the point is between blocks, narrow depend on
+`swift-mode:mark-defun-preference'.
+
+Preceding comments are included if INCLUDE-COMMENTS is non-nil.
+Interactively, the behavior depends on ‘narrow-to-defun-include-comments’."
   (let ((restriction (cons (point-min) (point-max)))
         region
         extended)
@@ -575,13 +662,16 @@ Interactively, the behavior depends on ‘narrow-to-defun-include-comments’."
       (setq region
             (cond
              ((eq swift-mode:mark-defun-preference 'containing)
-              (swift-mode:containing-defun-region))
+              (swift-mode:containing-generic-block-region
+               move-forward move-backward))
              ((eq swift-mode:mark-defun-preference 'preceding)
-              (swift-mode:preceding-defun-region))
+              (swift-mode:preceding-generic-block-region
+               move-forward move-backward))
              ((eq swift-mode:mark-defun-preference 'following)
-              (swift-mode:following-defun-region))))
+              (swift-mode:following-generic-block-region
+               move-forward move-backward))))
       (setq extended
-            (and region (swift-mode:extend-defun-region-with-spaces region)))
+            (and region (swift-mode:extend-region-with-spaces region)))
       (when (and extended include-comments)
         (save-excursion
           (goto-char (car extended))
@@ -593,40 +683,27 @@ Interactively, the behavior depends on ‘narrow-to-defun-include-comments’."
           (skip-syntax-backward " ")
           (setcar extended (point))))
       (if extended
-          (narrow-to-region (car extended) (cdr extended))
-        (when (called-interactively-p 'interactive)
-          (message "No defun found"))
-        (narrow-to-region (car restriction) (cdr restriction))))))
-
-(defun swift-mode:forward-sentence (&optional arg)
-  "Skip forward sentences or statements.
-
-In comments or strings, skip a sentence.  Otherwise, skip a stateement.
-
-With ARG, repeat ARG times.  If ARG is negative, Skip backwards."
-  (interactive "p")
-  (setq arg (or arg 1))
-  (if (< arg 0)
-      (swift-mode:backward-sentence (- arg))
-    (while (< 0 arg)
-      (unless (swift-mode:forward-sentence-1)
-        (setq arg 1))
-      (setq arg (1- arg)))))
+          (progn (narrow-to-region (car extended) (cdr extended)) extended)
+        (narrow-to-region (car restriction) (cdr restriction))
+        nil))))
 
 (defun swift-mode:backward-sentence (&optional arg)
 "Skip backward sentences or statements.
 
 In comments or strings, skip a sentence.  Otherwise, skip a stateement.
 
-With ARG, repeat ARG times.  If ARG is negative, Skip forwards."
+With ARG, repeat ARG times.  If ARG is negative, Skip forwards.
+
+Return t if a sentence is found.  Return nil otherwise."
   (interactive "p")
   (setq arg (or arg 1))
   (if (< arg 0)
       (swift-mode:forward-sentence (- arg))
-    (while (< 0 arg)
-      (unless (swift-mode:backward-sentence-1)
-        (setq arg 1))
-      (setq arg (1- arg)))))
+    (let ((result t))
+      (while (and result (< 0 arg))
+        (setq result (swift-mode:backward-sentence-1))
+        (setq arg (1- arg)))
+      result)))
 
 (defun swift-mode:forward-sentence-1 ()
   "Skip forward a sentence or a statement.
@@ -753,9 +830,10 @@ IS-SINGLE-LINE should be non-nil when called inside a single-line comment."
           (setq line-count (1+ line-count)))))
     (forward-line line-count)
     (goto-char (- (line-end-position) offset-from-line-end))
-    (when (= (point) pos)
-      (goto-char comment-block-end-position)
-      (swift-mode:forward-sentence-inside-code))))
+    (or (/= (point) pos)
+        (progn
+          (goto-char comment-block-end-position)
+          (swift-mode:forward-sentence-inside-code nil)))))
 
 (defun swift-mode:backward-sentence-inside-comment (is-single-line)
   "Skip backward a sentence in a comment.
@@ -801,9 +879,10 @@ IS-SINGLE-LINE should be non-nil when called inside a single-line comment."
           (setq line-count (1+ line-count)))))
     (forward-line (- line-count))
     (goto-char (- (line-end-position) offset-from-line-end))
-    (when (<= pos (point))
-      (goto-char comment-block-beginning-position)
-      (swift-mode:backward-sentence-inside-code))))
+    (or (< (point) pos)
+        (progn
+          (goto-char comment-block-beginning-position)
+          (swift-mode:backward-sentence-inside-code nil)))))
 
 (defmacro swift-mode:with-temp-comment-buffer (&rest body)
   "Eval BODY inside a temporary buffer keeping sentence related variables."
@@ -905,11 +984,12 @@ of lines.  Empty lines split blocks.  Example:
            (swift-mode:forward-string-chunk)
            (point))))
     (forward-sentence)
-    (when (< string-end-position (point))
-      (goto-char string-end-position)
-      (if (eq (char-before) ?\()
-          (swift-mode:forward-sentence-inside-interpolated-expression)
-        (swift-mode:forward-sentence-inside-code t)))))
+    (or (<= (point) string-end-position)
+        (progn
+          (goto-char string-end-position)
+          (if (eq (char-before) ?\()
+              (swift-mode:forward-sentence-inside-interpolated-expression)
+            (swift-mode:forward-sentence-inside-code t))))))
 
 (defun swift-mode:backward-sentence-inside-string ()
   "Skip backward a sentence in a string."
@@ -925,20 +1005,22 @@ of lines.  Empty lines split blocks.  Example:
         (string-beginning-position
          (swift-mode:chunk:start (swift-mode:chunk-after))))
     (backward-sentence)
-    (when (< (point) string-beginning-position)
-      (goto-char string-beginning-position)
-      (cond
-       ((and (looking-at "\"\"\"")
-             (save-excursion
-               (skip-chars-forward "\"")
-               (skip-syntax-forward " >")
-               (< (point) pos)))
-        (skip-chars-forward "\"")
-        (skip-syntax-forward " >"))
-       ((eq (char-after) ?\))
-        (swift-mode:backward-sentence-inside-interpolated-expression))
-       (t
-        (swift-mode:backward-sentence-inside-code t))))))
+    (or (<= string-beginning-position (point))
+        (progn
+          (goto-char string-beginning-position)
+          (cond
+           ((and (looking-at "\"\"\"")
+                 (save-excursion
+                   (skip-chars-forward "\"")
+                   (skip-syntax-forward " >")
+                   (< (point) pos)))
+            (skip-chars-forward "\"")
+            (skip-syntax-forward " >")
+            t)
+           ((eq (char-after) ?\))
+            (swift-mode:backward-sentence-inside-interpolated-expression))
+           (t
+            (swift-mode:backward-sentence-inside-code t)))))))
 
 (defun swift-mode:forward-sentence-inside-interpolated-expression ()
   "Skip forward a sentence in a interpolated expression."
@@ -946,10 +1028,11 @@ of lines.  Empty lines split blocks.  Example:
          (interpolated-expression-end-position
           (swift-mode:token:start string-chunk)))
     (swift-mode:forward-statement)
-    (when (< interpolated-expression-end-position (point))
-      (goto-char interpolated-expression-end-position)
-      (forward-char)
-      (swift-mode:forward-sentence-inside-string))))
+    (or (<= (point) interpolated-expression-end-position)
+        (progn
+          (goto-char interpolated-expression-end-position)
+          (forward-char)
+          (swift-mode:forward-sentence-inside-string)))))
 
 (defun swift-mode:backward-sentence-inside-interpolated-expression ()
   "Skip backward a sentence in a interpolated expression."
@@ -957,10 +1040,11 @@ of lines.  Empty lines split blocks.  Example:
          (interpolated-expression-beginning-position
           (swift-mode:token:end string-chunk)))
     (swift-mode:backward-statement)
-    (when (< (point) interpolated-expression-beginning-position)
-      (goto-char interpolated-expression-beginning-position)
-      (backward-char)
-      (swift-mode:backward-sentence-inside-string))))
+    (or (<= interpolated-expression-beginning-position (point))
+        (progn
+          (goto-char interpolated-expression-beginning-position)
+          (backward-char)
+          (swift-mode:backward-sentence-inside-string)))))
 
 (defun swift-mode:find-following-string-chunk ()
   "Return the following string-chunk token."
@@ -981,34 +1065,99 @@ of lines.  Empty lines split blocks.  Example:
      '(string-chunk-before-interpolated-expression))))
 
 (defun swift-mode:forward-sentence-inside-code
-    (&optional keep-position-if-at-end-of-statement)
+    (&optional keep-position-if-at-end-of-sentence)
   "Skip forward a statement.
 
-If KEEP-POSITION-IF-AT-END-OF-STATEMENT is non-nil and the cursor is already at
-the end of a statement, keep the position."
+If KEEP-POSITION-IF-AT-END-OF-SENTENCE is non-nil and the cursor is already at
+the end of a sentence, keep the position."
   (if (and (get-text-property (point) 'syntax-multiline)
            (not (bobp))
            ;; Not just before a string.
            (get-text-property (1- (point)) 'syntax-multiline))
       (swift-mode:forward-sentence-inside-interpolated-expression)
-    (if keep-position-if-at-end-of-statement
-        (swift-mode:end-of-statement)
-      (swift-mode:forward-statement))))
+    (if keep-position-if-at-end-of-sentence
+        (progn (swift-mode:end-of-statement) t)
+      (let ((pos (point)))
+        (swift-mode:forward-statement)
+        (or (not (eobp))
+             (progn
+               (forward-comment (- (point)))
+               (< pos (point))))))))
 
 (defun swift-mode:backward-sentence-inside-code
-    (&optional keep-position-if-at-beginning-of-statement)
+    (&optional keep-position-if-at-beginning-of-sentence)
   "Skip backward a statement.
 
-If KEEP-POSITION-IF-AT-BEGINNING-OF-STATEMENT is non-nil and the cursor is
-already at the beginning of a statement, keep the position."
+If KEEP-POSITION-IF-AT-BEGINNING-OF-SENTENCE is non-nil and the cursor is
+already at the beginning of a sentence, keep the position."
   (if (and (get-text-property (point) 'syntax-multiline)
            (not (bobp))
            ;; Not just before a string.
            (get-text-property (1- (point)) 'syntax-multiline))
       (swift-mode:backward-sentence-inside-interpolated-expression)
-    (if keep-position-if-at-beginning-of-statement
-        (swift-mode:beginning-of-statement)
-      (swift-mode:backward-statement))))
+    (if keep-position-if-at-beginning-of-sentence
+        (progn (swift-mode:beginning-of-statement) t)
+      (let ((pos (point)))
+        (swift-mode:backward-statement)
+        (or (not (bobp))
+            (progn
+              (forward-comment (point-max))
+              (< (point) pos)))))))
+
+(defun swift-mode:kill-sentence (&optional arg)
+  "Kill from the point to the end of sentences.
+
+With ARG, kill to the end of the ARG-th sentence.  If ARG is negative, kill
+backwards."
+  (interactive "p")
+  (kill-region
+   (point)
+   (save-excursion (swift-mode:forward-sentence arg) (point))))
+
+(defun swift-mode:backward-kill-sentence (&optional arg)
+  "Kill from the point to the beginning of sentences.
+
+With ARG, kill to the beginning of the ARG-th sentence.  If ARG is negative,
+kill forwards."
+  (interactive "p")
+  (kill-region
+   (point)
+   (save-excursion (swift-mode:backward-sentence arg) (point))))
+
+(defun swift-mode:mark-sentence (&optional allow-extend)
+  "Put mark at the end of sentence, point at the beginning of sentence.
+
+If the point is between sentence, mark depend on
+`swift-mode:mark-defun-preference'.
+
+If ALLOW-EXTEND is non-nil or called interactively, and the command is repeated
+or the region is active, mark the following (if the point is before the mark)
+or preceding (if the point is after the mark) statement.  If that statement has
+lesser nesting level, mark the whole outer statement."
+  (interactive (list t))
+  (let ((region (swift-mode:mark-generic-block allow-extend
+                                               #'swift-mode:forward-sentence
+                                               #'swift-mode:backward-sentence)))
+    (if (and (not region)  (called-interactively-p 'interactive))
+        (progn (message "No sentence found") nil)
+      region)))
+
+(defun swift-mode:narrow-to-sentence (&optional include-comments)
+"Make text outside current sentence invisible.
+
+If the point is between sentences, narrow depend on
+`swift-mode:mark-defun-preference'.
+
+Preceding comments are included if INCLUDE-COMMENTS is non-nil.
+Interactively, the behavior depends on ‘narrow-to-defun-include-comments’."
+  (interactive (list narrow-to-defun-include-comments))
+  (let ((region (swift-mode:narrow-to-generic-block
+                 include-comments
+                 #'swift-mode:forward-sentence
+                 #'swift-mode:backward-sentence)))
+    (if (and  (not region) (called-interactively-p 'interactive))
+        (progn (message "No sentence found") nil)
+      region)))
 
 (provide 'swift-mode-beginning-of-defun)
 

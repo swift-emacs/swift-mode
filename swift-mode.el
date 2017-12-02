@@ -65,6 +65,10 @@
     (define-key map (kbd "C-x n d") #'swift-mode:narrow-to-defun)
     (define-key map (kbd "M-a") #'swift-mode:backward-sentence)
     (define-key map (kbd "M-e") #'swift-mode:forward-sentence)
+    (define-key map (kbd "M-k") #'swift-mode:kill-sentence)
+    (define-key map (kbd "C-x DEL") #'swift-mode:backward-kill-sentence)
+    ;; (define-key map (kbd "???") #'swift-mode:mark-sentence)
+    (define-key map (kbd "C-x n s") #'swift-mode:narrow-to-sentence)
 
     (easy-menu-define swift-menu map "Swift Mode menu"
       `("Swift"
