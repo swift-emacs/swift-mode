@@ -62,6 +62,8 @@ To install without MELPA, download [latest release](https://github.com/swift-ema
   ```
 - `forward-sexp`
 - `beginning-of-defun`, `end-of-defun`, `mark-defun`, and `narrow-to-defun`.
+- `beginning-of-sentence`, `end-of-sentence`, `kill-sentence`, `backward-kill-sentence`, `mark-sentence`, and `narrow-to-sentence`.
+  A sentence is a statement outside comments or strings. Inside comments or strings, it indicates ordinal sentence.
 - `indent-new-comment-line`
 - [Imenu](https://www.gnu.org/software/emacs/manual/html_node/emacs/Imenu.html)
 - Running Swift REPL in a buffer (`M-x run-swift`)
