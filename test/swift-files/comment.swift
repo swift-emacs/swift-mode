@@ -19,7 +19,7 @@
     // aaa
     // bbb
       // ccc // swift-mode:test:keep-indent
-      // ddd // swift-mode:test:known-bug
+      // ddd
       /* // swift-mode:test:known-bug
        * aa
          * aa // swift-mode:test:keep-indent
