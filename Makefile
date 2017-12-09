@@ -49,5 +49,6 @@ test:
 ## Tests the package.
 	$(CASK) exec $(EMACS) --batch -q \
 	  --eval "(add-to-list 'load-path \""$(shell readlink -f .)"\")" \
-	  -l test/swift-mode-test-indent.el \
-	  -f swift-mode:run-test:indent
+	  --eval "(add-to-list 'load-path \""$(shell readlink -f .)"/test\")" \
+	  -l test/swift-mode-test.el \
+	  -f swift-mode:run-test
