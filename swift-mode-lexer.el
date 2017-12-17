@@ -1252,7 +1252,9 @@ If this line ends with a single-line comment, goto just before the comment."
         ;; Proceed to the end of the comment.
         (goto-char (swift-mode:chunk:start chunk))
         (forward-comment 1)
-        (end-of-line)))))
+        (end-of-line)
+        (when (and (eobp) (swift-mode:chunk-after))
+          (goto-char (swift-mode:chunk:start (swift-mode:chunk-after))))))))
 
 ;;; Comment or string chunks
 
@@ -1301,8 +1303,8 @@ If this line ends with a single-line comment, goto just before the comment."
 If the cursor is outside of strings and comments, return nil.
 
 If PARSER-STATE is given, it is used instead of (syntax-ppss)."
-  (unless parser-state
-    (setq parser-state (syntax-ppss)))
+  (when (or (null parser-state) (number-or-marker-p parser-state))
+    (setq parser-state (save-excursion (syntax-ppss parser-state))))
   (cond
    ((eq (nth 3 parser-state) t)
     (swift-mode:chunk 'multiline-string (nth 8 parser-state)))

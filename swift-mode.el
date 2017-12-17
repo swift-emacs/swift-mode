@@ -97,6 +97,8 @@
 
 See `forward-sexp for ARG."
   (setq arg (or arg 1))
+  (when (swift-mode:chunk-after)
+    (goto-char (swift-mode:chunk:start (swift-mode:chunk-after))))
   (if (< 0 arg)
       (while (< 0 arg)
         (while (eq (swift-mode:token:type (swift-mode:forward-sexp-1))

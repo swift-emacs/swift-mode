@@ -332,23 +332,23 @@ Intended for internal use."
                          '(\; implicit-\; } anonymous-function-parameter-in
                            outside-of-buffer)))
               (swift-mode:pseudo-implicit-semicolon-p token))))
-    (while (eq (swift-mode:token:type
-                (save-excursion (swift-mode:forward-token)))
-               '\;)
-      (setq token (swift-mode:forward-token)))
     (if (memq (swift-mode:token:type token)
               '(\; anonymous-function-parameter-in))
         (goto-char (swift-mode:token:end token))
       (goto-char (swift-mode:token:start token)))
+    (while (eq (swift-mode:token:type
+                (save-excursion (swift-mode:forward-token)))
+               '\;)
+      (setq token (swift-mode:forward-token)))
     (cond
      ((eq (swift-mode:token:type token) 'outside-of-buffer)
       (forward-comment (- (point)))
-      (when (< (point) pos)
+      (when (<= (point) pos)
         (goto-char (swift-mode:token:end token)))
       token)
      ((eq (swift-mode:token:type token) '})
       (forward-comment (- (point)))
-      (if (< (point) pos)
+      (if (<= (point) pos)
           (progn
             (goto-char (swift-mode:token:end token))
             (swift-mode:end-of-statement))

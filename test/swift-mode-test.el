@@ -32,6 +32,7 @@
 ;;; Code:
 
 (require 'swift-mode-test-indent)
+(require 'swift-mode-test-beginning-of-defun)
 
 (defvar swift-mode:test:basedir
   (file-name-directory (or load-file-name buffer-file-name)))
@@ -48,7 +49,9 @@ Return the error-buffer"
   (erase-buffer)
   (current-buffer))
 
-(defvar swift-mode:tests '(swift-mode:run-test:indent))
+(defvar swift-mode:tests
+  '(swift-mode:run-test:indent
+    swift-mode:run-test:beginning-of-defun))
 
 (defun swift-mode:run-test (&optional tests)
   "Run TESTS for `swift-mode'."

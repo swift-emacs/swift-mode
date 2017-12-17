@@ -110,7 +110,7 @@ ERROR-BUFFER is the buffer to output errors."
        (if known-bug "warning" "error")
        (concat
         (if known-bug "(knwon bug) " "")
-        "expected "
+        "indent: expected "
         (prin1-to-string original-indent)
         " but "
         (prin1-to-string computed-indent))))
