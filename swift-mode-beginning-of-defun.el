@@ -539,7 +539,7 @@ or the region is active, mark the following (if the point is before the mark)
 or preceding (if the point is after the mark) block.  If that statement has
 lesser nesting level, mark the whole outer statement.
 
-MOVE-FORWARDS is a function moving the cursor to the next end of block.
+MOVE-FORWARD is a function moving the cursor to the next end of block.
 MOVE-BACKWARD is a function moving the cursor to the previous beginning of
 block.
 Both functions return t if succeeded, return nil otherwise."
@@ -590,7 +590,7 @@ Both functions return t if succeeded, return nil otherwise."
 (defun swift-mode:following-generic-block-region (move-forward move-backward)
   "Return cons representing a region of following generic block.
 
-MOVE-FORWARDS is a function moving the cursor to the next end of block.
+MOVE-FORWARD is a function moving the cursor to the next end of block.
 MOVE-BACKWARD is a function moving the cursor to the previous beginning of
 block.
 Both functions return t if succeeded, return nil otherwise."
@@ -602,7 +602,7 @@ Both functions return t if succeeded, return nil otherwise."
 (defun swift-mode:preceding-generic-block-region (move-forward move-backward)
   "Return cons representing a region of preceding generic block.
 
-MOVE-FORWARDS is a function moving the cursor to the next end of block.
+MOVE-FORWARD is a function moving the cursor to the next end of block.
 MOVE-BACKWARD is a function moving the cursor to the previous beginning of
 block.
 Both functions return t if succeeded, return nil otherwise."
@@ -614,7 +614,7 @@ Both functions return t if succeeded, return nil otherwise."
 (defun swift-mode:containing-generic-block-region (move-forward move-backward)
   "Return cons representing a region of containing generic block.
 
-MOVE-FORWARDS is a function moving the cursor to the next end of block.
+MOVE-FORWARD is a function moving the cursor to the next end of block.
 MOVE-BACKWARD is a function moving the cursor to the previous beginning of
 block.
 Both functions return t if succeeded, return nil otherwise."
@@ -667,7 +667,12 @@ If the point is between blocks, narrow depend on
 `swift-mode:mark-defun-preference'.
 
 Preceding comments are included if INCLUDE-COMMENTS is non-nil.
-Interactively, the behavior depends on ‘narrow-to-defun-include-comments’."
+Interactively, the behavior depends on ‘narrow-to-defun-include-comments’.
+
+MOVE-FORWARD is a function moving the cursor to the next end of block.
+MOVE-BACKWARD is a function moving the cursor to the previous beginning of
+block.
+Both functions return t if succeeded, return nil otherwise."
   (let ((restriction (cons (point-min) (point-max)))
         region
         extended)
