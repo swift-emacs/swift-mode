@@ -167,19 +167,33 @@ The cursor must be at the beginning of a statement."
   (let ((token (swift-mode:forward-token-or-list))
         (defun-keywords
           '("import" "typealias" "associatedtype"
-            "enum" "struct" "class" "protocol" "extension"
+            "enum" "struct" "protocol" "extension"
             "func" "init" "deinit" "subscript" "get" "set" "willSet" "didSet"
             "prefix" "postfix" "infix" "precedencegroup"
             "var" "let"
             "case"))
         (stop-tokens '(\; implicit-\; {} } \) \]
-                       anonymous-function-parameter-in outside-of-buffer)))
+                       anonymous-function-parameter-in outside-of-buffer))
+        (class-token nil))
     (while (not (or
                  (memq (swift-mode:token:type token) stop-tokens)
                  (member (swift-mode:token:text token) defun-keywords)))
+      ;; "class" token may be either a class declaration keyword or a modifier:
+      ;;
+      ;; // Nested class named "final"
+      ;; class Foo { class final {} }
+      ;;
+      ;; // Nonoverridable class method named "foo"
+      ;; class Foo { class final func foo() {} }
+      ;;
+      ;; Keeps scanning and returns the token if there are no other
+      ;; `defun-keywords'.
+      (when (equal (swift-mode:token:text token) "class")
+        (setq class-token token))
       (setq token (swift-mode:forward-token-or-list)))
-    (when (member (swift-mode:token:text token) defun-keywords)
-      token)))
+    (if (member (swift-mode:token:text token) defun-keywords)
+        token
+      class-token)))
 
 (defun swift-mode:class-like-member-p ()
   "Return t if the cursor is on a member of a class-like declaration.

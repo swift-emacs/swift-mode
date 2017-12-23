@@ -58,7 +58,7 @@ let
         }/*}*/
     }/*}*/
 
-    /*{*/func foo() {
+    /*{*/class func foo() {
         let x = foo()
         let
           y
