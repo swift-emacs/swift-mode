@@ -223,7 +223,9 @@ class Foo {
 private
   final
   func
-  foo<A, B>(
+  foo<A,
+      B>
+  (
     x:
       Int,
     y:

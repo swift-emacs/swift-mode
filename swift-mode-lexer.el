@@ -68,6 +68,11 @@
                    stop-at-eol-token-types
                    stop-at-bol-token-types))
 
+(declare-function swift-mode:try-backward-generic-parameters
+                  "swift-mode-indent.el"
+                  ())
+
+
 (defun swift-mode:token (type text start end)
   "Construct and return a token.
 
@@ -571,7 +576,9 @@ Return nil otherwise."
     ;;   ]
     ((eq (swift-mode:token:type next-token) '\[) t)
 
-    ;; Inserts implicit semicolon before open parenthesis.
+    ;; Inserts implicit semicolon before open parenthesis, unless it is a
+    ;; function parameter clause. Suppress implicit semicolon before function
+    ;; parameter clause.
     ;;
     ;; Open parenthesis for function arguments cannot appear at the start of a
     ;; line.
@@ -584,7 +591,8 @@ Return nil otherwise."
     ;;   (
     ;;     1
     ;;   )
-    ((eq (swift-mode:token:type next-token) '\() t)
+    ((eq (swift-mode:token:type next-token) '\()
+     (not (swift-mode:function-parameter-clause-p)))
 
     ;; Suppress implicit semicolon after the beginning of an interpolated
     ;; expression.
@@ -594,6 +602,26 @@ Return nil otherwise."
 
     ;; Otherwise, inserts implicit semicolon.
     (t t))))
+
+(defun swift-mode:function-parameter-clause-p ()
+  "Return t if the cursor is before a function parameter clause.
+
+Return nil otherwise."
+  (save-excursion
+    (let* ((previous-token (swift-mode:backward-token-simple))
+           (previous-type (swift-mode:token:type previous-token)))
+      (cond
+       ((eq previous-type '>)
+        (and
+         (/= (point)
+             ;; FIXME: mutual dependency
+             (progn (swift-mode:try-backward-generic-parameters) (point)))
+         (swift-mode:function-parameter-clause-p)))
+       ((or (eq previous-type 'operator)
+            (eq previous-type 'identifier))
+        (equal (swift-mode:token:text (swift-mode:backward-token-simple))
+               "func"))
+       (t nil)))))
 
 (defun swift-mode:supertype-colon-p ()
   "Return t if a colon at the cursor is the colon for supertype.
