@@ -1331,23 +1331,30 @@ If this line ends with a single-line comment, goto just before the comment."
 If the cursor is outside of strings and comments, return nil.
 
 If PARSER-STATE is given, it is used instead of (syntax-ppss)."
-  (when (or (null parser-state) (number-or-marker-p parser-state))
-    (setq parser-state (save-excursion (syntax-ppss parser-state))))
-  (cond
-   ((eq (nth 3 parser-state) t)
-    (swift-mode:chunk 'multiline-string (nth 8 parser-state)))
-   ((nth 3 parser-state)
-    (swift-mode:chunk 'single-line-string (nth 8 parser-state)))
-   ((eq (nth 4 parser-state) t)
-    (swift-mode:chunk 'single-line-comment (nth 8 parser-state)))
-   ((nth 4 parser-state)
-    (swift-mode:chunk 'multiline-comment (nth 8 parser-state)))
-   ((and (eq (char-before) ?/) (eq (char-after) ?/))
-    (swift-mode:chunk 'single-line-comment (1- (point))))
-   ((and (eq (char-before) ?/) (eq (char-after) ?*))
-    (swift-mode:chunk 'multiline-comment (1- (point))))
-   (t
-    nil)))
+  (save-excursion
+    (when (number-or-marker-p parser-state)
+      (goto-char parser-state))
+    (when (or (null parser-state) (number-or-marker-p parser-state))
+      (setq parser-state (save-excursion (syntax-ppss parser-state))))
+    (cond
+     ((nth 3 parser-state)
+      ;; Syntax category "|" is attached to both single-line and multiline
+      ;; string delimiters.  So (nth 3 parser-state) may be t even for
+      ;; single-line string delimiters.
+      (if (save-excursion (goto-char (nth 8 parser-state))
+                          (looking-at "\"\"\""))
+          (swift-mode:chunk 'multiline-string (nth 8 parser-state))
+        (swift-mode:chunk 'single-line-string (nth 8 parser-state))))
+     ((eq (nth 4 parser-state) t)
+      (swift-mode:chunk 'single-line-comment (nth 8 parser-state)))
+     ((nth 4 parser-state)
+      (swift-mode:chunk 'multiline-comment (nth 8 parser-state)))
+     ((and (eq (char-before) ?/) (eq (char-after) ?/))
+      (swift-mode:chunk 'single-line-comment (1- (point))))
+     ((and (eq (char-before) ?/) (eq (char-after) ?*))
+      (swift-mode:chunk 'multiline-comment (1- (point))))
+     (t
+      nil))))
 
 (provide 'swift-mode-lexer)
 

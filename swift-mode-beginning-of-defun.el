@@ -218,6 +218,9 @@ Intended for internal use."
   (let ((chunk (swift-mode:chunk-after)))
     (when chunk
       (goto-char (swift-mode:chunk:start chunk))))
+  (when (and (eq (char-syntax (or (char-after) ?.)) ?w)
+             (eq (char-syntax (or (char-before) ?.)) ?w))
+    (swift-mode:forward-token))
   (let ((pos (point))
         (previous-token (save-excursion
                           (forward-comment (- (point)))
@@ -289,7 +292,7 @@ Statements include comments on the same line.
 Intended for internal use."
   (let ((pos (point)))
     (swift-mode:beginning-of-statement)
-    (when (eq pos (point))
+    (when (<= pos (point))
       (swift-mode:backward-token-or-list)
       (swift-mode:beginning-of-statement))))
 
@@ -336,6 +339,9 @@ Intended for internal use."
   (let ((chunk (swift-mode:chunk-after)))
     (when chunk
       (goto-char (swift-mode:chunk:start chunk))))
+  (when (and (eq (char-syntax (or (char-after) ?.)) ?w)
+             (eq (char-syntax (or (char-before) ?.)) ?w))
+    (swift-mode:backward-token))
   (forward-comment (point-max))
   (let ((pos (point))
         token)
@@ -808,6 +814,17 @@ In comments or strings, skip a sentence.  Otherwise, skip a stateement."
   "Skip forward a sentence in a comment.
 
 IS-SINGLE-LINE should be non-nil when called inside a single-line comment."
+  (when (and (not is-single-line)
+             (eq (char-before) ?/)
+             (eq (char-after) ?*))
+    (forward-char))
+  (when (and is-single-line
+             (< (point) (save-excursion
+                          (forward-line 0)
+                          (if (looking-at "\\s *//+")
+                              (match-end 0)
+                            (point)))))
+    (goto-char (match-end 0)))
   (let ((current-buffer (current-buffer))
         (pos (point))
         (comment-block-end-position
@@ -824,7 +841,8 @@ IS-SINGLE-LINE should be non-nil when called inside a single-line comment."
         (if is-single-line
             (while (re-search-forward "^[ \t]*/+[ \t]*" nil t)
               (replace-match ""))
-          (when (looking-at "\\*+")
+          (when (and (not (looking-at "\\*+/"))
+                     (looking-at "\\*+"))
             (replace-match ""))))
       ;; Forwards sentence.
       (let ((old-position (point)))
@@ -848,7 +866,14 @@ IS-SINGLE-LINE should be non-nil when called inside a single-line comment."
           (forward-line -1)
           (setq line-count (1+ line-count)))))
     (forward-line line-count)
-    (goto-char (- (line-end-position) offset-from-line-end))
+    (goto-char (- (if (and (not is-single-line)
+                           (eq (line-end-position)
+                               (save-excursion
+                                 (goto-char comment-block-end-position)
+                                 (line-end-position))))
+                      comment-block-end-position
+                    (line-end-position))
+                  offset-from-line-end))
     (or (/= (point) pos)
         (progn
           (goto-char comment-block-end-position)
@@ -901,7 +926,7 @@ IS-SINGLE-LINE should be non-nil when called inside a single-line comment."
     (or (< (point) pos)
         (progn
           (goto-char comment-block-beginning-position)
-          (swift-mode:backward-sentence-inside-code nil)))))
+          (swift-mode:backward-sentence-inside-code t)))))
 
 (defmacro swift-mode:with-temp-comment-buffer (&rest body)
   "Eval BODY inside a temporary buffer keeping sentence related variables."
@@ -1098,10 +1123,7 @@ the end of a sentence, keep the position."
         (progn (swift-mode:end-of-statement) t)
       (let ((pos (point)))
         (swift-mode:forward-statement)
-        (or (not (eobp))
-             (progn
-               (forward-comment (- (point)))
-               (< pos (point))))))))
+        (< pos (point))))))
 
 (defun swift-mode:backward-sentence-inside-code
     (&optional keep-position-if-at-beginning-of-sentence)
@@ -1118,10 +1140,7 @@ already at the beginning of a sentence, keep the position."
         (progn (swift-mode:beginning-of-statement) t)
       (let ((pos (point)))
         (swift-mode:backward-statement)
-        (or (not (bobp))
-            (progn
-              (forward-comment (point-max))
-              (< (point) pos)))))))
+        (< (point) pos)))))
 
 (defun swift-mode:kill-sentence (&optional arg)
   "Kill from the point to the end of sentences.

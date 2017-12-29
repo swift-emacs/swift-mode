@@ -91,7 +91,19 @@ PROGRESS-REPORTER is the progress-reporter."
                   expected-positions-asc
                   #'>
                   #'swift-mode:end-of-defun
-                  'end-of-defun)))
+                  'end-of-defun)
+                 (list
+                  expected-positions-desc
+                  #'<
+                  (lambda ()
+                    (swift-mode:backward-sentence)
+                    (skip-syntax-forward " "))
+                  '(beginning-of-sentence beginning-of-defun))
+                 (list
+                  expected-positions-asc
+                  #'>
+                  #'swift-mode:forward-sentence
+                  '(end-of-sentence end-of-defun))))
           (setq current-line 0)
           (while (not (eobp))
             (when (not noninteractive)
@@ -117,13 +129,15 @@ PROGRESS-REPORTER is the progress-reporter."
 The result is a list of remarkable tokens in descendant order.  A remarkable
 token is a list with the follwing elements:
 
-1. Type; one of `beginning-of-defun', `end-of-defun', `{', or `}'
+1. Type; one of `beginning-of-defun', `end-of-defun', `beginning-of-sentence',
+`end-of-sentence', `{', or `}'
 2. Start position
 3. End position
 4. Nesting level at the start position
 5. Nesting level at the end position
 
-`beginning-of-defun' and `end-of-defun' are represented as /*{*/ and /*}*/,
+`beginning-of-defun', `end-of-defun', `beginning-of-sentence', and
+`end-of-sentence' are represented as /*{*/, /*}*/, /*[*/, and /*]*/,
 respectively, in the test file, and removed from the buffer.
 
 `{' and `}' includes square brackets and parentheses."
@@ -133,7 +147,13 @@ respectively, in the test file, and removed from the buffer.
            (list (list 'beginning-of-defun (point) (point) 0 0)))
           (depth 0)
           (pattern (mapconcat #'regexp-quote
-                              '("/*{*/" "/*}*/" "{" "}" "[" "]" "(" ")")
+                              '("/*{*/" "/*}*/" "/*[*/" "/*]*/"
+                                "{" "}" "[" "]" "(" ")"
+                                "/*" "*/"
+                                "//" "\n"
+                                "\"\"\""
+                                "\""
+                                )
                               "\\|"))
           match-string
           match-beginning
@@ -155,16 +175,74 @@ respectively, in the test file, and removed from the buffer.
                              match-beginning match-beginning
                              depth depth))
           (replace-match ""))
-         ((and (member match-string '("{" "[" "("))
+         ((equal match-string "/*[*/")
+          (add-to-list 'expected-positions
+                       (list 'beginning-of-sentence
+                             match-beginning match-beginning
+                             depth depth))
+          (replace-match ""))
+         ((equal match-string "/*]*/")
+          (add-to-list 'expected-positions
+                       (list 'end-of-sentence
+                             match-beginning match-beginning
+                             depth depth))
+          (replace-match ""))
+         ((and (member match-string '("{" "[" "(" "/*"))
                (not (swift-mode:chunk-after match-beginning)))
           (setq depth (1+ depth))
           (add-to-list 'expected-positions
                        (list '{ match-beginning match-end (1- depth) depth)))
-         ((and (member match-string '("}" "]" ")"))
+         ((and (member match-string '("}" "]" ")" "*/"))
                (not (swift-mode:chunk-after match-end)))
           (setq depth (1- depth))
           (add-to-list 'expected-positions
-                       (list '} match-beginning match-end (1+ depth) depth)))))
+                       (list '} match-beginning match-end (1+ depth) depth)))
+
+         ((and (equal match-string "//")
+               (not (swift-mode:chunk-after match-beginning)))
+          (setq depth (1+ depth))
+          (add-to-list 'expected-positions
+                       (list '{ match-beginning match-end (1- depth) depth)))
+         ((and (equal match-string "\n")
+               (eq (swift-mode:chunk:type
+                    (swift-mode:chunk-after match-beginning))
+                   'single-line-comment))
+          (if (looking-at "\\s *//")
+              ;; Fuses with next line.
+              (goto-char (match-end 0))
+            (setq depth (1- depth))
+            (add-to-list 'expected-positions
+                         (list '} match-beginning match-end (1+ depth) depth))))
+         ((and (equal match-string "\"\"\"")
+               (not (eq (char-before match-beginning) ?\\))
+               (not (swift-mode:chunk:comment-p
+                     (swift-mode:chunk-after match-beginning))))
+          (if (swift-mode:chunk:multiline-string-p
+               (swift-mode:chunk-after match-end))
+              (progn (setq depth (1+ depth))
+                     (add-to-list
+                      'expected-positions
+                      (list '{ match-beginning match-end (1- depth) depth)))
+            (setq depth (1- depth))
+            (add-to-list
+             'expected-positions
+             (list '} match-beginning match-end (1+ depth) depth))))
+         ((and (equal match-string "\"")
+               (not (eq (char-before match-beginning) ?\\))
+               (not (swift-mode:chunk:comment-p
+                     (swift-mode:chunk-after match-beginning)))
+               (not (swift-mode:chunk:multiline-string-p
+                     (swift-mode:chunk-after match-beginning))))
+          (if (swift-mode:chunk:single-line-string-p
+               (swift-mode:chunk-after match-end))
+              (progn (setq depth (1+ depth))
+                     (add-to-list
+                      'expected-positions
+                      (list '{ match-beginning match-end (1- depth) depth)))
+            (setq depth (1- depth))
+            (add-to-list
+             'expected-positions
+             (list '} match-beginning match-end (1+ depth) depth))))))
       (goto-char (point-max))
       (add-to-list 'expected-positions
                    (list 'end-of-defun (point) (point) depth depth))
@@ -177,7 +255,7 @@ respectively, in the test file, and removed from the buffer.
      expected-positions
      less-than-function
      beginning-of-thing-function
-     boundary-symbol)
+     boundary-symbols)
   "Run `beginning-of-defun' test for `swift-mode' on current line.
 
 SWIFT-FILE is the filename of the current test case.
@@ -189,8 +267,10 @@ LESS-THAN-FUNCTION is a function returns non-nil iff the firt argument is
 before (or after for `end-of-defun' test) the second argument.
 BEGINNING-OF-THING-FUNCTION is a function goes to the boundary, that is the
 beginning of a defun or the end of the defun..
-BOUNDARY-SYMBOL is the type of expected remarkable token, like
-`beginning-of-defun' or `end-of-defun`'"
+BOUNDARY-SYMBOLS is the type or the list of types of expected remarkable token,
+like `beginning-of-defun' or `end-of-defun'"
+  (when (symbolp boundary-symbols)
+    (setq boundary-symbols (list boundary-symbols)))
   (forward-line 0)
   (let ((status 'ok)
         depth
@@ -209,7 +289,7 @@ BOUNDARY-SYMBOL is the type of expected remarkable token, like
                     (lambda (position)
                       (setq depth (min depth (nth 2 position)))
                       (and
-                       (eq (nth 0 position) boundary-symbol)
+                       (memq (nth 0 position) boundary-symbols)
                        (funcall less-than-function (nth 1 position) (point))
                        (<= (nth 2 position) depth)))
                     expected-positions-before-point
@@ -223,7 +303,7 @@ BOUNDARY-SYMBOL is the type of expected remarkable token, like
          error-buffer swift-file current-line
          "error"
          (concat
-          (symbol-name boundary-symbol)
+          (symbol-name (car boundary-symbols))
           ": at "
           (prin1-to-string (point))
           ", expected "

@@ -1,8 +1,8 @@
-// Foo bar baz.
+// /*[*/Foo bar baz./*]*/
 
-// Import declarations
+// /*[*/Import declarations/*]*/
 
-/*{*//* aaa */ /* bbb */@Foo import Foundation/*}*/
+/*{*//* /*[*/aaa/*]*/ */ /* /*[*/bbb/*]*/ */@Foo import Foundation/*}*/
 /*{*/@Foo
 import Foundation/*}*/
 
@@ -12,7 +12,7 @@ import Foundation/*}*/
     import Foundation/*}*/
 }/*}*/
 
-// Constant/variable declarations
+// /*[*/Constant/variable declarations/*]*/
 
 /*{*/let x = foo()/*}*/
 /*{*/@Foo
@@ -31,40 +31,40 @@ let
       bar()/*}*/
 
     /*{*/var a: Int {
-        return 0
+        /*[*/return 0/*]*/
     }/*}*/
 
     /*{*/var a: Int {
         /*{*/@Foo
         get {
-            return 0
+            /*[*/return 0/*]*/
         }/*}*/
 
         /*{*/@Foo
         set {
-            foo()
+            /*[*/foo()/*]*/
         }/*}*/
      }/*}*/
 
     /*{*/var a = 0 {
         /*{*/@Foo
         willSet {
-            foo()
+            /*[*/foo()/*]*/
         }/*}*/
 
         /*{*/@Foo
         didSet {
-            foo()
+            /*[*/foo()/*]*/
         }/*}*/
     }/*}*/
 
     /*{*/class func foo() {
-        let x = foo()
-        let
+        /*[*/let x = foo()/*]*/
+        /*[*/let
           y
           =
-          bar()
-        while
+          bar()/*]*/
+        /*[*/while
           let
             x
             =
@@ -80,13 +80,13 @@ let
             )
             =
             ab {
-            foo()
-            foo()
-        }
+            /*[*/foo()/*]*/
+            /*[*/foo()/*]*/
+        }/*]*/
     }/*}*/
 }/*}*/
 
-// Type alias declarationss
+// /*[*/Type alias declarationss/*]*/
 
 /*{*/@Foo typealias A = B/*}*/
 
@@ -107,7 +107,7 @@ typealias
       B/*}*/
 }/*}*/
 
-// Function declarations
+// /*[*/Function declarations/*]*/
 
 /*{*/func foo() {
 }/*}*/
@@ -134,11 +134,11 @@ foo() {
           (Int -> [Int])
           =
           {
-              x
-              in
-              [
+              /*[*/x
+              in/*]*/
+              /*[*/[
                 x
-              ]
+              ]/*]*/
           }
       )
       throws
@@ -156,10 +156,11 @@ foo() {
           ==
           Int
     {
+        /*[*/foo()/*]*/
     }/*}*/
 }/*}*/
 
-// Enum declarations
+// /*[*/Enum declarations/*]*/
 
 /*{*/enum Foo<A> where A: B {
     /*{*/case Foo(a: Int)/*}*/
@@ -177,26 +178,26 @@ foo() {
         0/*}*/
 
     /*{*/func foo() -> a {
-        switch this {
-        case .Foo:
-            return a
-        case
+        /*[*/switch this {
+        /*[*/case .Foo:
+            /*[*/return a/*]*/
+        /*[*/case
           let .Bar(a):
-            return a
-        case
+            /*[*/return a/*]*/
+        /*[*/case
           .Baz(var a):
-            return a
-        }
+            /*[*/return a/*]*/
+        }/*]*/
     }/*}*/
 }/*}*/
 
 
-// Struct declarations
+// /*[*/Struct declarations/*]*/
 
 /*{*/struct Foo {
 }/*}*/
 
-// Class declarations
+// /*[*/Class declarations/*]*/
 
 /*{*/class Foo {
 }/*}*/
@@ -227,7 +228,7 @@ public
     }/*}*/
 }/*}*/
 
-// Protocol declarations
+// /*[*/Protocol declarations/*]*/
 
 /*{*/protocol Foo {
     /*{*/var x: Int {
@@ -251,11 +252,11 @@ public
           E/*}*/
 }/*}*/
 
-// Extension declarations
+// /*[*/Extension declarations/*]*/
 /*{*/extension Foo: AAA {
 }/*}*/
 
-// Operator declarations
+// /*[*/Operator declarations/*]*/
 /*{*/prefix
   operator
   +++/*}*/
@@ -268,52 +269,52 @@ public
   :
   AAA/*}*/
 
-// Precedence group declarations
+// /*[*/Precedence group declarations/*]*/
 /*{*/precedencegroup Foo {
-    higherThan: AAA, BBB, CCC
-    lowerThan: DDD, EEE, FFF
-    assignment: false
-    associativity: left
+    /*[*/higherThan: AAA, BBB, CCC/*]*/
+    /*[*/lowerThan: DDD, EEE, FFF/*]*/
+    /*[*/assignment: false/*]*/
+    /*[*/associativity: left/*]*/
 }/*}*/
 
 /*{*/class Foo {
-    // Initializer declarations
+    // /*[*/Initializer declarations/*]*/
     /*{*/init() {
-        `init`() {
-        }
+        /*[*/`init`() {
+        }/*]*/
     }/*}*/
 
-    // Deinitializer declarations
+    // /*[*/Deinitializer declarations/*]*/
     /*{*/deinit() {
     }/*}*/
 
-    // Subscript declarations
+    // /*[*/Subscript declarations/*]*/
     /*{*/subscript(x: Int) {
     }/*}*/
 }/*}*/
 
-// Multiple declaratoins in single line
+// /*[*/Multiple declaratoins in single line/*]*/
 
 /*{*/func foo(){};/*}*/ /*{*/func foo(){/*{*/func foo(){}/*}*/};/*}*//*{*/func foo(){} ;/*}*/ /*{*/func foo() {} /* */ ;/*}*/ /*{*//* */ func foo() {}/*}*/
 
-// Strings and comments
+// /*[*/Strings and comments/*]*/
 
 /*{*/let x = """
-  class Foo {}
+  /*[*/class Foo {}
   \(
-    { () in
+    { /*[*/() in/*]*/
         /*{*/class Foo {
         }/*}*/
-        return 0
+        /*[*/return 0/*]*/
     }()
   )
   """/*}*/
 
-// class Foo {}
+// /*[*/class Foo {}/*]*/
 
 /*
- class Foo {
- }
+ /*[*/class Foo {
+ }/*]*/
  */
 
-// Foo bar baz.
+// /*[*/Foo bar baz./*]*/
