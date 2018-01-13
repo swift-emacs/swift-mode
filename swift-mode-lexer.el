@@ -900,7 +900,7 @@ This function does not return `implicit-;' or `type-:'."
       (swift-mode:fix-operator-type
        (swift-mode:token nil text start end))))
 
-   ;; Backquoted identifer
+   ;; Backquoted identifier
    ((eq (char-after) ?`)
     (let ((pos-after-comment (point)))
       (swift-mode:forward-string-chunk)
@@ -939,14 +939,14 @@ This function does not return `implicit-;' or `type-:'."
        pos-after-comment
        (point))))
 
-   ;; Other tokens including identifers, implicit parameters, keywords, and
+   ;; Other tokens including identifiers, implicit parameters, keywords, and
    ;; numbers
    (t
     (let*
         ((pos-after-comment (point))
          (text
           (cond
-           ;; Identifers, implicit parameters, keywords, numbers
+           ;; Identifiers, implicit parameters, keywords, numbers
            ;;
            ;; Note: syntax class _ includes #, @, and $.
            ((memq (char-syntax (char-after)) '(?w ?_))
@@ -973,7 +973,7 @@ This function does not return `implicit-;' or `type-:'."
                           (- (point) (length text))
                           (point)))
        (t
-        (swift-mode:token 'identifer
+        (swift-mode:token 'identifier
                           text
                           (- (point) (length text))
                           (point))))))))
@@ -1149,7 +1149,7 @@ This function does not return `implicit-;' or `type-:'."
         (swift-mode:fix-operator-type
          (swift-mode:token nil text start end)))))
 
-   ;; Backquoted identifer
+   ;; Backquoted identifier
    ((eq (char-before) ?`)
     (let ((pos-before-comment (point)))
       (swift-mode:backward-string-chunk)
@@ -1170,14 +1170,14 @@ This function does not return `implicit-;' or `type-:'."
        (point)
        pos-before-comment)))
 
-   ;; Other tokens including identifers, implicit parameters, keywords, and
+   ;; Other tokens including identifiers, implicit parameters, keywords, and
    ;; numbers
    (t
     (let*
         ((pos-before-comment (point))
          (text
           (cond
-           ;; Identifers, implicit parameters, keywords, numbers
+           ;; Identifiers, implicit parameters, keywords, numbers
            ;;
            ;; Note: syntax class _ includes #, @, and $.
            ((memq (char-syntax (char-before)) '(?w ?_))
