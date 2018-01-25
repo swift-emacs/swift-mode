@@ -1213,6 +1213,101 @@ Interactively, the behavior depends on ‘narrow-to-defun-include-comments’."
         (progn (message "No sentence found") nil)
       region)))
 
+(defun swift-mode:current-defun-name ()
+  "Return fully qualified name of defun under the point."
+  (save-excursion
+    (let ((token-list (reverse (swift-mode:current-defun-name-token-list))))
+      (if token-list
+          (mapconcat #'swift-mode:token:text token-list ".")
+        nil))))
+
+(defun swift-mode:current-defun-name-token-list ()
+  "Return a list of defun name tokens under the point.
+
+The first element is the name token of the current defun.  The rest are the ones
+of ancestors."
+  (if (bobp)
+      nil
+    (let ((name-token (swift-mode:current-defun-name-token)))
+      (swift-mode:backward-sexps-until '({))
+      (if name-token
+          (cons name-token (swift-mode:current-defun-name-token-list))
+        (swift-mode:current-defun-name-token-list)))))
+
+(defun swift-mode:current-defun-name-token ()
+  "Return the name token of the defun under the point."
+  (let ((pos (point))
+        keyword-token
+        keyword-text
+        next-token
+        name-token)
+    (goto-char (car (swift-mode:containing-generic-block-region
+                     #'swift-mode:end-of-defun
+                     #'swift-mode:beginning-of-defun)))
+
+    (save-excursion
+      (setq keyword-token (swift-mode:find-defun-keyword))
+      (setq keyword-text (swift-mode:token:text keyword-token))
+      (when keyword-token
+        (goto-char (swift-mode:token:end keyword-token)))
+      (setq
+       name-token
+       (cond
+        ((member keyword-text
+                 '("typealias" "associatedtype" "precedencegroup" "func"
+                   "class" "enum" "struct" "protocol" "extension"))
+         (swift-mode:forward-token))
+
+        ((member keyword-text '("init" "deinit" "subscript"))
+         keyword-token)
+
+        ((member keyword-text '("case" "var" "let"))
+         ;; enum Foo {
+         ;;   case A, B(x: (Int, Int)), C
+         ;; }
+         ;;
+         ;; class Foo {
+         ;;   let x = 1,
+         ;;       y = 1,
+         ;;       z = 1
+         ;;   var x {
+         ;;     get {
+         ;;       return 1
+         ;;     }
+         ;;   }
+         ;;   var x = 1 {
+         ;;     willSet {
+         ;;     }
+         ;;   }
+         ;;
+         ;;   let (x, y) = (1, 1) // not supported yet
+         ;; }
+         (while (< (point) pos)
+           (setq next-token (swift-mode:forward-token-or-list)))
+         (when next-token
+           (goto-char (swift-mode:token:start next-token)))
+         (goto-char (swift-mode:token:end
+                     (swift-mode:backward-sexps-until (list keyword-text '\,))))
+         (setq next-token (swift-mode:forward-token))
+         (if (and
+              (eq (swift-mode:token:type next-token) 'identifier)
+              (not
+               (equal (swift-mode:token:text (swift-mode:forward-token)) ".")))
+             next-token
+           ;; FIXME: Complex patterns.
+           nil))
+
+        ((member keyword-text '("prefix" "postfix" "infix"))
+         (and (equal (swift-mode:token:text (swift-mode:forward-token))
+                     "operator")
+              (swift-mode:forward-token)))
+
+        ;; Ignored: "import" "get" "set" "willSet" "didSet"
+        (t nil))))
+    (if (memq (swift-mode:token:type name-token) '(identifier operator))
+        name-token
+      nil)))
+
 (provide 'swift-mode-beginning-of-defun)
 
 ;;; swift-mode-beginning-of-defun.el ends here
