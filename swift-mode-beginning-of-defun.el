@@ -172,7 +172,7 @@ The cursor must be at the beginning of a statement."
             "prefix" "postfix" "infix" "precedencegroup"
             "var" "let"
             "case"))
-        (stop-tokens '(\; implicit-\; {} } \) \]
+        (stop-tokens '(\; implicit-\; {} { } \( \) \[ \]
                        anonymous-function-parameter-in outside-of-buffer))
         (class-token nil))
     (while (not (or
@@ -641,14 +641,30 @@ Both functions return t if succeeded, return nil otherwise."
       region)
 
      (t
-      (catch 'swift-mode:found-block
-        (while (funcall move-forward)
-          (let ((end (point)))
-            (save-excursion
-              (funcall move-backward)
-              (when (<= (point) pos end)
-                (throw 'swift-mode:found-block (cons (point) end))))))
-        (cons (point-min) (point-max)))))))
+      (save-excursion
+        (catch 'swift-mode:found-block
+          (let ((start pos)
+                (end pos))
+            (while (and (funcall move-forward) (/= end (point)))
+              (setq end (point))
+              (save-excursion
+                (funcall move-backward)
+                (when (<= (point) pos end)
+                  (throw 'swift-mode:found-block (cons (point) end)))))
+            (when (= end (point))
+              ;; Got unmatched parens.
+              ;; Scans backward.
+              (goto-char pos)
+              (while (and (funcall move-backward) (/= start (point)))
+                (setq start (point))
+                (save-excursion
+                  (funcall move-forward)
+                  (when (<= start pos (point))
+                    (throw 'swift-mode:found-block (cons start (point))))
+                  (funcall move-backward)
+                  (when (/= start (point))
+                    (throw 'swift-mode:found-block (cons start end)))))))
+          (cons (point-min) (point-max))))))))
 
 (defun swift-mode:extend-region-with-spaces (region)
   "Return REGION extended with surrounding spaces."

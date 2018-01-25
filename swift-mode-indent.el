@@ -1320,14 +1320,19 @@ Return the token skipped."
      ;; List
      ((memq previous-type '(} \) \]))
       (goto-char previous-end)
-      (backward-list)
-      (swift-mode:token
-       (cdr (assoc previous-type '((} . {})
-                                   (\) . \(\))
-                                   (\] . \[\]))))
-       (buffer-substring-no-properties (point) previous-end)
-       (point)
-       previous-end))
+      (condition-case nil
+          (progn
+            (backward-list)
+            (swift-mode:token
+             (cdr (assoc previous-type '((} . {})
+                                         (\) . \(\))
+                                         (\] . \[\]))))
+             (buffer-substring-no-properties (point) previous-end)
+             (point)
+             previous-end))
+        (scan-error
+         (goto-char previous-start)
+         previous-token)))
 
      ;; Generic parameter list
      ((equal previous-text ">")
@@ -1355,14 +1360,19 @@ Return the token skipped."
      ;; List
      ((memq next-type '({ \( \[))
       (goto-char next-start)
-      (forward-list)
-      (swift-mode:token
-       (cdr (assoc next-type '(({ . {})
-                               (\( . \(\))
-                               (\[ . \[\]))))
-       (buffer-substring-no-properties next-start (point))
-       next-start
-       (point)))
+      (condition-case nil
+          (progn
+            (forward-list)
+            (swift-mode:token
+             (cdr (assoc next-type '(({ . {})
+                                     (\( . \(\))
+                                     (\[ . \[\]))))
+             (buffer-substring-no-properties next-start (point))
+             next-start
+             (point)))
+        (scan-error
+         (goto-char next-end)
+         next-token)))
 
      ;; Generic parameter list
      ((equal next-text "<")
