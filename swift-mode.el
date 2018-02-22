@@ -215,7 +215,9 @@ Signal `scan-error' if it hits opening parentheses."
 
   (delete-overlay swift-mode:anchor-overlay)
 
-  (add-hook 'which-func-functions #'swift-mode:current-defun-name)
+  (add-hook 'which-func-functions (lambda ()
+                                    (when (equal (with-current-buffer (current-buffer) major-mode) 'swift-mode)
+                                      (swift-mode:current-defun-name))))
   (setq-local add-log-current-defun-function #'swift-mode:current-defun-name))
 
 ;;;###autoload (add-to-list 'auto-mode-alist '("\\.swift\\'" . swift-mode))
