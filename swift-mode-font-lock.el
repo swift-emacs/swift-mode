@@ -54,181 +54,335 @@ Return nil otherwise."
     (swift-mode:function-name-pos-p (match-beginning 0))
     (swift-mode:font-lock-match-function-names limit))))
 
-(defconst swift-mode:font-lock-keywords
+;; Keywords
+;; https://developer.apple.com/library/ios/documentation/Swift/Conceptual/Swift_Programming_Language/LexicalStructure.html#//apple_ref/doc/uid/TP40014097-CH30-ID410
+
+(defconst swift-mode:member-functions-trailing-closure
+  '("sort" "sorted" "split" "contains" "index" "partition" "filter" "first"
+    "forEach" "flatMap" "withMutableCharacters" "withCString"
+    "withUnsafeMutableBufferPointer" "withUnsafeMutablePointers"
+    "withUnsafeMutablePointerToElements" "withUnsafeMutablePointerToHeader"
+    "withUnsafeBufferPointer" "withUTF8Buffer" "min" "map" "max" "compactMap")
+  "Member functions in the standard library in Swift 3 which may be used
+  with trailing closures and no parentheses.")
+
+(defconst swift-mode:member-functions
+  '("symmetricDifference" "storeBytes" "starts" "stride" "sortInPlace"
+    "successor" "suffix" "subtract" "subtracting" "subtractInPlace"
+    "subtractWithOverflow" "squareRoot" "samePosition" "holdsUniqueReference"
+    "holdsUniqueOrPinnedReference" "hasSuffix" "hasPrefix" "negate" "negated"
+    "next" "countByEnumerating" "copy" "copyBytes" "clamp" "clamped" "create"
+    "toIntMax" "toOpaque" "toUIntMax" "takeRetainedValue" "takeUnretainedValue"
+    "truncatingRemainder" "transcodedLength" "trailSurrogate"
+    "isMutableAndUniquelyReferenced" "isMutableAndUniquelyReferencedOrPinned"
+    "isStrictSuperset" "isStrictSupersetOf" "isStrictSubset" "isStrictSubsetOf"
+    "isSuperset" "isSupersetOf" "isSubset" "isSubsetOf" "isContinuation"
+    "isTotallyOrdered" "isTrailSurrogate" "isDisjoint" "isDisjointWith"
+    "isUniqueReference" "isUniquelyReferenced" "isUniquelyReferencedOrPinned"
+    "isEqual" "isLess" "isLessThanOrEqualTo" "isLeadSurrogate" "insert"
+    "insertContentsOf" "intersect" "intersection" "intersectInPlace"
+    "initialize" "initializeMemory" "initializeFrom" "indexOf" "indexForKey"
+    "overlaps" "objectAt" "distance" "distanceTo" "divide" "divided"
+    "divideWithOverflow" "descendant" "destroy" "decode" "decodeCString"
+    "deinitialize" "dealloc" "deallocate" "deallocateCapacity" "dropFirst"
+    "dropLast" "union" "unionInPlace" "underestimateCount" "unwrappedOrError"
+    "update" "updateValue" "uppercased" "joined" "joinWithSeparator" "popFirst"
+    "popLast" "passRetained" "passUnretained" "predecessor" "prefix" "escape"
+    "escaped" "encode" "enumerate" "enumerated" "elementsEqual" "exclusiveOr"
+    "exclusiveOrInPlace" "formRemainder" "formSymmetricDifference"
+    "formSquareRoot" "formTruncatingRemainder" "formIntersection" "formIndex"
+    "formUnion" "flatten" "fromCString" "fromCStringRepairingIllFormedUTF8"
+    "fromOpaque" "withMemoryRebound" "width" "write" "writeTo" "lowercased"
+    "load" "leadSurrogate" "lexicographicalCompare" "lexicographicallyPrecedes"
+    "assign" "assignBackwardFrom" "assignFrom" "assumingMemoryBound" "add"
+    "adding" "addingProduct" "addProduct" "addWithOverflow" "advanced"
+    "advancedBy" "autorelease" "append" "appendContentsOf" "alloc" "allocate"
+    "abs" "round" "rounded" "reserveCapacity" "retain" "reduce" "replace"
+    "replaceRange" "replaceSubrange" "reverse" "reversed" "requestNativeBuffer"
+    "requestUniqueMutableBackingBuffer" "release" "remove" "removeRange"
+    "removeSubrange" "removeValue" "removeValueForKey" "removeFirst"
+    "removeLast" "removeAtIndex" "removeAll" "remainder" "remainderWithOverflow"
+    "generate" "getObjects" "getElement" "minimum" "minimumMagnitude"
+    "minElement" "move" "moveInitialize" "moveInitializeMemory"
+    "moveInitializeBackwardFrom" "moveInitializeFrom" "moveAssign"
+    "moveAssignFrom" "multiply" "multiplyWithOverflow" "multiplied" "measure"
+    "makeIterator" "makeDescription" "maximum" "maximumMagnitude" "maxElement"
+    "bindMemory")
+  "Member functions in the standard library in Swift 3.")
+
+(defconst swift-mode:global-functions-trailing-closure
+  '("anyGenerator" "autoreleasepool")
+  "Global functions available in Swift 3 which may be used with trailing
+  closures and no parentheses.")
+
+(defconst swift-mode:global-functions
+  '("stride" "strideof" "strideofValue" "sizeof" "sizeofValue" "sequence" "swap"
+    "numericCast" "transcode" "isUniquelyReferenced"
+    "isUniquelyReferencedNonObjC" "isKnownUniquelyReferenced" "zip" "dump"
+    "debugPrint" "unsafeBitCast" "unsafeDowncast" "unsafeUnwrap" "unsafeAddress"
+    "unsafeAddressOf" "print" "precondition" "preconditionFailure" "fatalError"
+    "withUnsafeMutablePointer" "withUnsafePointer" "withExtendedLifetime"
+    "withVaList" "assert" "assertionFailure" "alignof" "alignofValue" "abs"
+    "repeatElement" "readLine" "getVaList" "min" "max")
+  "Global functions available in Swift 3.")
+
+(defconst swift-mode:properties
+  '("startIndex" "stringValue" "stride" "size" "sign" "signBitIndex"
+    "significand" "significandBitCount" "significandBitPattern"
+    "significandWidth" "signalingNaN" "superclassMirror" "summary"
+    "subscriptBaseAddress" "header" "hashValue" "hasPointerRepresentation"
+    "nulTerminatedUTF8" "nextDown" "nextUp" "nan" "nativeOwner" "characters"
+    "count" "countTrailingZeros" "customMirror" "customPlaygroundQuickLook"
+    "capacity" "isSignMinus" "isSignaling" "isSignalingNaN" "isSubnormal"
+    "isNormal" "isNaN" "isCanonical" "isInfinite" "isZero" "isEmpty" "isFinite"
+    "isASCII" "indices" "infinity" "identity" "owner" "description"
+    "debugDescription" "unsafelyUnwrapped" "unicodeScalar" "unicodeScalars"
+    "underestimatedCount" "utf16" "utf8" "utf8Start" "utf8CString"
+    "utf8CodeUnitCount" "uintValue" "uppercaseString" "ulp" "ulpOfOne" "pi"
+    "pointee" "endIndex" "elements" "exponent" "exponentBitCount"
+    "exponentBitPattern" "value" "values" "keys" "quietNaN" "first"
+    "firstElementAddress" "firstElementAddressIfContiguous" "floatingPointClass"
+    "littleEndian" "lowercaseString" "leastNonzeroMagnitude"
+    "leastNormalMagnitude" "last" "lazy" "alignment" "allocatedElementCount"
+    "allZeros" "array" "arrayPropertyIsNativeTypeChecked" "radix" "rawValue"
+    "greatestFiniteMagnitude" "min" "memory" "max" "byteSize" "byteSwapped"
+    "binade" "bitPattern" "bigEndian" "buffer" "base" "baseAddress" "arguments"
+    "argc" "unsafeArgv")
+  "Properties in the standard library in Swift 3.")
+
+(defconst swift-mode:enum-cases
+  '("scalarValue" "size" "signalingNaN" "sound" "some" "suppressed" "sprite"
+    "set" "none" "negativeSubnormal" "negativeNormal" "negativeInfinity"
+    "negativeZero" "color" "collection" "customized" "toNearestOrEven"
+    "toNearestOrAwayFromZero" "towardZero" "tuple" "text" "int" "image"
+    "optional" "dictionary" "double" "down" "uInt" "up" "url"
+    "positiveSubnormal" "positiveNormal" "positiveInfinity" "positiveZero"
+    "point" "plus" "error" "emptyInput" "view" "quietNaN" "float"
+    "attributedString" "awayFromZero" "rectangle" "range" "generated" "minus"
+    "bool" "bezierPath")
+  "Enum cases in the standard library - note that there is some overlap
+between these and the properties")
+
+(defconst swift-mode:enum-types
+  '("ImplicitlyUnwrappedOptional" "Representation" "MemoryLayout"
+    "FloatingPointClassification" "SetIndexRepresentation"
+    "SetIteratorRepresentation" "FloatingPointRoundingRule"
+    "UnicodeDecodingResult" "Optional" "DictionaryIndexRepresentation"
+    "AncestorRepresentation" "DisplayStyle" "PlaygroundQuickLook" "Never"
+    "FloatingPointSign" "Bit" "DictionaryIteratorRepresentation")
+  "Enum types in the standard library in Swift 3.")
+
+(defconst swift-mode:protocols
+  '("RandomAccessCollection" "RandomAccessIndexable"
+    "RangeReplaceableCollection" "RangeReplaceableIndexable" "RawRepresentable"
+    "MirrorPath" "MutableCollection" "MutableIndexable" "BinaryFloatingPoint"
+    "BitwiseOperations" "BidirectionalCollection" "BidirectionalIndexable"
+    "Strideable" "Streamable" "SignedNumber" "SignedInteger" "SetAlgebra"
+    "Sequence" "Hashable" "Collection" "Comparable" "CustomReflectable"
+    "CustomStringConvertible" "CustomDebugStringConvertible"
+    "CustomPlaygroundQuickLookable" "CustomLeafReflectable" "CVarArg"
+    "TextOutputStream" "Integer" "IntegerArithmetic" "Indexable" "IndexableBase"
+    "IteratorProtocol" "OptionSet" "UnsignedInteger" "UnicodeCodec" "Equatable"
+    "Error" "ExpressibleByBooleanLiteral" "ExpressibleByStringInterpolation"
+    "ExpressibleByStringLiteral" "ExpressibleByNilLiteral"
+    "ExpressibleByIntegerLiteral" "ExpressibleByDictionaryLiteral"
+    "ExpressibleByUnicodeScalarLiteral"
+    "ExpressibleByExtendedGraphemeClusterLiteral" "ExpressibleByFloatLiteral"
+    "ExpressibleByArrayLiteral" "FloatingPoint" "LosslessStringConvertible"
+    "LazySequenceProtocol" "LazyCollectionProtocol" "AnyObject"
+    "AbsoluteValuable")
+  "Protocols in the standard library in Swift 3.")
+
+(defconst swift-mode:foundation-protocols
+  '("CustomNSError" "LocalizedError" "NSKeyValueObservingCustomization"
+    "RecoverableError" "ReferenceConvertible")
+  "Protocols in Foundation.")
+
+(defconst swift-mode:structs
+  '("Repeat" "Repeated" "ReversedRandomAccessCollection"
+    "ReversedRandomAccessIndex" "ReversedCollection" "ReversedIndex"
+    "RandomAccessSlice" "Range" "RangeReplaceableRandomAccessSlice"
+    "RangeReplaceableBidirectionalSlice" "RangeReplaceableSlice"
+    "RangeGenerator" "GeneratorSequence" "GeneratorOfOne" "Mirror"
+    "MutableRandomAccessSlice" "MutableRangeReplaceableRandomAccessSlice"
+    "MutableRangeReplaceableBidirectionalSlice" "MutableRangeReplaceableSlice"
+    "MutableBidirectionalSlice" "MutableSlice" "ManagedBufferPointer"
+    "BidirectionalSlice" "Bool" "StaticString" "String" "StrideThrough"
+    "StrideThroughGenerator" "StrideThroughIterator" "StrideTo"
+    "StrideToGenerator" "StrideToIterator" "Set" "SetIndex" "SetIterator"
+    "Slice" "HalfOpenInterval" "Character" "CharacterView" "ContiguousArray"
+    "CountableRange" "CountableClosedRange" "CollectionOfOne" "COpaquePointer"
+    "ClosedRange" "ClosedRangeIndex" "ClosedRangeIterator" "ClosedInterval"
+    "CVaListPointer" "Int" "Int16" "Int8" "Int32" "Int64" "Indices" "Index"
+    "IndexingGenerator" "IndexingIterator" "Iterator" "IteratorSequence"
+    "IteratorOverOne" "Zip2Sequence" "Zip2Iterator" "OpaquePointer"
+    "ObjectIdentifier" "Dictionary" "DictionaryIndex" "DictionaryIterator"
+    "DictionaryLiteral" "Double" "DefaultRandomAccessIndices"
+    "DefaultBidirectionalIndices" "DefaultIndices" "UnsafeRawPointer"
+    "UnsafeMutableRawPointer" "UnsafeMutableBufferPointer"
+    "UnsafeMutablePointer" "UnsafeBufferPointer" "UnsafeBufferPointerGenerator"
+    "UnsafeBufferPointerIterator" "UnsafePointer" "UnicodeScalar"
+    "UnicodeScalarView" "UnfoldSequence" "Unmanaged" "UTF16" "UTF16View" "UTF8"
+    "UTF8View" "UTF32" "UInt" "UInt16" "UInt8" "UInt32" "UInt64" "JoinGenerator"
+    "JoinedSequence" "JoinedIterator" "PermutationGenerator"
+    "EnumerateGenerator" "EnumerateSequence" "EnumeratedSequence"
+    "EnumeratedIterator" "EmptyGenerator" "EmptyCollection" "EmptyIterator"
+    "Float" "Float80" "FlattenGenerator" "FlattenBidirectionalCollection"
+    "FlattenBidirectionalCollectionIndex" "FlattenSequence" "FlattenCollection"
+    "FlattenCollectionIndex" "FlattenIterator" "LegacyChildren"
+    "LazyRandomAccessCollection" "LazyMapRandomAccessCollection"
+    "LazyMapGenerator" "LazyMapBidirectionalCollection" "LazyMapSequence"
+    "LazyMapCollection" "LazyMapIterator" "LazyBidirectionalCollection"
+    "LazySequence" "LazyCollection" "LazyFilterGenerator"
+    "LazyFilterBidirectionalCollection" "LazyFilterSequence"
+    "LazyFilterCollection" "LazyFilterIndex" "LazyFilterIterator"
+    "AnyRandomAccessCollection" "AnyGenerator" "AnyBidirectionalCollection"
+    "AnySequence" "AnyHashable" "AnyCollection" "AnyIndex" "AnyIterator"
+    "AutoreleasingUnsafeMutablePointer" "Array" "ArraySlice")
+  "Structs in the standard library in Swift 3.")
+
+(defconst swift-mode:foundation-structs
+  '("Calendar" "CharacterSet" "CocoaError" "Data" "Date" "DateComponents"
+    "DateInterval" "ErrorUserInfoKey" "IndexPath" "IndexSet" "Locale"
+    "MachError" "Measurement" "NSFastEnumerationIterator" "NSIndexSetIterator"
+    "NSKeyValueObservedChange" "Notification" "POSIXError"
+    "PersonNameComponents" "TimeZone" "URL" "URLComponents" "URLError"
+    "URLQueryItem" "URLRequest" "URLResourceValues" "UUID")
+  "Structs in Foundation.")
+
+(defconst swift-mode:typealiases
+  '("RawSignificand" "RawExponent" "RawValue" "BooleanLiteralType" "Buffer"
+    "Base" "Storage" "StringLiteralType" "Stride" "Stream1" "Stream2"
+    "SubSequence" "NativeBuffer" "Child" "Children" "CBool" "CShort"
+    "CSignedChar" "CodeUnit" "CChar" "CChar16" "CChar32" "CInt" "CDouble"
+    "CUnsignedShort" "CUnsignedChar" "CUnsignedInt" "CUnsignedLong"
+    "CUnsignedLongLong" "CFloat" "CWideChar" "CLong" "CLongLong" "IntMax"
+    "IntegerLiteralType" "Indices" "Index" "IndexDistance" "Iterator" "Distance"
+    "UnicodeScalarType" "UnicodeScalarIndex" "UnicodeScalarView"
+    "UnicodeScalarLiteralType" "UnfoldFirstSequence" "UTF16Index" "UTF16View"
+    "UTF8Index" "UIntMax" "Element" "Elements" "ExtendedGraphemeClusterType"
+    "ExtendedGraphemeClusterLiteralType" "Exponent" "Void" "Value" "Key"
+    "Float32" "FloatLiteralType" "Float64" "AnyClass" "Any")
+  "Typealiases in the standard library in Swift 3.")
+
+(defconst swift-mode:class-types
+  '("ManagedBuffer" "ManagedProtoBuffer" "NonObjectiveCBase" "AnyGenerator")
+  "Built-in class types.")
+
+(defconst swift-mode:precedence-groups
+  '("BitwiseShift" "Assignment" "RangeFormation" "Casting" "Addition"
+    "NilCoalescing" "Comparison" "LogicalConjunction" "LogicalDisjunction"
+    "Default" "Ternary" "Multiplication" "FunctionArrow")
+  "Precedence groups in the standard library.")
+
+(defconst swift-mode:constant-keywords
   '(
+    "true" "false" "nil"
+    ;; CommandLine is an enum, but it acts like a constant.
+    "CommandLine" "Process"
+    ;; The return type of a function that never returns.
+    "Never")
+  "Keywords used as constants.")
+
+(defconst swift-mode:preprocessor-keywords
+  '("#available" "#colorLiteral" "#column" "#else" "#elseif" "#endif"
+    "#fileLiteral" "#file" "#function" "#if" "#imageLiteral" "#keypath" "#line"
+    "#selector" "#sourceLocation")
+  "Keywords that begin with a number sign (#).")
+
+(defconst swift-mode:declaration-keywords
+  '("associatedtype" "class" "deinit" "enum" "extension" "fileprivate" "func"
+    "import" "init" "inout" "internal" "let" "open" "operator" "private"
+    "protocol" "public" "static" "struct" "subscript" "typealias" "var")
+  "Keywords used in declarations.")
+
+(defconst swift-mode:statement-keywords
+  '("break" "case" "continue" "default" "defer" "do" "else" "fallthrough" "for"
+    "guard" "if" "in" "repeat" "return" "switch" "where" "while")
+  "Keywords used in statements.")
+
+(defconst swift-mode:expression-keywords
+  '("as" "catch" "dynamicType" "is" "rethrows" "super" "self" "Self" "throws"
+    "throw" "try")
+  "Keywords used in expressions and types (without true, false, and
+  keywords begin with a number sign)")
+
+(defconst swift-mode:context-keywords
+  '("Protocol" "Type" "and" "assignment" "associativity" "convenience" "didSet"
+    "dynamic" "final" "get" "higherThan" "indirect" "infix" "lazy" "left"
+    "lowerThan" "mutating" "none" "nonmutating" "optional" "override" "postfix"
+    "precedence" "precedencegroup" "prefix" "required" "right" "set" "unowned"
+    "weak" "willSet")
+  "Keywords reserved in particular contexts.")
+
+(defconst swift-mode:build-config-keywords
+  '("os" "arch" "swift" "OSX" "iOS" "watchOS" "tvOS" "i386" "x86_64" "arm"
+    "arm64" "iOSApplicationExtension" "OSXApplicationExtension")
+  "Keywords for build configuration statements.")
+
+(defconst swift-mode:font-lock-keywords
+  `(
     ;; Attributes
     "@\\(\\sw\\|\\s_\\)*"
 
-    ;; Constants
-    ("\\<true\\>" . font-lock-constant-face)
-    ("\\<false\\>" . font-lock-constant-face)
-    ("\\<nil\\>" . font-lock-constant-face)
+    (,(regexp-opt swift-mode:constant-keywords 'words)
+     .
+     font-lock-constant-face)
 
-    ;; Keywords
-    ;; https://developer.apple.com/library/ios/documentation/Swift/Conceptual/Swift_Programming_Language/LexicalStructure.html#//apple_ref/doc/uid/TP40014097-CH30-ID410
+    (,(regexp-opt swift-mode:preprocessor-keywords 'symbols)
+     .
+     font-lock-preprocessor-face)
 
-    ;; Keywords that begin with a number sign (#)
-    ("#available\\>" . font-lock-preprocessor-face)
-    ("#colorLiteral\\>" . font-lock-preprocessor-face)
-    ("#column\\>" . font-lock-preprocessor-face)
-    ("#else\\>" . font-lock-preprocessor-face)
-    ("#elseif\\>" . font-lock-preprocessor-face)
-    ("#endif\\>" . font-lock-preprocessor-face)
-    ("#fileLiteral\\>" . font-lock-preprocessor-face)
-    ("#file\\>" . font-lock-preprocessor-face)
-    ("#function\\>" . font-lock-preprocessor-face)
-    ("#if\\>" . font-lock-preprocessor-face)
-    ("#imageLiteral\\>" . font-lock-preprocessor-face)
-    ("#keypath\\>" . font-lock-preprocessor-face)
-    ("#line\\>" . font-lock-preprocessor-face)
-    ("#selector\\>" . font-lock-preprocessor-face)
-    ("#sourceLocation\\>" . font-lock-preprocessor-face)
+    ,(regexp-opt (append swift-mode:declaration-keywords
+                         swift-mode:statement-keywords
+                         swift-mode:expression-keywords
+                         swift-mode:context-keywords) 'words)
 
-    ;; Keywords used in declarations
-    "\\<associatedtype\\>"
-    "\\<class\\>"
-    "\\<deinit\\>"
-    "\\<enum\\>"
-    "\\<extension\\>"
-    "\\<fileprivate\\>"
-    "\\<func\\>"
-    "\\<import\\>"
-    "\\<init\\>"
-    "\\<inout\\>"
-    "\\<internal\\>"
-    "\\<let\\>"
-    "\\<open\\>"
-    "\\<operator\\>"
-    "\\<private\\>"
-    "\\<protocol\\>"
-    "\\<public\\>"
-    "\\<static\\>"
-    "\\<struct\\>"
-    "\\<subscript\\>"
-    "\\<typealias\\>"
-    "\\<var\\>"
+    (,(concat "\\.\\s-*"
+              (regexp-opt swift-mode:member-functions-trailing-closure 'words)
+              "\\s-*[({]")
+     1
+     font-lock-builtin-face)
 
-    ;; Keywords used in statements
-    "\\<break\\>"
-    "\\<case\\>"
-    "\\<continue\\>"
-    "\\<default\\>"
-    "\\<defer\\>"
-    "\\<do\\>"
-    "\\<else\\>"
-    "\\<fallthrough\\>"
-    "\\<for\\>"
-    "\\<guard\\>"
-    "\\<if\\>"
-    "\\<in\\>"
-    "\\<repeat\\>"
-    "\\<return\\>"
-    "\\<switch\\>"
-    "\\<where\\>"
-    "\\<while\\>"
+    (,(concat "\\.\\s-*"
+              (regexp-opt swift-mode:member-functions 'words)
+              "\\s-*(")
+     1
+     font-lock-builtin-face)
 
-    ;; Keywords used in expressions and types (without true, false, and keywords begin with a number sign)
-    "\\<as\\>"
-    "\\<catch\\>"
-    "\\<dynamicType\\>"
-    "\\<is\\>"
-    "\\<rethrows\\>"
-    "\\<super\\>"
-    "\\<self\\>"
-    "\\<Self\\>"
-    "\\<throws\\>"
-    "\\<throw\\>"
-    "\\<try\\>"
+    (,(concat (regexp-opt swift-mode:global-functions-trailing-closure 'words)
+              "\\s-*[({]")
+     1
+     font-lock-builtin-face)
 
-    ;; Keywords reserved in particular contexts
-    "\\<Protocol\\>"
-    "\\<Type\\>"
-    "\\<and\\>"
-    "\\<assignment\\>"
-    "\\<associativity\\>"
-    "\\<convenience\\>"
-    "\\<didSet\\>"
-    "\\<dynamic\\>"
-    "\\<final\\>"
-    "\\<get\\>"
-    "\\<higherThan\\>"
-    "\\<indirect\\>"
-    "\\<infix\\>"
-    "\\<lazy\\>"
-    "\\<left\\>"
-    "\\<lowerThan\\>"
-    "\\<mutating\\>"
-    "\\<none\\>"
-    "\\<nonmutating\\>"
-    "\\<optional\\>"
-    "\\<override\\>"
-    "\\<postfix\\>"
-    "\\<precedence\\>"
-    "\\<precedencegroup\\>"
-    "\\<prefix\\>"
-    "\\<required\\>"
-    "\\<right\\>"
-    "\\<set\\>"
-    "\\<unowned\\>"
-    "\\<weak\\>"
-    "\\<willSet\\>"
+    (,(concat (regexp-opt swift-mode:global-functions 'words)
+              "\\s-*(")
+     1
+     font-lock-builtin-face)
 
-    ;; Standard library functions
-    ;; https://developer.apple.com/library/ios/documentation/Swift/Reference/Swift_StandardLibrary_Functions/index.html#//apple_ref/doc/uid/TP40016052
-    ("\\<abs\\>" . font-lock-builtin-face)
-    ("\\<alignof\\>" . font-lock-builtin-face)
-    ("\\<alignofValue\\>" . font-lock-builtin-face)
-    ("\\<anyGenerator\\>" . font-lock-builtin-face)
-    ("\\<assert\\>" . font-lock-builtin-face)
-    ("\\<assertionFailure\\>" . font-lock-builtin-face)
-    ("\\<debugPrint\\>" . font-lock-builtin-face)
-    ("\\<dump\\>" . font-lock-builtin-face)
-    ("\\<fatalError\\>" . font-lock-builtin-face)
-    ("\\<getVaList\\>" . font-lock-builtin-face)
-    ("\\<isUniquelyReferenced\\>" . font-lock-builtin-face)
-    ("\\<isUniquelyReferencedNonObjC\\>" . font-lock-builtin-face)
-    ("\\<max\\>" . font-lock-builtin-face)
-    ("\\<min\\>" . font-lock-builtin-face)
-    ("\\<numericCast\\>" . font-lock-builtin-face)
-    ("\\<precondition\\>" . font-lock-builtin-face)
-    ("\\<preconditionFailure\\>" . font-lock-builtin-face)
-    ("\\<print\\>" . font-lock-builtin-face)
-    ("\\<readLine\\>" . font-lock-builtin-face)
-    ("\\<sizeof\\>" . font-lock-builtin-face)
-    ("\\<sizeofValue\\>" . font-lock-builtin-face)
-    ("\\<strideof\\>" . font-lock-builtin-face)
-    ("\\<strideofValue\\>" . font-lock-builtin-face)
-    ("\\<swap\\>" . font-lock-builtin-face)
-    ("\\<transcode\\>" . font-lock-builtin-face)
-    ("\\<unsafeAddressOf\\>" . font-lock-builtin-face)
-    ("\\<unsafeBitCast\\>" . font-lock-builtin-face)
-    ("\\<unsafeDowncast\\>" . font-lock-builtin-face)
-    ("\\<unsafeUnwrap\\>" . font-lock-builtin-face)
-    ("\\<withExtendedLifetime\\>" . font-lock-builtin-face)
-    ("\\<withUnsafeMutablePointer\\>" . font-lock-builtin-face)
-    ("\\<withUnsafeMutablePointers\\>" . font-lock-builtin-face)
-    ("\\<withUnsafePointer\\>" . font-lock-builtin-face)
-    ("\\<withUnsafePointers\\>" . font-lock-builtin-face)
-    ("\\<withVaList\\>" . font-lock-builtin-face)
-    ("\\<zip\\>" . font-lock-builtin-face)
+    (,(concat "\\.\\s-*" (regexp-opt (append swift-mode:properties
+                                             swift-mode:enum-cases) 'words))
+     1
+     font-lock-builtin-face)
 
-    ;; keywords for build configuration statements
-    ("\\<os\\>" . font-lock-builtin-face)
-    ("\\<arch\\>" . font-lock-builtin-face)
-    ("\\<swift\\>" . font-lock-builtin-face)
-    ("\\<OSX\\>" . font-lock-builtin-face)
-    ("\\<iOS\\>" . font-lock-builtin-face)
-    ("\\<watchOS\\>" . font-lock-builtin-face)
-    ("\\<tvOS\\>" . font-lock-builtin-face)
-    ("\\<i386\\>" . font-lock-builtin-face)
-    ("\\<x86_64\\>" . font-lock-builtin-face)
-    ("\\<arm\\>" . font-lock-builtin-face)
-    ("\\<arm64\\>" . font-lock-builtin-face)
-    ("\\<iOSApplicationExtension\\>" . font-lock-builtin-face)
-    ("\\<OSXApplicationExtension\\>" . font-lock-builtin-face)
+    (,(regexp-opt (append swift-mode:build-config-keywords
+                          swift-mode:class-types
+                          swift-mode:enum-types
+                          swift-mode:foundation-protocols
+                          swift-mode:foundation-structs
+                          swift-mode:protocols
+                          swift-mode:structs
+                          swift-mode:typealiases) 'words)
+     .
+     font-lock-builtin-face)
 
-    (swift-mode:font-lock-match-function-names . font-lock-function-name-face)
-    )
+    (,(concat "\\<"
+              (regexp-opt swift-mode:precedence-groups 'non-nil)
+              "Precedence\\>")
+     .
+     font-lock-builtin-face)
+
+    (swift-mode:font-lock-match-function-names . font-lock-function-name-face))
   "Swift mode keywords for Font Lock.")
 
 
