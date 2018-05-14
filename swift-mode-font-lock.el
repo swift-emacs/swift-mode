@@ -32,14 +32,42 @@
 
 ;;; Code:
 
-(defun swift-mode:function-name-pos-p (pos)
-  "Return t if POS is at just before function name."
+(defun swift-mode:expr-pos-p (pos expr)
+  "Return t if POS is just before the given expression."
   (save-excursion
     (save-match-data
       (goto-char pos)
       (forward-comment (- (point)))
       (skip-syntax-backward "w_")
-      (looking-at "\\<\\(func\\|enum\\|struct\\|class\\|protocol\\|extension\\)\\>"))))
+      (funcall expr))))
+
+(defun swift-mode:function-name-pos-p (pos)
+  "Return t if POS is just before a function name."
+  (swift-mode:expr-pos-p
+   pos
+   (lambda ()
+     (progn
+       (skip-syntax-backward "w_")
+       (looking-at "\\<\\(func\\|enum\\|struct\\|class\\|protocol\\|extension\\)\\>")))))
+
+(defun swift-mode:property-call-pos-p (pos)
+  "Return t if POS is just before a property call."
+  (swift-mode:expr-pos-p
+   pos
+   (lambda ()
+     (progn
+       (skip-syntax-backward "w_")
+       (skip-syntax-backward ".")
+       (looking-at "\\.\\s-*\\(\\<[^[:digit:]][_[:alnum:]]*?\\)\\b\\s-*[^(]")))))
+
+(defun swift-mode:font-lock-match-expr (limit fn)
+  "Return t if POS is just before the given keyword expression."
+  (and
+   (< (point) limit)
+   (re-search-forward "\\<\\(\\sw\\|\\s_\\)+\\>" limit t)
+   (or
+    (funcall fn (match-beginning 0))
+    (swift-mode:font-lock-match-expr limit fn))))
 
 (defun swift-mode:font-lock-match-function-names (limit)
   "Move the cursor just after a function name or others.
@@ -47,12 +75,11 @@
 Others includes enum, struct, class, protocol name.
 Set `match-data', and return t if a function name found before position LIMIT.
 Return nil otherwise."
-  (and
-   (< (point) limit)
-   (re-search-forward "\\<\\(\\sw\\|\\s_\\)+\\>" limit t)
-   (or
-    (swift-mode:function-name-pos-p (match-beginning 0))
-    (swift-mode:font-lock-match-function-names limit))))
+  (swift-mode:font-lock-match-expr limit #'swift-mode:function-name-pos-p))
+
+(defun swift-mode:font-lock-match-property-calls (limit)
+  "Move the cursor just after a property call."
+  (swift-mode:font-lock-match-expr limit #'swift-mode:property-call-pos-p))
 
 ;; Keywords
 ;; https://developer.apple.com/library/ios/documentation/Swift/Conceptual/Swift_Programming_Language/LexicalStructure.html#//apple_ref/doc/uid/TP40014097-CH30-ID410
@@ -382,7 +409,18 @@ between these and the properties")
      .
      font-lock-builtin-face)
 
-    (swift-mode:font-lock-match-function-names . font-lock-function-name-face))
+    ;; Method/function calls
+    (
+     "\\b\\(\\<[^[:digit:]][_[:alnum:]]*?\\)\\b\\s-*\\??\\s-*("
+     1
+     font-lock-function-name-face
+    )
+
+    ;; Function declarations
+    (swift-mode:font-lock-match-function-names . font-lock-function-name-face)
+
+    ;; Property calls
+    (swift-mode:font-lock-match-property-calls . font-lock-variable-name-face))
   "Swift mode keywords for Font Lock.")
 
 
