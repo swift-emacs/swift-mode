@@ -113,6 +113,9 @@ otherwise.")
 (defvar swift-mode:ios-simulator-device-identifier nil
   "Device identifier of iOS simulator for building/debugging.")
 
+(defvar swift-mode:ios-project-scheme nil
+  "Scheme to use in Xcode project for building/debugging.")
+
 (defun swift-mode:command-list-to-string (cmd)
   "Concatenate the CMD unless it is a string.
 This function quotes elements appropriately."
@@ -234,7 +237,13 @@ then unquoted.
 ARGS are rest arguments, appended to the argument list."
   (with-temp-buffer
     (unless (zerop
-             (apply 'swift-mode:call-process executable args))
+             (swift-mode:do-call-process executable
+                                         nil
+                                         ;; Disregard stderr output, as it
+                                         ;; corrupts JSON.
+                                         (list t nil)
+                                         nil
+                                         args))
       (error "%s: %s" "Cannot invoke executable" (buffer-string)))
     (goto-char (point-min))
     (json-read)))
@@ -309,7 +318,7 @@ Return a directory path if found.  Return nil otherwise."
    'swift-mode:swift-project-directory-p directory))
 
 (defun swift-mode:read-project-directory ()
-  "Read a project direcotry from the minibuffer."
+  "Read a project directory from the minibuffer."
   (expand-file-name (read-directory-name "Project directory: " nil nil t)))
 
 (defun swift-mode:ensure-swift-project-directory (project-directory)
@@ -389,6 +398,7 @@ or its ancestors."
     (widget-choose "Choose a device" items)))
 
 (defun swift-mode:read-xcode-build-settings (project-directory
+                                             scheme
                                              device-identifier)
   "Read Xcode build settings in PROJECT-DIRECTORY.
 DEVICE-IDENTIFIER is used as the destination parameter for xcodebuild."
@@ -400,6 +410,7 @@ DEVICE-IDENTIFIER is used as the destination parameter for xcodebuild."
                       "-destination"
                       (concat "platform=iOS Simulator,id=" device-identifier)
                       "-sdk" "iphonesimulator"
+                      "-scheme" scheme
                       "-showBuildSettings"))
         (error "%s %s" "Cannot read Xcode build settings" (buffer-string))))
     (goto-char (point-min))
@@ -407,6 +418,28 @@ DEVICE-IDENTIFIER is used as the destination parameter for xcodebuild."
       (while (search-forward-regexp " *\\([_a-zA-Z0-9]+\\) *= *\\(.*\\)" nil t)
         (push (cons (match-string 1) (match-string 2)) settings))
       settings)))
+
+(defun swift-mode:xcodebuild-list (project-directory)
+  "Returns the contents of `xcodebuild -list' as JSON."
+  (let ((default-directory project-directory)
+        (json-array-type 'list))
+    (swift-mode:call-process-to-json
+     swift-mode:xcodebuild-executable
+     "-list"
+     "-json")))
+
+(defun swift-mode:read-project-scheme (project-directory)
+  "Reads and prompts for a project's scheme in the minibuffer."
+  (let* ((json (swift-mode:xcodebuild-list project-directory))
+         (project (cdr (assoc 'project json)))
+         (schemes (cdr (assoc 'schemes project)))
+         (choices (seq-map
+                   (lambda (scheme) (cons scheme scheme))
+                   schemes)))
+    (pcase (length schemes)
+      (1 (car schemes))
+      (0 nil)
+      (_ (widget-choose "Choose a scheme" choices)))))
 
 (defun swift-mode:locate-xcode ()
   "Return the developer path in Xcode.app.
@@ -456,13 +489,18 @@ An list ARGS are appended for builder command line arguments."
       (progress-reporter-done progress-reporter))))
 
 ;;;###autoload
-(defun swift-mode:build-ios-app (&optional project-directory device-identifier)
-  "Build a iOS app in the PROJECT-DIRECTORY.
+(defun swift-mode:build-ios-app (&optional project-directory
+                                           device-identifier
+                                           scheme)
+  "Build an iOS app in the PROJECT-DIRECTORY for the given SCHEME.
 Build it for iOS simulator device DEVICE-IDENTIFIER.
-If PROJECT-DIRECTORY is nil or omited, it is searched from `default-directory'
+If PROJECT-DIRECTORY is nil or omitted, it is searched from `default-directory'
 or its ancestors.
-If DEVICE-IDENTIFIER is nil or omited,
-the value of `swift-mode:ios-simulator-device-identifier' is used."
+If DEVICE-IDENTIFIER is nil or omitted,
+the value of `swift-mode:ios-simulator-device-identifier' is used.
+If SCHEME is nil or omitted,
+the value of `swift-mode:ios-project-scheme' is used.
+"
   (interactive
    (list
     (if current-prefix-arg
@@ -479,6 +517,11 @@ the value of `swift-mode:ios-simulator-device-identifier' is used."
            swift-mode:ios-simulator-device-identifier
            (swift-mode:read-ios-simulator-device-identifier))))
   (setq swift-mode:ios-simulator-device-identifier device-identifier)
+  (unless scheme
+    (setq scheme (or
+                  swift-mode:ios-project-scheme
+                  (swift-mode:read-project-scheme project-directory))))
+  (setq swift-mode:ios-project-scheme scheme)
 
   (with-current-buffer (get-buffer-create "*swift-mode:compilation*")
     (fundamental-mode)
@@ -490,6 +533,7 @@ the value of `swift-mode:ios-simulator-device-identifier' is used."
              (swift-mode:call-process
               swift-mode:xcodebuild-executable
               "-configuration" "Debug"
+              "-scheme" scheme
               "-destination"
               (concat "platform=iOS Simulator,id=" device-identifier)
               "-sdk" "iphonesimulator")))
@@ -665,11 +709,14 @@ PROCESS-IDENTIFIER is the process ID."
     (search-forward expected-output nil t)))
 
 ;;;###autoload
-(defun swift-mode:debug-ios-app (&optional project-directory device-identifier)
-  "Run debugger on an iOS app in the PROJECT-DIRECTORY.
-If PROJECT-DIRECTORY is nil or omited, it is searched from `default-directory'
+(defun swift-mode:debug-ios-app (&optional project-directory
+                                           device-identifier
+                                           scheme)
+  "Run debugger on an iOS app in the PROJECT-DIRECTORY for the given SCHEME.
+If PROJECT-DIRECTORY is nil or omitted, it is searched from `default-directory'
 or its ancestors.
-DEVICE-IDENTIFIER is the device identifier of the iOS simulator."
+DEVICE-IDENTIFIER is the device identifier of the iOS simulator.
+SCHEME is the name of the project scheme in Xcode."
   (interactive
    (list
     (if current-prefix-arg
@@ -686,9 +733,15 @@ DEVICE-IDENTIFIER is the device identifier of the iOS simulator."
            swift-mode:ios-simulator-device-identifier
            (swift-mode:read-ios-simulator-device-identifier))))
   (setq swift-mode:ios-simulator-device-identifier device-identifier)
+  (unless scheme
+    (setq scheme (or
+                  swift-mode:ios-project-scheme
+                  (swift-mode:read-project-scheme project-directory))))
+  (setq swift-mode:ios-project-scheme scheme)
   (let* ((build-settings
           (swift-mode:read-xcode-build-settings
            project-directory
+           scheme
            device-identifier))
          (codesigning-folder-path
           (cdr (assoc "CODESIGNING_FOLDER_PATH" build-settings)))
@@ -698,7 +751,9 @@ DEVICE-IDENTIFIER is the device identifier of the iOS simulator."
       (error "Cannot get codesigning folder path"))
     (unless product-bundle-identifier
       (error "Cannot get product bundle identifier"))
-    (swift-mode:build-ios-app project-directory device-identifier)
+    (swift-mode:build-ios-app project-directory
+                              device-identifier
+                              scheme)
 
     (let* ((devices (swift-mode:list-ios-simulator-devices))
            (target-device
