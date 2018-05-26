@@ -826,6 +826,29 @@ In comments or strings, skip a sentence.  Otherwise, skip a stateement."
      (t
       (swift-mode:backward-sentence-inside-code)))))
 
+(defmacro swift-mode:with-temp-comment-buffer (&rest body)
+  "Eval BODY inside a temporary buffer keeping sentence related variables."
+  (declare (indent 0) (debug t))
+  (let ((current-sentence-end (make-symbol "current-sentence-end"))
+        (current-paragraph-start (make-symbol "current-paragraph-start"))
+        (current-paragraph-separate (make-symbol "current-paragraph-separate"))
+        (current-paragraph-ignore-fill-prefix
+         (make-symbol "current-paragraph-ignore-fill-prefix"))
+        (current-fill-prefix (make-symbol "current-fill-prefix")))
+    `(let ((,current-sentence-end (sentence-end))
+           (,current-paragraph-start paragraph-start)
+           (,current-paragraph-separate paragraph-separate)
+           (,current-paragraph-ignore-fill-prefix paragraph-ignore-fill-prefix)
+           (,current-fill-prefix fill-prefix))
+       (with-temp-buffer
+         (setq-local sentence-end ,current-sentence-end)
+         (setq-local paragraph-start ,current-paragraph-start)
+         (setq-local paragraph-separate ,current-paragraph-separate)
+         (setq-local paragraph-ignore-fill-prefix
+                     ,current-paragraph-ignore-fill-prefix)
+         (setq-local fill-prefix ,current-fill-prefix)
+         ,@body))))
+
 (defun swift-mode:forward-sentence-inside-comment (is-single-line)
   "Skip forward a sentence in a comment.
 
@@ -943,29 +966,6 @@ IS-SINGLE-LINE should be non-nil when called inside a single-line comment."
         (progn
           (goto-char comment-block-beginning-position)
           (swift-mode:backward-sentence-inside-code t)))))
-
-(defmacro swift-mode:with-temp-comment-buffer (&rest body)
-  "Eval BODY inside a temporary buffer keeping sentence related variables."
-  (declare (indent 0) (debug t))
-  (let ((current-sentence-end (make-symbol "current-sentence-end"))
-        (current-paragraph-start (make-symbol "current-paragraph-start"))
-        (current-paragraph-separate (make-symbol "current-paragraph-separate"))
-        (current-paragraph-ignore-fill-prefix
-         (make-symbol "current-paragraph-ignore-fill-prefix"))
-        (current-fill-prefix (make-symbol "current-fill-prefix")))
-    `(let ((,current-sentence-end (sentence-end))
-           (,current-paragraph-start paragraph-start)
-           (,current-paragraph-separate paragraph-separate)
-           (,current-paragraph-ignore-fill-prefix paragraph-ignore-fill-prefix)
-           (,current-fill-prefix fill-prefix))
-       (with-temp-buffer
-         (setq-local sentence-end ,current-sentence-end)
-         (setq-local paragraph-start ,current-paragraph-start)
-         (setq-local paragraph-separate ,current-paragraph-separate)
-         (setq-local paragraph-ignore-fill-prefix
-                     ,current-paragraph-ignore-fill-prefix)
-         (setq-local fill-prefix ,current-fill-prefix)
-         ,@body))))
 
 (defun swift-mode:comment-block-end-position-single-line ()
   "Return the position of the end of a single-line comment block.
