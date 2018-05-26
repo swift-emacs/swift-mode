@@ -38,11 +38,16 @@
 (require 'subr-x)
 (require 'wid-edit)
 
+;;;###autoload
+(defgroup swift-mode:repl nil
+  "REPL."
+  :group 'swift)
+
 (defcustom swift-mode:repl-executable
   "xcrun swift"
   "Path to the Swift CLI.  The string is splitted by spaces, then unquoted."
   :type '(choice string (list string))
-  :group 'swift
+  :group 'swift-mode:repl
   :safe 'stringp)
 
 (defcustom swift-mode:swift-package-executable
@@ -50,7 +55,7 @@
   "Path to the Swift command for package manipulation.
 The string is splitted by spaces, then unquoted."
   :type '(choice string (list string))
-  :group 'swift
+  :group 'swift-mode:repl
   :safe 'stringp)
 
 (defcustom swift-mode:swift-build-executable
@@ -58,7 +63,7 @@ The string is splitted by spaces, then unquoted."
   "Path to the Swift command for building.
 The string is splitted by spaces, then unquoted."
   :type '(choice string (list string))
-  :group 'swift
+  :group 'swift-mode:repl
   :safe 'stringp)
 
 (defcustom swift-mode:debugger-executable
@@ -66,7 +71,7 @@ The string is splitted by spaces, then unquoted."
   "Path to the debugger command.
 The string is splitted by spaces, then unquoted."
   :type '(choice string (list string))
-  :group 'swift
+  :group 'swift-mode:repl
   :safe 'stringp)
 
 (defcustom swift-mode:simulator-controller-executable
@@ -74,7 +79,7 @@ The string is splitted by spaces, then unquoted."
   "Path to the simulator controller command.
 The string is splitted by spaces, then unquoted."
   :type '(choice string (list string))
-  :group 'swift
+  :group 'swift-mode:repl
   :safe 'stringp)
 
 (defcustom swift-mode:xcodebuild-executable
@@ -82,7 +87,7 @@ The string is splitted by spaces, then unquoted."
   "Path to the Xcode builder.
 The string is splitted by spaces, then unquoted."
   :type '(choice string (list string))
-  :group 'swift
+  :group 'swift-mode:repl
   :safe 'stringp)
 
 (defcustom swift-mode:xcode-select-executable
@@ -90,13 +95,13 @@ The string is splitted by spaces, then unquoted."
   "Path to the Xcode selector.
 The string is splitted by spaces, then unquoted."
   :type '(choice string (list string))
-  :group 'swift
+  :group 'swift-mode:repl
   :safe 'stringp)
 
 (defcustom swift-mode:debugger-prompt-regexp "^(lldb) +\\|^[0-9]+> +"
   "Regexp to search a debugger prompt."
   :type 'string
-  :group 'swift
+  :group 'swift-mode:repl
   :safe 'stringp)
 
 (defvar swift-mode:repl-buffer nil
