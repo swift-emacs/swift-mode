@@ -32,6 +32,95 @@
 
 ;;; Code:
 
+;;; Customizations
+
+;;;###autoload
+(defgroup swift-mode:faces nil
+  "Font faces."
+  :group 'swift)
+
+(defface swift-mode:constant-keyword-face
+  '((t . (:inherit font-lock-constant-face)))
+  "Face for highlighting constant keywords
+
+That is, true, false, and nil."
+  :group 'swift-mode:faces)
+
+(defface swift-mode:preprocessor-keyword-face
+  '((t . (:inherit font-lock-preprocessor-face)))
+  "Face for highlighting preprocessor keywords.
+
+Exmpale: #if, #endif, and #selector."
+  :group 'swift-mode:faces)
+
+(defface swift-mode:keyword-face
+  '((t . (:inherit font-lock-keyword-face)))
+  "Face for highlighting keywords."
+  :group 'swift-mode:faces)
+
+(defface swift-mode:builtin-method-trailing-closure-face
+  '((t . (:inherit font-lock-builtin-face)))
+  "Face for highlighting builtin methods with trailing closure."
+  :group 'swift-mode:faces)
+
+(defface swift-mode:builtin-method-face
+  '((t . (:inherit font-lock-builtin-face)))
+  "Face for highlighting builtin methods."
+  :group 'swift-mode:faces)
+
+(defface swift-mode:builtin-function-trailing-closure-face
+  '((t . (:inherit font-lock-builtin-face)))
+  "Face for highlighting builtin functions with trailing closure."
+  :group 'swift-mode:faces)
+
+(defface swift-mode:builtin-function-face
+  '((t . (:inherit font-lock-builtin-face)))
+  "Face for highlighting builtin functions."
+  :group 'swift-mode:faces)
+
+(defface swift-mode:builtin-propertie-face
+  '((t . (:inherit font-lock-builtin-face)))
+  "Face for highlighting builtin properties."
+  :group 'swift-mode:faces)
+
+(defface swift-mode:builtin-enum-case-face
+  '((t . (:inherit font-lock-builtin-face)))
+  "Face for highlighting builtin enum cases."
+  :group 'swift-mode:faces)
+
+(defface swift-mode:build-config-keyword-face
+  '((t . (:inherit font-lock-builtin-face)))
+  "Face for highlighting build configuration keywords."
+  :group 'swift-mode:faces)
+
+(defface swift-mode:builtin-type-face
+  '((t . (:inherit font-lock-builtin-face)))
+  "Face for highlighting builtin types."
+  :group 'swift-mode:faces)
+
+(defface swift-mode:builtin-precedence-group-face
+  '((t . (:inherit font-lock-builtin-face)))
+  "Face for highlighting builtin precedence groups."
+  :group 'swift-mode:faces)
+
+(defface swift-mode:function-call-face
+  '((t . (:inherit font-lock-function-name-face)))
+  "Face for highlighting function calls."
+  :group 'swift-mode:faces)
+
+(defface swift-mode:function-name-face
+  '((t . (:inherit font-lock-function-name-face)))
+  "Face for highlighting function names."
+  :group 'swift-mode:faces)
+
+(defface swift-mode:property-access-face
+  '((t . (:inherit font-lock-variable-name-face)))
+  "Face for highlighting property accesses."
+  :group 'swift-mode:faces)
+
+
+;;; Supporting functions
+
 (defun swift-mode:function-name-pos-p (pos limit)
   "Return t if POS is just before the name of a function declaration.
 
@@ -117,6 +206,8 @@ Return nil otherwise."
 Set `match-data', and return t if a property access found before position LIMIT.
 Return nil otherwise."
   (swift-mode:font-lock-match-expr limit #'swift-mode:property-access-pos-p))
+
+;;; Keywords and standard identifiers
 
 ;; Keywords
 ;; https://developer.apple.com/library/ios/documentation/Swift/Conceptual/Swift_Programming_Language/LexicalStructure.html#//apple_ref/doc/uid/TP40014097-CH30-ID410
@@ -387,6 +478,8 @@ Excludes true, false, and keywords begin with a number sign.")
     "arm64" "iOSApplicationExtension" "OSXApplicationExtension")
   "Keywords for build configuration statements.")
 
+;;; font-lock definition
+
 (defconst swift-mode:font-lock-keywords
   `(
     ;; Attributes
@@ -394,48 +487,55 @@ Excludes true, false, and keywords begin with a number sign.")
 
     (,(regexp-opt swift-mode:constant-keywords 'words)
      .
-     font-lock-constant-face)
+     'swift-mode:constant-keyword-face)
 
     (,(regexp-opt swift-mode:preprocessor-keywords 'symbols)
      .
-     font-lock-preprocessor-face)
+     'swift-mode:preprocessor-keyword-face)
 
-    ,(regexp-opt (append swift-mode:declaration-keywords
-                         swift-mode:statement-keywords
-                         swift-mode:expression-keywords
-                         swift-mode:context-keywords)
-                 'words)
+    (,(regexp-opt (append swift-mode:declaration-keywords
+                          swift-mode:statement-keywords
+                          swift-mode:expression-keywords
+                          swift-mode:context-keywords)
+                  'words)
+     .
+     'swift-mode:keyword-face)
 
     (,(concat "\\."
               (regexp-opt swift-mode:member-functions-trailing-closure 'words)
               "\\s-*[({]")
      1
-     font-lock-builtin-face)
+     'swift-mode:builtin-method-trailing-closure-face)
 
     (,(concat "\\."
               (regexp-opt swift-mode:member-functions 'words)
               "\\s-*(")
      1
-     font-lock-builtin-face)
+     'swift-mode:builtin-method-face)
 
     (,(concat (regexp-opt swift-mode:global-functions-trailing-closure 'words)
               "\\s-*[({]")
      1
-     font-lock-builtin-face)
+     'swift-mode:builtin-function-trailing-closure-face)
 
     (,(concat (regexp-opt swift-mode:global-functions 'words)
               "\\s-*(")
      1
-     font-lock-builtin-face)
+     'swift-mode:builtin-function-face)
 
-    (,(concat "\\." (regexp-opt (append swift-mode:properties
-                                             swift-mode:enum-cases)
-                                     'words))
+    (,(concat "\\." (regexp-opt swift-mode:properties 'words))
      1
-     font-lock-builtin-face)
+     'swift-mode:builtin-propertie-face)
 
-    (,(regexp-opt (append swift-mode:build-config-keywords
-                          swift-mode:class-types
+    (,(concat "\\." (regexp-opt swift-mode:enum-cases 'words))
+     1
+     'swift-mode:builtin-enum-case-face)
+
+    (,(regexp-opt swift-mode:build-config-keywords 'words)
+     .
+     'swift-mode:build-config-keyword-face)
+
+    (,(regexp-opt (append swift-mode:class-types
                           swift-mode:enum-types
                           swift-mode:foundation-protocols
                           swift-mode:foundation-structs
@@ -444,26 +544,28 @@ Excludes true, false, and keywords begin with a number sign.")
                           swift-mode:typealiases)
                   'words)
      .
-     font-lock-builtin-face)
+     'swift-mode:builtin-type-face)
 
     (,(concat "\\<"
               (regexp-opt swift-mode:precedence-groups 'non-nil)
               "Precedence\\>")
      .
-     font-lock-builtin-face)
+     'swift-mode:builtin-precedence-group-face)
 
     ;; Method/function calls
     ("\\<\\(\\(\\sw\\|\\s_\\)+\\)\\>\\??\\s-*("
      1
-     font-lock-function-name-face)
+     'swift-mode:function-call-face)
 
     ;; Function declarations
-    (swift-mode:font-lock-match-function-names . font-lock-function-name-face)
+    (swift-mode:font-lock-match-function-names
+     .
+     'swift-mode:function-name-face)
 
     ;; Property accesses
     (swift-mode:font-lock-match-property-accesss
      .
-     font-lock-variable-name-face))
+     'swift-mode:property-access-face))
   "Swift mode keywords for Font Lock.")
 
 
