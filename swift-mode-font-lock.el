@@ -32,54 +32,91 @@
 
 ;;; Code:
 
-(defun swift-mode:expr-pos-p (pos expr)
-  "Return t if POS is just before the given expression."
-  (save-excursion
-    (save-match-data
-      (goto-char pos)
-      (forward-comment (- (point)))
-      (skip-syntax-backward "w_")
-      (funcall expr))))
+(defun swift-mode:function-name-pos-p (pos limit)
+  "Return t if POS is just before the name of a function declaration.
 
-(defun swift-mode:function-name-pos-p (pos)
-  "Return t if POS is just before a function name."
-  (swift-mode:expr-pos-p
-   pos
-   (lambda ()
-     (progn
-       (skip-syntax-backward "w_")
-       (looking-at "\\<\\(func\\|enum\\|struct\\|class\\|protocol\\|extension\\)\\>")))))
+This function does not search beyond LIMIT."
+  (goto-char pos)
+  (forward-comment (- (point)))
+  (skip-syntax-backward "w_")
+  (looking-at
+   "\\<\\(func\\|enum\\|struct\\|class\\|protocol\\|extension\\)\\>"))
 
-(defun swift-mode:property-call-pos-p (pos)
-  "Return t if POS is just before a property call."
-  (swift-mode:expr-pos-p
-   pos
-   (lambda ()
-     (progn
-       (skip-syntax-backward "w_")
-       (skip-syntax-backward ".")
-       (looking-at "\\.\\s-*\\(\\<[^[:digit:]][_[:alnum:]]*?\\)\\b\\s-*[^(]")))))
+(defun swift-mode:property-access-pos-p (pos limit)
+  "Return t if POS is just before the property name of a member expression.
 
-(defun swift-mode:font-lock-match-expr (limit fn)
-  "Return t if POS is just before the given keyword expression."
+This function does not search beyond LIMIT."
+  ;; foo.bar    // property access
+  ;; foo .bar   // property access
+  ;; foo . bar  // INVALID
+  ;; foo. bar   // INVALID
+  ;; foo?.bar   // property access
+  ;; foo?. bar  // INVALID
+  ;; foo ?.bar  // INVALID, but highlight as a property access anyway
+  ;; foo? .bar  // property access
+  ;; foo.bar()  // NOT property access
+  ;; foo.bar () // NOT property access
+  ;; foo.1      // property access
+  ;; foo1.1     // property access
+  ;; 1.1        // NOT property access
+  ;; .1         // NOT property access
+  ;; $1.1       // property access
+  ;; .x         // property access
+  (and
+   ;; Just after dot
+   (progn
+     (goto-char pos)
+     (eq (char-before) ?.))
+
+   ;; Not floating-point literal
+   (progn
+     (goto-char pos)
+     (backward-char)
+     (skip-syntax-backward "w_")
+     (not (looking-at "[0-9]*\\.[0-9]+\\>")))
+
+   ;; Not method/function call
+   (progn
+     (goto-char pos)
+     (skip-syntax-forward "w_" limit)
+     (skip-chars-forward "?")
+     ;; I don't sure we can use `forward-comment' beyond limit, so assuming
+     ;; no comments here.
+     (skip-syntax-forward " " limit)
+     (not (eq (char-after) ?\()))))
+
+(defun swift-mode:font-lock-match-expr (limit match-p)
+  "Move the cursor just after an identifier that satisfy given predicate.
+
+Set `match-data', and return t if the identifier found before position LIMIT.
+Return nil otherwise.
+
+The predicate MATCH-P is called with two arguments:
+- the position of the identifier, and
+- the limit of search functions."
   (and
    (< (point) limit)
    (re-search-forward "\\<\\(\\sw\\|\\s_\\)+\\>" limit t)
    (or
-    (funcall fn (match-beginning 0))
-    (swift-mode:font-lock-match-expr limit fn))))
+    (save-excursion
+      (save-match-data
+        (funcall match-p (match-beginning 0) limit)))
+    (swift-mode:font-lock-match-expr limit match-p))))
 
 (defun swift-mode:font-lock-match-function-names (limit)
   "Move the cursor just after a function name or others.
 
-Others includes enum, struct, class, protocol name.
-Set `match-data', and return t if a function name found before position LIMIT.
+Others includes enum, struct, class, protocol, and extension name.
+Set `match-data', and return t if a function name or others found before
+position LIMIT.
 Return nil otherwise."
   (swift-mode:font-lock-match-expr limit #'swift-mode:function-name-pos-p))
 
-(defun swift-mode:font-lock-match-property-calls (limit)
-  "Move the cursor just after a property call."
-  (swift-mode:font-lock-match-expr limit #'swift-mode:property-call-pos-p))
+(defun swift-mode:font-lock-match-property-accesss (limit)
+  "Move the cursor just after a property access.
+Set `match-data', and return t if a property access found before position LIMIT.
+Return nil otherwise."
+  (swift-mode:font-lock-match-expr limit #'swift-mode:property-access-pos-p))
 
 ;; Keywords
 ;; https://developer.apple.com/library/ios/documentation/Swift/Conceptual/Swift_Programming_Language/LexicalStructure.html#//apple_ref/doc/uid/TP40014097-CH30-ID410
@@ -90,8 +127,9 @@ Return nil otherwise."
     "withUnsafeMutableBufferPointer" "withUnsafeMutablePointers"
     "withUnsafeMutablePointerToElements" "withUnsafeMutablePointerToHeader"
     "withUnsafeBufferPointer" "withUTF8Buffer" "min" "map" "max" "compactMap")
-  "Member functions in the standard library in Swift 3 which may be used
-  with trailing closures and no parentheses.")
+  "Member functions with closures in the standard library in Swift 3.
+
+They may be used with trailing closures and no parentheses.")
 
 (defconst swift-mode:member-functions
   '("symmetricDifference" "storeBytes" "starts" "stride" "sortInPlace"
@@ -139,8 +177,9 @@ Return nil otherwise."
 
 (defconst swift-mode:global-functions-trailing-closure
   '("anyGenerator" "autoreleasepool")
-  "Global functions available in Swift 3 which may be used with trailing
-  closures and no parentheses.")
+  "Global functions with closures available in Swift 3.
+
+They may be used with trailing closures and no parentheses.")
 
 (defconst swift-mode:global-functions
   '("stride" "strideof" "strideofValue" "sizeof" "sizeofValue" "sequence" "swap"
@@ -187,8 +226,9 @@ Return nil otherwise."
     "point" "plus" "error" "emptyInput" "view" "quietNaN" "float"
     "attributedString" "awayFromZero" "rectangle" "range" "generated" "minus"
     "bool" "bezierPath")
-  "Enum cases in the standard library - note that there is some overlap
-between these and the properties")
+  "Enum cases in the standard library.
+
+Note that there is some overlap between these and the properties.")
 
 (defconst swift-mode:enum-types
   '("ImplicitlyUnwrappedOptional" "Representation" "MemoryLayout"
@@ -303,8 +343,7 @@ between these and the properties")
   "Precedence groups in the standard library.")
 
 (defconst swift-mode:constant-keywords
-  '(
-    "true" "false" "nil"
+  '("true" "false" "nil"
     ;; CommandLine is an enum, but it acts like a constant.
     "CommandLine" "Process"
     ;; The return type of a function that never returns.
@@ -331,8 +370,9 @@ between these and the properties")
 (defconst swift-mode:expression-keywords
   '("as" "catch" "dynamicType" "is" "rethrows" "super" "self" "Self" "throws"
     "throw" "try")
-  "Keywords used in expressions and types (without true, false, and
-  keywords begin with a number sign)")
+  "Keywords used in expressions and types.
+
+Excludes true, false, and keywords begin with a number sign.")
 
 (defconst swift-mode:context-keywords
   '("Protocol" "Type" "and" "assignment" "associativity" "convenience" "didSet"
@@ -363,15 +403,16 @@ between these and the properties")
     ,(regexp-opt (append swift-mode:declaration-keywords
                          swift-mode:statement-keywords
                          swift-mode:expression-keywords
-                         swift-mode:context-keywords) 'words)
+                         swift-mode:context-keywords)
+                 'words)
 
-    (,(concat "\\.\\s-*"
+    (,(concat "\\."
               (regexp-opt swift-mode:member-functions-trailing-closure 'words)
               "\\s-*[({]")
      1
      font-lock-builtin-face)
 
-    (,(concat "\\.\\s-*"
+    (,(concat "\\."
               (regexp-opt swift-mode:member-functions 'words)
               "\\s-*(")
      1
@@ -387,8 +428,9 @@ between these and the properties")
      1
      font-lock-builtin-face)
 
-    (,(concat "\\.\\s-*" (regexp-opt (append swift-mode:properties
-                                             swift-mode:enum-cases) 'words))
+    (,(concat "\\." (regexp-opt (append swift-mode:properties
+                                             swift-mode:enum-cases)
+                                     'words))
      1
      font-lock-builtin-face)
 
@@ -399,7 +441,8 @@ between these and the properties")
                           swift-mode:foundation-structs
                           swift-mode:protocols
                           swift-mode:structs
-                          swift-mode:typealiases) 'words)
+                          swift-mode:typealiases)
+                  'words)
      .
      font-lock-builtin-face)
 
@@ -410,17 +453,17 @@ between these and the properties")
      font-lock-builtin-face)
 
     ;; Method/function calls
-    (
-     "\\b\\(\\<[^[:digit:]][_[:alnum:]]*?\\)\\b\\s-*\\??\\s-*("
+    ("\\<\\(\\(\\sw\\|\\s_\\)+\\)\\>\\??\\s-*("
      1
-     font-lock-function-name-face
-    )
+     font-lock-function-name-face)
 
     ;; Function declarations
     (swift-mode:font-lock-match-function-names . font-lock-function-name-face)
 
-    ;; Property calls
-    (swift-mode:font-lock-match-property-calls . font-lock-variable-name-face))
+    ;; Property accesses
+    (swift-mode:font-lock-match-property-accesss
+     .
+     font-lock-variable-name-face))
   "Swift mode keywords for Font Lock.")
 
 
