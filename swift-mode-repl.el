@@ -646,7 +646,7 @@ STRING is passed to the command."
        (swift-mode:join-path project-directory ".build" "debug" package-name)))
      nil t)
     (swift-mode:enqueue-repl-commands
-     "breakpoint set --one-shot --file main.swift --name main"
+     "breakpoint set --one-shot true --file main.swift --name main"
      "run"
      "repl")))
 
@@ -854,7 +854,7 @@ the value of `swift-mode:ios-project-scheme' is used."
          "platform select ios-simulator"
          (concat "platform connect " device-identifier)
          (concat "process attach --pid " (number-to-string process-identifier))
-         "breakpoint set --one-shot --name UIApplicationMain"
+         "breakpoint set --one-shot true --name UIApplicationMain"
          "cont"
          (cons
           (lambda (_string)
