@@ -109,6 +109,7 @@ The string is splitted by spaces, then unquoted."
 
 (defvar swift-mode:repl-command-queue nil
   "List of strings to be executed on REPL prompts.
+
 Use `swift-mode:enqueue-repl-commands' to enqueue commands.
 If an element is a cons cell, its car is used as a regexp for prompt and
 cdr is used as a command.  If its car is a function, it is called to search
@@ -123,28 +124,31 @@ otherwise.")
 
 (defun swift-mode:command-list-to-string (cmd)
   "Concatenate the CMD unless it is a string.
+
 This function quotes elements appropriately."
   (if (stringp cmd) cmd (combine-and-quote-strings cmd)))
 
 (defun swift-mode:command-string-to-list (cmd)
   "Split the CMD unless it is a list.
+
 This function respects quotes."
   (if (listp cmd) cmd (split-string-and-unquote cmd)))
 
 ;;;###autoload
 (defun swift-mode:run-repl (cmd &optional dont-switch keep-default)
   "Run a Swift REPL process.
+
 This function input and output via buffer `*CMD*' where CMD is replaced with
 the CMD given.
-If there is a process already running in `*CMD*', switch to that buffer.
-CMD is a string or a list, interpreted as a command line. The default value is
-`swift-mode:repl-executable'. This function updates the buffer local variable
-`swift-mode:repl-executable' with the given CMD unless KEEP-DEFAULT is non-nil,
+If there is a process already running in `*CMD*', and DONT-SWITCH is nil,
+switch to that buffer.
+CMD is a string or a list, interpreted as a command line.  The default value is
+`swift-mode:repl-executable'.  This function updates the buffer local variable
+`swift-mode:repl-executable' with the given CMD if KEEP-DEFAULT is nil,
 so it will be used as the default value for the next invocatoin in the current
 buffer.
-If DONT-SWITCH is non-nil, cursor will stay in current buffer.
 If KEEP-DEFAULT is non-nil, the `swift-mode:repl-executable' and the global
-variable `swift-mode:repl-buffer' are not updated. The buffer local variable
+variable `swift-mode:repl-buffer' are not updated.  The buffer local variable
 `swift-mode:repl-buffer' is always updated.
 Runs the hook `swift-repl-mode-hook' \(after the `comint-mode-hook' is run).
 \(Type \\[describe-mode] in the process buffer for a list of commands.)"
@@ -180,6 +184,7 @@ Runs the hook `swift-repl-mode-hook' \(after the `comint-mode-hook' is run).
 ;;;###autoload
 (defun swift-mode:send-region (start end)
   "Send the current region to the inferior swift process.
+
 START and END define region within current buffer"
   (interactive "r")
   (swift-mode:run-repl swift-mode:repl-executable t t)
@@ -197,15 +202,16 @@ START and END define region within current buffer"
 
 A REPL can be fired up with M-x swift-mode:run-repl or M-x run-swift.
 
-Customization: Entry to this mode runs the hooks on comint-mode-hook and
-swift-repl-mode-hook (in that order).
+Customization: Entry to this mode runs the hooks on `comint-mode-hook' and
+`swift-repl-mode-hook' (in that order).
 
 You can send text to the REPL process from other buffers containing source.
-    swift-mode:send-region sends the current region to the REPL process,
-    swift-mode:send-buffer sends the current buffer to the REPL process.")
+`swift-mode:send-region' sends the current region to the REPL process,
+`swift-mode:send-buffer' sends the current buffer to the REPL process.")
 
 (defun swift-mode:call-process (executable &rest args)
   "Call EXECUTABLE synchronously in separate process.
+
 EXECUTABLE may be a string or a list.  The string is splitted by spaces,
 then unquoted.
 ARGS are rest arguments, appended to the argument list.
@@ -214,6 +220,7 @@ Returns the exit status."
 
 (defun swift-mode:call-process-async (executable &rest args)
   "Call EXECUTABLE asynchronously in separate process.
+
 EXECUTABLE may be a string or a list.  The string is splitted by spaces,
 then unquoted.
 ARGS are rest arguments, appended to the argument list."
@@ -221,6 +228,7 @@ ARGS are rest arguments, appended to the argument list."
 
 (defun swift-mode:do-call-process (executable infile destination display args)
   "Wrapper for `call-process'.
+
 EXECUTABLE may be a string or a list.  The string is splitted by spaces,
 then unquoted.
 For INFILE, DESTINATION, DISPLAY, see `call-process'.
@@ -236,6 +244,7 @@ Returns the exit status."
 
 (defun swift-mode:call-process-to-json (executable &rest args)
   "Call EXECUTABLE synchronously in separate process.
+
 The output is parsed as a JSON document.
 EXECUTABLE may be a string or a list.  The string is splitted by spaces,
 then unquoted.
@@ -255,6 +264,7 @@ ARGS are rest arguments, appended to the argument list."
 
 (defun swift-mode:describe-package (project-directory)
   "Read the package definition from the manifest file Package.swift.
+
 The manifest file is searched from the PROJECT-DIRECTORY, defaults to
 `default-directory', or its ancestors.
 Return a JSON object."
@@ -265,6 +275,7 @@ Return a JSON object."
 
 (defun swift-mode:read-main-module (project-directory)
   "Read the main module description from the manifest file Package.swift.
+
 The manifest file is searched from the PROJECT-DIRECTORY, defaults to
 `default-directory', or its ancestors."
   (let* ((description (swift-mode:describe-package project-directory))
@@ -275,24 +286,27 @@ The manifest file is searched from the PROJECT-DIRECTORY, defaults to
 
 (defun swift-mode:read-package-name (project-directory)
   "Read the package name from the manifest file Package.swift.
+
 The manifest file is searched from the PROJECT-DIRECTORY, defaults to
 `default-directory', or its ancestors."
   (cdr (assoc 'name (swift-mode:read-main-module project-directory))))
 
 (defun swift-mode:read-c99-name (project-directory)
   "Read the C99 name from the manifest file Package.swift.
+
 The manifest file is searched from the PROJECT-DIRECTORY, defaults to
 `default-directory', or its ancestors."
   (cdr (assoc 'c99name (swift-mode:read-main-module project-directory))))
 
 (defun swift-mode:read-module-type (project-directory)
   "Read the module type from the manifest file Package.swift.
+
 The manifest file is searched from the PROJECT-DIRECTORY, defaults to
 `default-directory', or its ancestors."
   (cdr (assoc 'type (swift-mode:read-main-module project-directory))))
 
 (defun swift-mode:join-path (directory &rest components)
-  "Append each path components in COMPONENTS after DIRECTORY."
+  "Make path string for DIRECTORY followed by COMPONENTS."
   (seq-reduce
    (lambda (directory component) (expand-file-name component directory))
    components
@@ -302,6 +316,7 @@ The manifest file is searched from the PROJECT-DIRECTORY, defaults to
                                                    &optional
                                                    directory)
   "Find the nearest ancestor-or-self directory satisfying a PREDICATE.
+
 Traverse up from DIRECTORY up to the root directory.
 Return a directory satisfying the PREDICATE if exists.  Otherwise, return nil."
   (unless directory (setq directory default-directory))
@@ -318,6 +333,7 @@ Return a directory satisfying the PREDICATE if exists.  Otherwise, return nil."
 
 (defun swift-mode:find-swift-project-directory (&optional directory)
   "Find a file Package.swift in the DIRECTORY or its ancestors.
+
 Return a directory path if found.  Return nil otherwise."
   (swift-mode:find-ancestor-or-self-directory
    'swift-mode:swift-project-directory-p directory))
@@ -328,6 +344,7 @@ Return a directory path if found.  Return nil otherwise."
 
 (defun swift-mode:ensure-swift-project-directory (project-directory)
   "Check PROJECT-DIRECTORY contains the manifest file Package.swift.
+
 If PROJECT-DIRECTORY is nil, this function searches it from `default-directory'
 or its ancestors."
   (unless project-directory
@@ -348,18 +365,21 @@ or its ancestors."
 
 (defun swift-mode:find-xcode-project-directory (&optional directory)
   "Find a file *.xcodeproj in the DIRECTORY or its ancestors.
+
 Return a directory path if found.  Return nil otherwise."
   (swift-mode:find-ancestor-or-self-directory
    'swift-mode:xcode-project-directory-p directory))
 
 (defun swift-mode:find-xcode-workspace-directory (&optional directory)
   "Find a file *.xcworkspace in the DIRECTORY or its ancestors.
+
 Return a directory path if found.  Return nil otherwise."
   (swift-mode:find-ancestor-or-self-directory
    'swift-mode:xcode-workspace-directory-p directory))
 
 (defun swift-mode:ensure-xcode-project-directory (project-directory)
   "Check PROJECT-DIRECTORY contains *.xcworkspace or *.xcodeproj.
+
 If PROJECT-DIRECTORY is nil, this function searches it from `default-directory'
 or its ancestors."
   (unless project-directory
@@ -403,10 +423,12 @@ or its ancestors."
     (widget-choose "Choose a device" items)))
 
 (defun swift-mode:read-xcode-build-settings (project-directory
-                                             scheme
-                                             device-identifier)
+                                             device-identifier
+                                             scheme)
   "Read Xcode build settings in PROJECT-DIRECTORY.
-DEVICE-IDENTIFIER is used as the destination parameter for xcodebuild."
+
+DEVICE-IDENTIFIER is used as the destination parameter for xcodebuild.
+SCHEME is the name of the project scheme in Xcode."
   (with-temp-buffer
     (let ((default-directory project-directory))
       (unless (zerop (swift-mode:call-process
@@ -425,7 +447,7 @@ DEVICE-IDENTIFIER is used as the destination parameter for xcodebuild."
       settings)))
 
 (defun swift-mode:xcodebuild-list (project-directory)
-  "Returns the contents of `xcodebuild -list' as JSON."
+  "Return the contents of `xcodebuild -list' in PROJECT-DIRECTORY as JSON."
   (let ((default-directory project-directory)
         (json-array-type 'list))
     (swift-mode:call-process-to-json
@@ -434,7 +456,9 @@ DEVICE-IDENTIFIER is used as the destination parameter for xcodebuild."
      "-json")))
 
 (defun swift-mode:read-project-scheme (project-directory)
-  "Reads and prompts for a project's scheme in the minibuffer."
+  "Read and prompt for a project's scheme in the minibuffer.
+
+xcodebuild is executed in PROJECT-DIRECTORY."
   (let* ((json (swift-mode:xcodebuild-list project-directory))
          (project (cdr (assoc 'project json)))
          (schemes (cdr (assoc 'schemes project)))
@@ -448,6 +472,7 @@ DEVICE-IDENTIFIER is used as the destination parameter for xcodebuild."
 
 (defun swift-mode:locate-xcode ()
   "Return the developer path in Xcode.app.
+
 Typically, it is /Applications/Xcode.app/Contents/Developer."
   (string-trim-right
    (with-output-to-string
@@ -461,6 +486,7 @@ Typically, it is /Applications/Xcode.app/Contents/Developer."
 ;;;###autoload
 (defun swift-mode:build-swift-module (&optional project-directory args)
   "Build a Swift module in the PROJECT-DIRECTORY.
+
 If PROJECT-DIRECTORY is nil or omited, it is searched from `default-directory'
 or its ancestors.
 An list ARGS are appended for builder command line arguments."
@@ -497,23 +523,27 @@ An list ARGS are appended for builder command line arguments."
 (defun swift-mode:build-ios-app (&optional project-directory
                                            device-identifier
                                            scheme)
-  "Build an iOS app in the PROJECT-DIRECTORY for the given SCHEME.
-Build it for iOS simulator device DEVICE-IDENTIFIER.
+  "Build an iOS app in the PROJECT-DIRECTORY.
+
+Build it for iOS simulator device DEVICE-IDENTIFIER for the given SCHEME.
 If PROJECT-DIRECTORY is nil or omitted, it is searched from `default-directory'
 or its ancestors.
-If DEVICE-IDENTIFIER is nil or omitted,
-the value of `swift-mode:ios-simulator-device-identifier' is used.
-If SCHEME is nil or omitted,
-the value of `swift-mode:ios-project-scheme' is used.
-"
+DEVICE-IDENTIFIER is the device identifier of the iOS simulator.  If it is nil
+or omitted, the value of `swift-mode:ios-simulator-device-identifier' is used.
+SCHEME is the name of the project scheme in Xcode.  If it is nil or omitted,
+the value of `swift-mode:ios-project-scheme' is used."
   (interactive
-   (list
-    (if current-prefix-arg
-        (swift-mode:read-project-directory)
-      (swift-mode:find-xcode-project-directory))
-    (if current-prefix-arg
-        (swift-mode:read-ios-simulator-device-identifier)
-      swift-mode:ios-simulator-device-identifier)))
+   (let ((project-directory (if current-prefix-arg
+                                (swift-mode:read-project-directory)
+                              (swift-mode:find-xcode-project-directory))))
+     (list
+      project-directory
+      (if current-prefix-arg
+          (swift-mode:read-ios-simulator-device-identifier)
+        swift-mode:ios-simulator-device-identifier)
+      (if current-prefix-arg
+          (swift-mode:read-project-scheme project-directory)
+        swift-mode:ios-project-scheme))))
   (setq project-directory
         (swift-mode:ensure-xcode-project-directory project-directory))
   (unless device-identifier
@@ -523,9 +553,10 @@ the value of `swift-mode:ios-project-scheme' is used.
            (swift-mode:read-ios-simulator-device-identifier))))
   (setq swift-mode:ios-simulator-device-identifier device-identifier)
   (unless scheme
-    (setq scheme (or
-                  swift-mode:ios-project-scheme
-                  (swift-mode:read-project-scheme project-directory))))
+    (setq scheme
+          (or
+           swift-mode:ios-project-scheme
+           (swift-mode:read-project-scheme project-directory))))
   (setq swift-mode:ios-project-scheme scheme)
 
   (with-current-buffer (get-buffer-create "*swift-mode:compilation*")
@@ -551,7 +582,9 @@ the value of `swift-mode:ios-project-scheme' is used.
 
 (defun swift-mode:wait-for-prompt-then-execute-commands (string)
   "Execute the next command from the queue if the point is on a prompt.
-Itended for used as a `comint-output-filter-functions'."
+
+Itended for used as a `comint-output-filter-functions'.
+STRING is passed to the command."
   (let ((command (car swift-mode:repl-command-queue)))
     (when (and
            ;; The point is on an input field of comint.
@@ -620,6 +653,7 @@ Itended for used as a `comint-output-filter-functions'."
 ;;;###autoload
 (defun swift-mode:debug-swift-module (&optional project-directory)
   "Run debugger on a Swift module in the PROJECT-DIRECTORY.
+
 If PROJECT-DIRECTORY is nil or omited, it is searched from `default-directory'
 or its ancestors."
   (interactive
@@ -635,6 +669,7 @@ or its ancestors."
 
 (defun swift-mode:find-ios-simulator-process ()
   "Return the process ID of an iOS simulator process if exists.
+
 Return nil otherwise."
   (with-temp-buffer
     (swift-mode:call-process "ps" "-x" "-o" "pid,comm")
@@ -673,6 +708,7 @@ Return nil otherwise."
 
 (defun swift-mode:install-ios-app (device-identifier codesigning-folder-path)
   "Install an iOS app to an iOS simulator with DEVICE-IDENTIFIER.
+
 CODESIGNING-FOLDER-PATH is the path of the app."
   (with-temp-buffer
     (unless (zerop (swift-mode:call-process
@@ -687,6 +723,7 @@ CODESIGNING-FOLDER-PATH is the path of the app."
                                   &optional
                                   wait-for-debugger)
   "Launch an iOS app in DEVICE-IDENTIFIER.
+
 PRODUCT-BUNDLE-IDENTIFIER is the product bundle identifier of the app.
 If WAIT-FOR-DEBUGGER is non-nil, the new process is suspended until a debugger
 attaches to it."
@@ -705,6 +742,7 @@ attaches to it."
 
 (defun swift-mode:search-process-stopped-message (process-identifier)
   "Find a message of process suspension in the comint output.
+
 PROCESS-IDENTIFIER is the process ID."
   (let ((expected-output
          (concat "Process "
@@ -717,19 +755,27 @@ PROCESS-IDENTIFIER is the process ID."
 (defun swift-mode:debug-ios-app (&optional project-directory
                                            device-identifier
                                            scheme)
-  "Run debugger on an iOS app in the PROJECT-DIRECTORY for the given SCHEME.
+  "Run debugger on an iOS app in the PROJECT-DIRECTORY.
+
+Run it for iOS simulator device DEVICE-IDENTIFIER for the given SCHEME.
 If PROJECT-DIRECTORY is nil or omitted, it is searched from `default-directory'
 or its ancestors.
-DEVICE-IDENTIFIER is the device identifier of the iOS simulator.
-SCHEME is the name of the project scheme in Xcode."
+DEVICE-IDENTIFIER is the device identifier of the iOS simulator.  If it is nil
+or omitted, the value of `swift-mode:ios-simulator-device-identifier' is used.
+SCHEME is the name of the project scheme in Xcode.  If it is nil or omitted,
+the value of `swift-mode:ios-project-scheme' is used."
   (interactive
-   (list
-    (if current-prefix-arg
-        (swift-mode:read-project-directory)
-      (swift-mode:find-xcode-project-directory))
-    (if current-prefix-arg
-        (swift-mode:read-ios-simulator-device-identifier)
-      swift-mode:ios-simulator-device-identifier)))
+   (let ((project-directory (if current-prefix-arg
+                                (swift-mode:read-project-directory)
+                              (swift-mode:find-xcode-project-directory))))
+     (list
+      project-directory
+      (if current-prefix-arg
+          (swift-mode:read-ios-simulator-device-identifier)
+        swift-mode:ios-simulator-device-identifier)
+      (if current-prefix-arg
+          (swift-mode:read-project-scheme project-directory)
+        swift-mode:ios-project-scheme))))
   (setq project-directory
         (swift-mode:ensure-xcode-project-directory project-directory))
   (unless device-identifier
@@ -739,15 +785,16 @@ SCHEME is the name of the project scheme in Xcode."
            (swift-mode:read-ios-simulator-device-identifier))))
   (setq swift-mode:ios-simulator-device-identifier device-identifier)
   (unless scheme
-    (setq scheme (or
-                  swift-mode:ios-project-scheme
-                  (swift-mode:read-project-scheme project-directory))))
+    (setq scheme
+          (or
+           swift-mode:ios-project-scheme
+           (swift-mode:read-project-scheme project-directory))))
   (setq swift-mode:ios-project-scheme scheme)
   (let* ((build-settings
           (swift-mode:read-xcode-build-settings
            project-directory
-           scheme
-           device-identifier))
+           device-identifier
+           scheme))
          (codesigning-folder-path
           (cdr (assoc "CODESIGNING_FOLDER_PATH" build-settings)))
          (product-bundle-identifier
