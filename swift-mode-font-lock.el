@@ -212,7 +212,7 @@ Return nil otherwise."
 ;; Keywords
 ;; https://developer.apple.com/library/ios/documentation/Swift/Conceptual/Swift_Programming_Language/LexicalStructure.html#//apple_ref/doc/uid/TP40014097-CH30-ID410
 
-(defconst swift-mode:member-functions-trailing-closure
+(defconst swift-mode:standard-member-functions-trailing-closure
   '("sort" "sorted" "split" "contains" "index" "partition" "filter" "first"
     "forEach" "flatMap" "withMutableCharacters" "withCString"
     "withUnsafeMutableBufferPointer" "withUnsafeMutablePointers"
@@ -222,7 +222,7 @@ Return nil otherwise."
 
 They may be used with trailing closures and no parentheses.")
 
-(defconst swift-mode:member-functions
+(defconst swift-mode:standard-member-functions
   '("symmetricDifference" "storeBytes" "starts" "stride" "sortInPlace"
     "successor" "suffix" "subtract" "subtracting" "subtractInPlace"
     "subtractWithOverflow" "squareRoot" "samePosition" "holdsUniqueReference"
@@ -266,13 +266,13 @@ They may be used with trailing closures and no parentheses.")
     "bindMemory")
   "Member functions in the standard library in Swift 3.")
 
-(defconst swift-mode:global-functions-trailing-closure
+(defconst swift-mode:standard-global-functions-trailing-closure
   '("anyGenerator" "autoreleasepool")
   "Global functions with closures available in Swift 3.
 
 They may be used with trailing closures and no parentheses.")
 
-(defconst swift-mode:global-functions
+(defconst swift-mode:standard-global-functions
   '("stride" "strideof" "strideofValue" "sizeof" "sizeofValue" "sequence" "swap"
     "numericCast" "transcode" "isUniquelyReferenced"
     "isUniquelyReferencedNonObjC" "isKnownUniquelyReferenced" "zip" "dump"
@@ -283,7 +283,7 @@ They may be used with trailing closures and no parentheses.")
     "repeatElement" "readLine" "getVaList" "min" "max")
   "Global functions available in Swift 3.")
 
-(defconst swift-mode:properties
+(defconst swift-mode:standard-properties
   '("startIndex" "stringValue" "stride" "size" "sign" "signBitIndex"
     "significand" "significandBitCount" "significandBitPattern"
     "significandWidth" "signalingNaN" "superclassMirror" "summary"
@@ -307,7 +307,7 @@ They may be used with trailing closures and no parentheses.")
     "argc" "unsafeArgv")
   "Properties in the standard library in Swift 3.")
 
-(defconst swift-mode:enum-cases
+(defconst swift-mode:standard-enum-cases
   '("scalarValue" "size" "signalingNaN" "sound" "some" "suppressed" "sprite"
     "set" "none" "negativeSubnormal" "negativeNormal" "negativeInfinity"
     "negativeZero" "color" "collection" "customized" "toNearestOrEven"
@@ -321,7 +321,7 @@ They may be used with trailing closures and no parentheses.")
 
 Note that there is some overlap between these and the properties.")
 
-(defconst swift-mode:enum-types
+(defconst swift-mode:standard-enum-types
   '("ImplicitlyUnwrappedOptional" "Representation" "MemoryLayout"
     "FloatingPointClassification" "SetIndexRepresentation"
     "SetIteratorRepresentation" "FloatingPointRoundingRule"
@@ -330,7 +330,7 @@ Note that there is some overlap between these and the properties.")
     "FloatingPointSign" "Bit" "DictionaryIteratorRepresentation")
   "Enum types in the standard library in Swift 3.")
 
-(defconst swift-mode:protocols
+(defconst swift-mode:standard-protocols
   '("RandomAccessCollection" "RandomAccessIndexable"
     "RangeReplaceableCollection" "RangeReplaceableIndexable" "RawRepresentable"
     "MirrorPath" "MutableCollection" "MutableIndexable" "BinaryFloatingPoint"
@@ -356,7 +356,7 @@ Note that there is some overlap between these and the properties.")
     "RecoverableError" "ReferenceConvertible")
   "Protocols in Foundation.")
 
-(defconst swift-mode:structs
+(defconst swift-mode:standard-structs
   '("Repeat" "Repeated" "ReversedRandomAccessCollection"
     "ReversedRandomAccessIndex" "ReversedCollection" "ReversedIndex"
     "RandomAccessSlice" "Range" "RangeReplaceableRandomAccessSlice"
@@ -408,7 +408,7 @@ Note that there is some overlap between these and the properties.")
     "URLQueryItem" "URLRequest" "URLResourceValues" "UUID")
   "Structs in Foundation.")
 
-(defconst swift-mode:typealiases
+(defconst swift-mode:standard-typealiases
   '("RawSignificand" "RawExponent" "RawValue" "BooleanLiteralType" "Buffer"
     "Base" "Storage" "StringLiteralType" "Stride" "Stream1" "Stream2"
     "SubSequence" "NativeBuffer" "Child" "Children" "CBool" "CShort"
@@ -423,11 +423,11 @@ Note that there is some overlap between these and the properties.")
     "Float32" "FloatLiteralType" "Float64" "AnyClass" "Any")
   "Typealiases in the standard library in Swift 3.")
 
-(defconst swift-mode:class-types
+(defconst swift-mode:standard-class-types
   '("ManagedBuffer" "ManagedProtoBuffer" "NonObjectiveCBase" "AnyGenerator")
   "Built-in class types.")
 
-(defconst swift-mode:precedence-groups
+(defconst swift-mode:standard-precedence-groups
   '("BitwiseShift" "Assignment" "RangeFormation" "Casting" "Addition"
     "NilCoalescing" "Comparison" "LogicalConjunction" "LogicalDisjunction"
     "Default" "Ternary" "Multiplication" "FunctionArrow")
@@ -502,32 +502,34 @@ Excludes true, false, and keywords begin with a number sign.")
      'swift-mode:keyword-face)
 
     (,(concat "\\."
-              (regexp-opt swift-mode:member-functions-trailing-closure 'words)
+              (regexp-opt swift-mode:standard-member-functions-trailing-closure
+                          'words)
               "\\s-*[({]")
      1
      'swift-mode:builtin-method-trailing-closure-face)
 
     (,(concat "\\."
-              (regexp-opt swift-mode:member-functions 'words)
+              (regexp-opt swift-mode:standard-member-functions 'words)
               "\\s-*(")
      1
      'swift-mode:builtin-method-face)
 
-    (,(concat (regexp-opt swift-mode:global-functions-trailing-closure 'words)
+    (,(concat (regexp-opt swift-mode:standard-global-functions-trailing-closure
+                          'words)
               "\\s-*[({]")
      1
      'swift-mode:builtin-function-trailing-closure-face)
 
-    (,(concat (regexp-opt swift-mode:global-functions 'words)
+    (,(concat (regexp-opt swift-mode:standard-global-functions 'words)
               "\\s-*(")
      1
      'swift-mode:builtin-function-face)
 
-    (,(concat "\\." (regexp-opt swift-mode:properties 'words))
+    (,(concat "\\." (regexp-opt swift-mode:standard-properties 'words))
      1
      'swift-mode:builtin-propertie-face)
 
-    (,(concat "\\." (regexp-opt swift-mode:enum-cases 'words))
+    (,(concat "\\." (regexp-opt swift-mode:standard-enum-cases 'words))
      1
      'swift-mode:builtin-enum-case-face)
 
@@ -535,19 +537,19 @@ Excludes true, false, and keywords begin with a number sign.")
      .
      'swift-mode:build-config-keyword-face)
 
-    (,(regexp-opt (append swift-mode:class-types
-                          swift-mode:enum-types
+    (,(regexp-opt (append swift-mode:standard-class-types
+                          swift-mode:standard-enum-types
                           swift-mode:foundation-protocols
                           swift-mode:foundation-structs
-                          swift-mode:protocols
-                          swift-mode:structs
-                          swift-mode:typealiases)
+                          swift-mode:standard-protocols
+                          swift-mode:standard-structs
+                          swift-mode:standard-typealiases)
                   'words)
      .
      'swift-mode:builtin-type-face)
 
     (,(concat "\\<"
-              (regexp-opt swift-mode:precedence-groups 'non-nil)
+              (regexp-opt swift-mode:standard-precedence-groups 'non-nil)
               "Precedence\\>")
      .
      'swift-mode:builtin-precedence-group-face)
