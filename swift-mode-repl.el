@@ -1,11 +1,13 @@
 ;;; swift-mode-repl.el --- Run Apple's Swift processes in Emacs buffers -*- lexical-binding: t -*-
 
-;; Copyright (C) 2014-2017 taku0, Chris Barrett, Bozhidar Batsov, Arthur Evstifeev
+;; Copyright (C) 2014-2017 taku0, Chris Barrett, Bozhidar Batsov,
+;;                         Arthur Evstifeev, Michael Sanders
 
 ;; Authors: taku0 (http://github.com/taku0)
 ;;       Chris Barrett <chris.d.barrett@me.com>
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Arthur Evstifeev <lod@pisem.net>
+;;       Michael Sanders <michael.sanders@fastmail.com>
 ;;
 ;; Version: 4.1.1
 ;; Package-Requires: ((emacs "24.4") (seq "2.3"))
@@ -444,7 +446,7 @@ or its ancestors."
 
 SCHEME is the name of the project scheme in Xcode.
 SDK is the name of the SDK build against.
-DEVICE-IDENTIFIER is used as the destination parameter for xcodebuild. If
+DEVICE-IDENTIFIER is used as the destination parameter for xcodebuild.  If
 identifier is equal to `swift-mode:ios-local-device-identifier', it is not
 passed as a destination to xcodebuild."
   (with-temp-buffer
@@ -555,7 +557,9 @@ Build it for iOS device DEVICE-IDENTIFIER for the given SCHEME.
 If PROJECT-DIRECTORY is nil or omitted, it is searched from `default-directory'
 or its ancestors.
 DEVICE-IDENTIFIER is the device identifier of the iOS simulator.  If it is nil
-or omitted, the value of `swift-mode:ios-device-identifier' is used.
+or omitted, the value of `swift-mode:ios-device-identifier' is used. If it is
+equal to `swift-mode:ios-local-device-identifier', a local device is used via
+`ios-deploy' instead.
 SCHEME is the name of the project scheme in Xcode.  If it is nil or omitted,
 the value of `swift-mode:ios-project-scheme' is used."
   (interactive
@@ -875,8 +879,8 @@ in Xcode build settings."
 Run it for the iOS simulator devie DEVICE-IDENTIFIER for the given SCHEME.
 If PROJECT-DIRECTORY is nil or omitted, it is searched from `default-directory'
 or its ancestors.
-DEVICE-IDENTIFIER is the device identifier of the iOS simulator. If it is
-nil or omitted, the value of `swift-mode:ios-device-identifier' is used. If
+DEVICE-IDENTIFIER is the device identifier of the iOS simulator.  If it is
+nil or omitted, the value of `swift-mode:ios-device-identifier' is used.  If
 it is equal to `swift-mode:ios-local-device-identifier', a local build via
 `ios-deploy' is generated instead.
 SCHEME is the name of the project scheme in Xcode.  If it is nil or omitted,

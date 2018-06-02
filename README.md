@@ -63,14 +63,15 @@ To install without MELPA, download [latest release](https://github.com/swift-ema
 - `forward-sexp`
 - `beginning-of-defun`, `end-of-defun`, `mark-defun`, and `narrow-to-defun`.
 - `beginning-of-sentence`, `end-of-sentence`, `kill-sentence`, `backward-kill-sentence`, `mark-sentence`, and `narrow-to-sentence`.
-  A sentence is a statement outside comments or strings. Inside comments or strings, it indicates ordinal sentence.
+  A sentence is a statement outside comments or strings, or an ordinal sentence inside comments or strings.
 - `indent-new-comment-line`
 - [Imenu](https://www.gnu.org/software/emacs/manual/html_node/emacs/Imenu.html)
 - Running Swift REPL in a buffer (`M-x run-swift`)
 - Build Swift module (`M-x swift-mode:build-swift-module`)
 - Build iOS app (`M-x swift-mode:build-ios-app`)
 - Running debugger on Swift module (`M-x swift-mode:debug-swift-module`)
-- Running debugger on iOS app in simulator (`M-x swift-mode:debug-ios-app`)
+- Running debugger on iOS app in simulator or device (`M-x swift-mode:debug-ios-app`)
+  ([`ios-deploy`](https://github.com/ios-control/ios-deploy) is required to debug on device).
 
 This package does not provide flycheck. See [flycheck-swift](https://github.com/swift-emacs/flycheck-swift).
 
@@ -203,6 +204,7 @@ Thanks to the following original developer and users for their contributions:
 - [@ckruse](https://github.com/ckruse) (Christian Kruse)
 - [@syohex](https://github.com/syohex) (Syohei Yoshida)
 - [@uk-ar](https://github.com/uk-ar) (Yuuki Arisawa)
+- [@msanders](https://github.com/msanders) (Michael Sanders)
 
 You can find a [full list of those people here](https://github.com/swift-emacs/swift-mode/graphs/contributors).
 
