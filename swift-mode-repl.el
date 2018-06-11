@@ -293,9 +293,9 @@ Return a JSON object."
 The manifest file is searched from the PROJECT-DIRECTORY, defaults to
 `default-directory', or its ancestors."
   (let* ((description (swift-mode:describe-package project-directory))
-         (modules (cdr (assoc 'modules description))))
+         (modules (cdr (assoc 'targets description))))
     (seq-find
-     (lambda (module) (not (eq :json-true (cdr (assoc 'is_test module)))))
+     (lambda (module) (not (equal "test" (cdr (assoc 'type module)))))
      modules)))
 
 (defun swift-mode:read-package-name (project-directory)
@@ -352,9 +352,9 @@ Return a directory path if found.  Return nil otherwise."
   (swift-mode:find-ancestor-or-self-directory
    'swift-mode:swift-project-directory-p directory))
 
-(defun swift-mode:read-project-directory ()
-  "Read a project directory from the minibuffer."
-  (expand-file-name (read-directory-name "Project directory: " nil nil t)))
+(defun swift-mode:read-project-directory (default)
+  "Read a project directory from the minibuffer with DEFAULT directory."
+  (expand-file-name (read-directory-name "Project directory: " default nil t)))
 
 (defun swift-mode:ensure-swift-project-directory (project-directory)
   "Check PROJECT-DIRECTORY contains the manifest file Package.swift.
@@ -460,8 +460,8 @@ passed as a destination to xcodebuild."
                      ,scheme
                      "-showBuildSettings")))
       (when (and device-identifier
-                 (not (eql device-identifier
-                           swift-mode:ios-local-device-identifier)))
+                 (not (equal device-identifier
+                             swift-mode:ios-local-device-identifier)))
         (setq arglist
               (append arglist
                       `("-destination"
@@ -489,7 +489,8 @@ passed as a destination to xcodebuild."
 
 xcodebuild is executed in PROJECT-DIRECTORY."
   (let* ((json (swift-mode:xcodebuild-list project-directory))
-         (project (cdr (assoc 'project json)))
+         (project (or (cdr (assoc 'project json))
+                      (cdr (assoc 'workspace json))))
          (schemes (cdr (assoc 'schemes project)))
          (choices (seq-map
                    (lambda (scheme) (cons scheme scheme))
@@ -520,9 +521,11 @@ If PROJECT-DIRECTORY is nil or omited, it is searched from `default-directory'
 or its ancestors.
 An list ARGS are appended for builder command line arguments."
   (interactive
-   (let ((project-directory (if current-prefix-arg
-                                (swift-mode:read-project-directory)
-                              (swift-mode:find-swift-project-directory))))
+   (let* ((default-project-directory (swift-mode:find-swift-project-directory))
+          (project-directory
+           (if current-prefix-arg
+               (swift-mode:read-project-directory default-project-directory)
+             default-project-directory)))
      (list
       project-directory
       (if (string-equal (swift-mode:read-module-type project-directory)
@@ -539,7 +542,7 @@ An list ARGS are appended for builder command line arguments."
           (zerop
            (apply 'swift-mode:call-process
             swift-mode:swift-build-executable
-            "--chdir" project-directory
+            "--package-path" project-directory
             args))
         (compilation-mode)
         (goto-char (point-min))
@@ -563,9 +566,14 @@ equal to `swift-mode:ios-local-device-identifier', a local device is used via
 SCHEME is the name of the project scheme in Xcode.  If it is nil or omitted,
 the value of `swift-mode:ios-project-scheme' is used."
   (interactive
-   (let ((project-directory (if current-prefix-arg
-                                (swift-mode:read-project-directory)
-                              (swift-mode:find-xcode-project-directory))))
+   (let* ((default-project-directory
+            (or
+             (swift-mode:find-xcode-workspace-directory)
+             (swift-mode:find-xcode-project-directory)))
+          (project-directory
+          (if current-prefix-arg
+              (swift-mode:read-project-directory default-project-directory)
+            default-project-directory)))
      (list
       project-directory
       (if current-prefix-arg
@@ -596,7 +604,7 @@ the value of `swift-mode:ios-project-scheme' is used."
           (xcodebuild-args `(,swift-mode:xcodebuild-executable
                              "-configuration" "Debug"
                              "-scheme" ,scheme)))
-      (if (eql device-identifier swift-mode:ios-local-device-identifier)
+      (if (equal device-identifier swift-mode:ios-local-device-identifier)
           (setq xcodebuild-args (append xcodebuild-args '("-sdk" "iphoneos")))
         (setq xcodebuild-args
               (append xcodebuild-args
@@ -655,15 +663,17 @@ STRING is passed to the command."
 (defun swift-mode:debug-swift-module-library (project-directory)
   "Run debugger on a Swift library module in the PROJECT-DIRECTORY."
   (let* ((c99name (swift-mode:read-c99-name project-directory))
-         (import-statement (concat "import " c99name)))
+         (import-statement (concat "import " c99name))
+         (build-debug-directory
+          (swift-mode:join-path project-directory ".build" "debug")))
     (unless c99name (error "Cannot get module name"))
     (swift-mode:build-swift-module project-directory)
     (swift-mode:run-repl
      (append
       (swift-mode:command-string-to-list swift-mode:repl-executable)
       (list
-       "-I" (swift-mode:join-path project-directory ".build" "debug")
-       "-L" project-directory
+       "-I" build-debug-directory
+       "-L" build-debug-directory
        (concat "-l" c99name)))
      nil t)
     (swift-mode:enqueue-repl-commands import-statement)))
@@ -691,10 +701,11 @@ STRING is passed to the command."
 If PROJECT-DIRECTORY is nil or omited, it is searched from `default-directory'
 or its ancestors."
   (interactive
-   (list
-    (if current-prefix-arg
-        (swift-mode:read-project-directory)
-      (swift-mode:find-swift-project-directory))))
+   (let ((default-project-directory (swift-mode:find-swift-project-directory)))
+     (list
+      (if current-prefix-arg
+          (swift-mode:read-project-directory default-project-directory)
+        default-project-directory))))
   (setq project-directory
         (swift-mode:ensure-swift-project-directory project-directory))
   (if (string-equal (swift-mode:read-module-type project-directory) "library")
@@ -818,20 +829,20 @@ PRODUCT-BUNDLE-IDENTIFIER is the name of the product bundle identifier used
 in Xcode build settings."
   (swift-mode:build-ios-app project-directory device-identifier scheme)
   (let* ((devices (swift-mode:list-ios-simulator-devices))
-          (target-device
+         (target-device
           (seq-find
-            (lambda (device)
-              (string-equal (cdr (assoc 'udid device)) device-identifier))
-            devices))
-          (active-devices
+           (lambda (device)
+             (string-equal (cdr (assoc 'udid device)) device-identifier))
+           devices))
+         (active-devices
           (seq-filter
-            (lambda (device)
-              (string-equal (cdr (assoc 'state device)) "Booted"))
-            devices))
-          (target-booted
+           (lambda (device)
+             (string-equal (cdr (assoc 'state device)) "Booted"))
+           devices))
+         (target-booted
           (string-equal (cdr (assoc 'state target-device)) "Booted"))
-          (simulator-running (consp active-devices))
-          (progress-reporter
+         (simulator-running (consp active-devices))
+         (progress-reporter
           (make-progress-reporter "Waiting for simulator...")))
     (cond
       (target-booted
@@ -886,9 +897,14 @@ it is equal to `swift-mode:ios-local-device-identifier', a local build via
 SCHEME is the name of the project scheme in Xcode.  If it is nil or omitted,
 the value of `swift-mode:ios-project-scheme' is used."
   (interactive
-   (let ((project-directory (if current-prefix-arg
-                                (swift-mode:read-project-directory)
-                              (swift-mode:find-xcode-project-directory))))
+   (let* ((default-project-directory
+            (or
+             (swift-mode:find-xcode-workspace-directory)
+             (swift-mode:find-xcode-project-directory)))
+          (project-directory
+           (if current-prefix-arg
+               (swift-mode:read-project-directory default-project-directory)
+             default-project-directory)))
      (list
       project-directory
       (if current-prefix-arg
@@ -911,8 +927,8 @@ the value of `swift-mode:ios-project-scheme' is used."
            swift-mode:ios-project-scheme
            (swift-mode:read-project-scheme project-directory))))
   (setq swift-mode:ios-project-scheme scheme)
-  (let* ((local-device-build (eql device-identifier
-                                  swift-mode:ios-local-device-identifier))
+  (let* ((local-device-build (equal device-identifier
+                                    swift-mode:ios-local-device-identifier))
          (sdk (if local-device-build "iphoneos" "iphonesimulator"))
          (build-settings
           (swift-mode:read-xcode-build-settings
