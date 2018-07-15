@@ -80,7 +80,7 @@ Exmpale: #if, #endif, and #selector."
   "Face for highlighting builtin functions."
   :group 'swift-mode:faces)
 
-(defface swift-mode:builtin-propertie-face
+(defface swift-mode:builtin-property-face
   '((t . (:inherit font-lock-builtin-face)))
   "Face for highlighting builtin properties."
   :group 'swift-mode:faces)
@@ -529,7 +529,7 @@ Excludes true, false, and keywords begin with a number sign.")
 
     (,(concat "\\." (regexp-opt swift-mode:standard-properties 'words))
      1
-     'swift-mode:builtin-propertie-face)
+     'swift-mode:builtin-property-face)
 
     (,(concat "\\." (regexp-opt swift-mode:standard-enum-cases 'words))
      1
