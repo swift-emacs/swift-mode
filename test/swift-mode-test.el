@@ -1,6 +1,6 @@
 ;;; swift-mode-test.el --- Test for swift-mode  -*- lexical-binding: t -*-
 
-;; Copyright (C) 2016-2017 taku0
+;; Copyright (C) 2016-2018 taku0
 
 ;; Authors: taku0 (http://github.com/taku0)
 ;;

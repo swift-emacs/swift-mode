@@ -1,6 +1,6 @@
 ;;; swift-mode-test-beginning-of-defun.el --- Test for swift-mode: beginning-of-defun -*- lexical-binding: t -*-
 
-;; Copyright (C) 2017 taku0
+;; Copyright (C) 2017-2018 taku0
 
 ;; Authors: taku0 (http://github.com/taku0)
 ;;

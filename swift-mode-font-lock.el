@@ -1,6 +1,6 @@
 ;;; swift-mode-font-lock.el --- Major-mode for Apple's Swift programming language, Font Locks. -*- lexical-binding: t -*-
 
-;; Copyright (C) 2014-2017 taku0, Chris Barrett, Bozhidar Batsov,
+;; Copyright (C) 2014-2018 taku0, Chris Barrett, Bozhidar Batsov,
 ;;                         Arthur Evstifeev, Michael Sanders
 
 ;; Authors: taku0 (http://github.com/taku0)

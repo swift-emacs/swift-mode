@@ -1,6 +1,6 @@
 ;;; swift-mode.el --- Major-mode for Apple's Swift programming language. -*- lexical-binding: t -*-
 
-;; Copyright (C) 2014-2017 taku0, Chris Barrett, Bozhidar Batsov, Arthur Evstifeev
+;; Copyright (C) 2014-2018 taku0, Chris Barrett, Bozhidar Batsov, Arthur Evstifeev
 
 ;; Authors: taku0 (http://github.com/taku0)
 ;;       Chris Barrett <chris.d.barrett@me.com>
