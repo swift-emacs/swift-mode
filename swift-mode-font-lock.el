@@ -35,6 +35,7 @@
 ;;; Code:
 
 (require 'swift-mode-standard-types)
+(require 'seq)
 
 ;;; Customizations
 
@@ -42,6 +43,20 @@
 (defgroup swift-mode:faces nil
   "Font faces."
   :group 'swift)
+
+(defcustom swift-mode:highlight-symbols-in-standard-library
+  t
+  "Highlight symbols in the standard library."
+  :type 'boolean
+  :group 'swift-mode:faces
+  :safe 'booleanp)
+
+(defcustom swift-mode:highlight-symbols-in-foundation-framework
+  t
+  "Highlight symbols in the Foundation framework."
+  :type 'boolean
+  :group 'swift-mode:faces
+  :safe 'booleanp)
 
 (defface swift-mode:constant-keyword-face
   '((t . (:inherit font-lock-constant-face)))
@@ -127,59 +142,64 @@ Exmpale: #if, #endif, and #selector."
   "Face for highlighting property accesses."
   :group 'swift-mode:faces)
 
+
+(defun swift-mode:make-set (list)
+  "Return a hash where its keys are elemetns of the LIST.
+
+All values are t."
+  (let ((hash (make-hash-table :test 'equal)))
+    (dolist (value list)
+      (puthash value t hash))
+    hash))
+
 (defvar swift-mode:standard-types-hash
-  (make-hash-table :test 'equal)
+  (swift-mode:make-set swift-mode:standard-types)
   "Set of standard type names.  All values are t.")
 
-(dolist (name swift-mode:standard-types)
-  (puthash name t swift-mode:standard-types-hash))
-(dolist (name swift-mode:foundation-types)
-  (puthash name t swift-mode:standard-types-hash))
-
 (defvar swift-mode:standard-enum-cases-hash
-  (make-hash-table :test 'equal)
+  (swift-mode:make-set swift-mode:standard-enum-cases)
   "Set of standard enum case names.  All values are t.")
 
-(dolist (name swift-mode:standard-enum-cases)
-  (puthash name t swift-mode:standard-enum-cases-hash))
-(dolist (name swift-mode:foundation-enum-cases)
-  (puthash name t swift-mode:standard-enum-cases-hash))
-
 (defvar swift-mode:standard-methods-hash
-  (make-hash-table :test 'equal)
+  (swift-mode:make-set swift-mode:standard-methods)
   "Set of standard method names.  All values are t.")
 
-(dolist (name swift-mode:standard-methods)
-  (puthash name t swift-mode:standard-methods-hash))
-(dolist (name swift-mode:foundation-methods)
-  (puthash name t swift-mode:standard-methods-hash))
-
 (defvar swift-mode:standard-properties-hash
-  (make-hash-table :test 'equal)
+  (swift-mode:make-set swift-mode:standard-properties)
   "Set of standard property names.  All values are t.")
 
-(dolist (name swift-mode:standard-properties)
-  (puthash name t swift-mode:standard-properties-hash))
-(dolist (name swift-mode:foundation-properties)
-  (puthash name t swift-mode:standard-properties-hash))
-
 (defvar swift-mode:standard-functions-hash
-  (make-hash-table :test 'equal)
+  (swift-mode:make-set swift-mode:standard-functions)
   "Set of standard function names.  All values are t.")
 
-(dolist (name swift-mode:standard-functions)
-  (puthash name t swift-mode:standard-functions-hash))
-(dolist (name swift-mode:foundation-functions)
-  (puthash name t swift-mode:standard-functions-hash))
-
 (defvar swift-mode:standard-constants-hash
-  (make-hash-table :test 'equal)
+  (swift-mode:make-set swift-mode:standard-constants)
   "Set of standard constant names.  All values are t.")
 
-(dolist (name swift-mode:standard-constants)
-  (puthash name t swift-mode:standard-constants-hash))
-(dolist (name swift-mode:foundation-constants)
-  (puthash name t swift-mode:standard-constants-hash))
+(defvar swift-mode:foundation-types-hash
+  (swift-mode:make-set swift-mode:foundation-types)
+  "Set of Foundation type names.  All values are t.")
+
+(defvar swift-mode:foundation-enum-cases-hash
+  (swift-mode:make-set swift-mode:foundation-enum-cases)
+  "Set of Foundation enum case names.  All values are t.")
+
+(defvar swift-mode:foundation-methods-hash
+  (swift-mode:make-set swift-mode:foundation-methods)
+  "Set of Foundation method names.  All values are t.")
+
+(defvar swift-mode:foundation-properties-hash
+  (swift-mode:make-set swift-mode:foundation-properties)
+  "Set of Foundation property names.  All values are t.")
+
+(defvar swift-mode:foundation-functions-hash
+  (swift-mode:make-set swift-mode:foundation-functions)
+  "Set of Foundation function names.  All values are t.")
+
+(defvar swift-mode:foundation-constants-hash
+  (swift-mode:make-set swift-mode:foundation-constants)
+  "Set of Foundation constant names.  All values are t.")
+
 
 ;;; Supporting functions
 
@@ -236,31 +256,30 @@ This function does not search beyond LIMIT."
      (skip-syntax-forward " " limit)
      (not (eq (char-after) ?\()))))
 
-(defun swift-mode:standard-name-pos-p (identifiers pos limit)
-  "Return t if an identifier in the hash IDENTIFIERS appears at POS.
+(defun swift-mode:builtin-name-pos-p (names pos limit)
+  "Return t if an identifier in the hash NAMES appears at POS.
 
 This function does not search beyond LIMIT."
   (goto-char pos)
   (skip-syntax-forward "w_" limit)
-  (gethash (buffer-substring-no-properties pos (point)) identifiers))
+  (gethash (buffer-substring-no-properties pos (point)) names))
 
-(defun swift-mode:standard-type-name-pos-p (pos limit)
-  "Return t if POS is just before a standard type name.
+(defun swift-mode:builtin-type-name-pos-p (names pos limit)
+  "Return t if POS is just before a builtin type name in NAMES.
 
 This function does not search beyond LIMIT."
-  (swift-mode:standard-name-pos-p swift-mode:standard-types-hash pos limit))
+  (swift-mode:builtin-name-pos-p names pos limit))
 
-(defun swift-mode:standard-enum-case-name-pos-p (pos limit)
-  "Return t if POS is just before a standard enum case name.
+(defun swift-mode:builtin-enum-case-name-pos-p (names pos limit)
+  "Return t if POS is just before a builtin enum case name in NAMES.
 
 This function does not search beyond LIMIT."
   (and
    (eq (char-before pos) ?.)
-   (swift-mode:standard-name-pos-p
-    swift-mode:standard-enum-cases-hash pos limit)))
+   (swift-mode:builtin-name-pos-p names pos limit)))
 
-(defun swift-mode:standard-method-trailing-closure-name-pos-p (pos limit)
-  "Return t if POS is just before a standard method name.
+(defun swift-mode:builtin-method-trailing-closure-name-pos-p (names pos limit)
+  "Return t if POS is just before a builtin method name in NAMES.
 
 It must followed by open curly bracket.
 This function does not search beyond LIMIT."
@@ -272,10 +291,10 @@ This function does not search beyond LIMIT."
      (skip-chars-forward "?")
      (skip-syntax-forward " " limit)
      (eq (char-after) ?{))
-   (swift-mode:standard-name-pos-p swift-mode:standard-methods-hash pos limit)))
+   (swift-mode:builtin-name-pos-p names pos limit)))
 
-(defun swift-mode:standard-method-name-pos-p (pos limit)
-  "Return t if POS is just before a standard method name.
+(defun swift-mode:builtin-method-name-pos-p (names pos limit)
+  "Return t if POS is just before a builtin method name in NAMES.
 
 This function does not search beyond LIMIT."
   (and
@@ -286,19 +305,18 @@ This function does not search beyond LIMIT."
      (skip-chars-forward "?")
      (skip-syntax-forward " " limit)
      (eq (char-after) ?\())
-   (swift-mode:standard-name-pos-p swift-mode:standard-methods-hash pos limit)))
+   (swift-mode:builtin-name-pos-p names pos limit)))
 
-(defun swift-mode:standard-property-name-pos-p (pos limit)
-  "Return t if POS is just before a standard property name.
+(defun swift-mode:builtin-property-name-pos-p (names pos limit)
+  "Return t if POS is just before a builtin property name in NAMES.
 
 This function does not search beyond LIMIT."
   (and
    (swift-mode:property-access-pos-p pos limit)
-   (swift-mode:standard-name-pos-p
-    swift-mode:standard-properties-hash pos limit)))
+   (swift-mode:builtin-name-pos-p names pos limit)))
 
-(defun swift-mode:standard-function-trailing-closure-name-pos-p (pos limit)
-  "Return t if POS is just before a standard function name.
+(defun swift-mode:builtin-function-trailing-closure-name-pos-p (names pos limit)
+  "Return t if POS is just before a builtin function name in NAMES.
 
 It must followed by open curly bracket.
 This function does not search beyond LIMIT."
@@ -309,11 +327,10 @@ This function does not search beyond LIMIT."
      (skip-chars-forward "?")
      (skip-syntax-forward " " limit)
      (eq (char-after) ?{))
-   (swift-mode:standard-name-pos-p
-    swift-mode:standard-functions-hash pos limit)))
+   (swift-mode:builtin-name-pos-p names pos limit)))
 
-(defun swift-mode:standard-function-name-pos-p (pos limit)
-  "Return t if POS is just before a standard function name.
+(defun swift-mode:builtin-function-name-pos-p (names pos limit)
+  "Return t if POS is just before a builtin function name in NAMES.
 
 This function does not search beyond LIMIT."
   (and
@@ -323,15 +340,13 @@ This function does not search beyond LIMIT."
      (skip-chars-forward "?")
      (skip-syntax-forward " " limit)
      (eq (char-after) ?\())
-   (swift-mode:standard-name-pos-p
-    swift-mode:standard-functions-hash pos limit)))
+   (swift-mode:builtin-name-pos-p names pos limit)))
 
-(defun swift-mode:standard-constant-name-pos-p (pos limit)
-  "Return t if POS is just before a standard constant name.
+(defun swift-mode:builtin-constant-name-pos-p (names pos limit)
+  "Return t if POS is just before a builtin constant name in NAMES.
 
 This function does not search beyond LIMIT."
-   (swift-mode:standard-name-pos-p
-    swift-mode:standard-constants-hash pos limit))
+  (swift-mode:builtin-name-pos-p names pos limit))
 
 (defun swift-mode:font-lock-match-expr (limit match-p)
   "Move the cursor just after an identifier that satisfy given predicate.
@@ -367,78 +382,142 @@ Set `match-data', and return t if a property access found before position LIMIT.
 Return nil otherwise."
   (swift-mode:font-lock-match-expr limit #'swift-mode:property-access-pos-p))
 
-(defun swift-mode:font-lock-match-standard-type-names (limit)
-  "Move the cursor just after a standard type name.
+(defmacro swift-mode:font-lock-match-builtin-names (f limit &rest list-of-sets)
+  "Move the cursor just after a builtin name.
 
-Set `match-data', and return t if a standard type name found before position
+Function F takes set of names, position, and limit.
+
+Set `match-data', and return t if a builtin name found before position LIMIT.
+Return nil otherwise.
+
+LIST-OF-SETS is a list of set of names."
+  (let ((pos (make-symbol "pos"))
+        (limit2 (make-symbol "limit"))
+        (matched (make-symbol "matched"))
+        (names (make-symbol "names")))
+  `(swift-mode:font-lock-match-expr
+    ,limit
+    (lambda (,pos ,limit2)
+      (seq-reduce
+       (lambda (,matched ,names)
+         (or ,matched
+             (and ,names
+                  (funcall ,f ,names ,pos ,limit2))))
+       (list ,@list-of-sets)
+       nil)))))
+
+(defun swift-mode:font-lock-match-builtin-type-names (limit)
+  "Move the cursor just after a builtin type name.
+
+Set `match-data', and return t if a builtin type name found before position
 LIMIT.
 Return nil otherwise."
-  (swift-mode:font-lock-match-expr
-   limit #'swift-mode:standard-type-name-pos-p))
+  (swift-mode:font-lock-match-builtin-names
+   #'swift-mode:builtin-type-name-pos-p
+   limit
+   (and swift-mode:highlight-symbols-in-standard-library
+        swift-mode:standard-types-hash)
+   (and swift-mode:highlight-symbols-in-foundation-framework
+        swift-mode:foundation-types-hash)))
 
-(defun swift-mode:font-lock-match-standard-enum-case-names (limit)
-  "Move the cursor just after a standard enum case name.
+(defun swift-mode:font-lock-match-builtin-enum-case-names (limit)
+  "Move the cursor just after a builtin enum case name.
 
-Set `match-data', and return t if a standard enum case name found before
+Set `match-data', and return t if a builtin enum case name found before
 position LIMIT.
 Return nil otherwise."
-  (swift-mode:font-lock-match-expr
-   limit #'swift-mode:standard-enum-case-name-pos-p))
+  (swift-mode:font-lock-match-builtin-names
+   #'swift-mode:builtin-enum-case-name-pos-p
+   limit
+   (and swift-mode:highlight-symbols-in-standard-library
+        swift-mode:standard-enum-cases-hash)
+   (and swift-mode:highlight-symbols-in-foundation-framework
+        swift-mode:foundation-enum-cases-hash)))
 
-(defun swift-mode:font-lock-match-standard-method-trailing-closure-names (limit)
-  "Move the cursor just after a standard method name with trailing closure.
+(defun swift-mode:font-lock-match-builtin-method-trailing-closure-names (limit)
+  "Move the cursor just after a builtin method name with trailing closure.
 
-Set `match-data', and return t if a standard method name found before position
+Set `match-data', and return t if a builtin method name found before position
 LIMIT.
 Return nil otherwise."
-  (swift-mode:font-lock-match-expr
-   limit #'swift-mode:standard-method-trailing-closure-name-pos-p))
+  (swift-mode:font-lock-match-builtin-names
+   #'swift-mode:builtin-method-trailing-closure-name-pos-p
+   limit
+   (and swift-mode:highlight-symbols-in-standard-library
+        swift-mode:standard-methods-hash)
+   (and swift-mode:highlight-symbols-in-foundation-framework
+        swift-mode:foundation-methods-hash)))
 
-(defun swift-mode:font-lock-match-standard-method-names (limit)
-  "Move the cursor just after a standard method name.
+(defun swift-mode:font-lock-match-builtin-method-names (limit)
+  "Move the cursor just after a builtin method name.
 
-Set `match-data', and return t if a standard method name found before
+Set `match-data', and return t if a builtin method name found before
 position LIMIT.
 Return nil otherwise."
-  (swift-mode:font-lock-match-expr
-   limit #'swift-mode:standard-method-name-pos-p))
+  (swift-mode:font-lock-match-builtin-names
+   #'swift-mode:builtin-method-name-pos-p
+   limit
+   (and swift-mode:highlight-symbols-in-standard-library
+        swift-mode:standard-methods-hash)
+   (and swift-mode:highlight-symbols-in-foundation-framework
+        swift-mode:foundation-methods-hash)))
 
-(defun swift-mode:font-lock-match-standard-property-names (limit)
-  "Move the cursor just after a standard property name.
+(defun swift-mode:font-lock-match-builtin-property-names (limit)
+  "Move the cursor just after a builtin property name.
 
-Set `match-data', and return t if a standard property name found before
+Set `match-data', and return t if a builtin property name found before
 position LIMIT.
 Return nil otherwise."
-  (swift-mode:font-lock-match-expr
-   limit #'swift-mode:standard-property-name-pos-p))
+  (swift-mode:font-lock-match-builtin-names
+   #'swift-mode:builtin-property-name-pos-p
+   limit
+   (and swift-mode:highlight-symbols-in-standard-library
+        swift-mode:standard-properties-hash)
+   (and swift-mode:highlight-symbols-in-foundation-framework
+        swift-mode:foundation-properties-hash)))
 
-(defun swift-mode:font-lock-match-standard-function-trailing-closure-names
+(defun swift-mode:font-lock-match-builtin-function-trailing-closure-names
     (limit)
-  "Move the cursor just after a standard function name with trailing closure.
+  "Move the cursor just after a builtin function name with trailing closure.
 
-Set `match-data', and return t if a standard function name found before
+Set `match-data', and return t if a builtin function name found before
 position LIMIT.
 Return nil otherwise."
-  (swift-mode:font-lock-match-expr
-   limit #'swift-mode:standard-function-trailing-closure-name-pos-p))
+  (swift-mode:font-lock-match-builtin-names
+   #'swift-mode:builtin-function-trailing-closure-name-pos-p
+   limit
+   (and swift-mode:highlight-symbols-in-standard-library
+        swift-mode:standard-functions-hash)
+   (and swift-mode:highlight-symbols-in-foundation-framework
+        swift-mode:foundation-functions-hash)))
 
-(defun swift-mode:font-lock-match-standard-function-names (limit)
-  "Move the cursor just after a standard function name.
+(defun swift-mode:font-lock-match-builtin-function-names (limit)
+  "Move the cursor just after a builtin function name.
 
-Set `match-data', and return t if a standard function name found before
+Set `match-data', and return t if a builtin function name found before
 position LIMIT.
 Return nil otherwise."
-  (swift-mode:font-lock-match-expr
-   limit #'swift-mode:standard-function-name-pos-p))
+  (swift-mode:font-lock-match-builtin-names
+   #'swift-mode:builtin-function-name-pos-p
+   limit
+   (and swift-mode:highlight-symbols-in-standard-library
+        swift-mode:standard-functions-hash)
+   (and swift-mode:highlight-symbols-in-foundation-framework
+        swift-mode:foundation-functions-hash)))
 
-(defun swift-mode:font-lock-match-standard-constant-names (limit)
-  "Move the cursor just after a standard constant name.
+(defun swift-mode:font-lock-match-builtin-constant-names (limit)
+  "Move the cursor just after a builtin constant name.
 
-Set `match-data', and return t if a standard constant name found before
+Set `match-data', and return t if a builtin constant name found before
 position LIMIT.
 Return nil otherwise."
-  (swift-mode:font-lock-match-expr
-   limit #'swift-mode:standard-constant-name-pos-p))
+  (swift-mode:font-lock-match-builtin-names
+   #'swift-mode:builtin-constant-name-pos-p
+   limit
+   (and swift-mode:highlight-symbols-in-standard-library
+        swift-mode:standard-constants-hash)
+   (and swift-mode:highlight-symbols-in-foundation-framework
+        swift-mode:foundation-constants-hash)))
 
 ;;; Keywords and standard identifiers
 
@@ -525,35 +604,35 @@ Excludes true, false, and keywords begin with a number sign.")
      .
      'swift-mode:keyword-face)
 
-    (swift-mode:font-lock-match-standard-type-names
+    (swift-mode:font-lock-match-builtin-type-names
      .
      'swift-mode:builtin-type-face)
 
-    (swift-mode:font-lock-match-standard-enum-case-names
+    (swift-mode:font-lock-match-builtin-enum-case-names
      .
      'swift-mode:builtin-enum-case-face)
 
-    (swift-mode:font-lock-match-standard-method-trailing-closure-names
+    (swift-mode:font-lock-match-builtin-method-trailing-closure-names
      .
      'swift-mode:builtin-method-trailing-closure-face)
 
-    (swift-mode:font-lock-match-standard-method-names
+    (swift-mode:font-lock-match-builtin-method-names
      .
      'swift-mode:builtin-method-face)
 
-    (swift-mode:font-lock-match-standard-property-names
+    (swift-mode:font-lock-match-builtin-property-names
      .
      'swift-mode:builtin-property-face)
 
-    (swift-mode:font-lock-match-standard-function-trailing-closure-names
+    (swift-mode:font-lock-match-builtin-function-trailing-closure-names
      .
      'swift-mode:builtin-function-trailing-closure-face)
 
-    (swift-mode:font-lock-match-standard-function-names
+    (swift-mode:font-lock-match-builtin-function-names
      .
      'swift-mode:builtin-function-face)
 
-    (swift-mode:font-lock-match-standard-constant-names
+    (swift-mode:font-lock-match-builtin-constant-names
      .
      'swift-mode:builtin-constant-face)
 
