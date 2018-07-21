@@ -34,6 +34,8 @@
 
 ;;; Code:
 
+(require 'swift-mode-standard-types)
+
 ;;; Customizations
 
 ;;;###autoload
@@ -85,6 +87,11 @@ Exmpale: #if, #endif, and #selector."
   "Face for highlighting builtin properties."
   :group 'swift-mode:faces)
 
+(defface swift-mode:builtin-constant-face
+  '((t . (:inherit font-lock-builtin-face)))
+  "Face for highlighting builtin constants."
+  :group 'swift-mode:faces)
+
 (defface swift-mode:builtin-enum-case-face
   '((t . (:inherit font-lock-builtin-face)))
   "Face for highlighting builtin enum cases."
@@ -120,10 +127,63 @@ Exmpale: #if, #endif, and #selector."
   "Face for highlighting property accesses."
   :group 'swift-mode:faces)
 
+(defvar swift-mode:standard-types-hash
+  (make-hash-table :test 'equal)
+  "Set of standard type names.  All values are t.")
+
+(dolist (name swift-mode:standard-types)
+  (puthash name t swift-mode:standard-types-hash))
+(dolist (name swift-mode:foundation-types)
+  (puthash name t swift-mode:standard-types-hash))
+
+(defvar swift-mode:standard-enum-cases-hash
+  (make-hash-table :test 'equal)
+  "Set of standard enum case names.  All values are t.")
+
+(dolist (name swift-mode:standard-enum-cases)
+  (puthash name t swift-mode:standard-enum-cases-hash))
+(dolist (name swift-mode:foundation-enum-cases)
+  (puthash name t swift-mode:standard-enum-cases-hash))
+
+(defvar swift-mode:standard-methods-hash
+  (make-hash-table :test 'equal)
+  "Set of standard method names.  All values are t.")
+
+(dolist (name swift-mode:standard-methods)
+  (puthash name t swift-mode:standard-methods-hash))
+(dolist (name swift-mode:foundation-methods)
+  (puthash name t swift-mode:standard-methods-hash))
+
+(defvar swift-mode:standard-properties-hash
+  (make-hash-table :test 'equal)
+  "Set of standard property names.  All values are t.")
+
+(dolist (name swift-mode:standard-properties)
+  (puthash name t swift-mode:standard-properties-hash))
+(dolist (name swift-mode:foundation-properties)
+  (puthash name t swift-mode:standard-properties-hash))
+
+(defvar swift-mode:standard-functions-hash
+  (make-hash-table :test 'equal)
+  "Set of standard function names.  All values are t.")
+
+(dolist (name swift-mode:standard-functions)
+  (puthash name t swift-mode:standard-functions-hash))
+(dolist (name swift-mode:foundation-functions)
+  (puthash name t swift-mode:standard-functions-hash))
+
+(defvar swift-mode:standard-constants-hash
+  (make-hash-table :test 'equal)
+  "Set of standard constant names.  All values are t.")
+
+(dolist (name swift-mode:standard-constants)
+  (puthash name t swift-mode:standard-constants-hash))
+(dolist (name swift-mode:foundation-constants)
+  (puthash name t swift-mode:standard-constants-hash))
 
 ;;; Supporting functions
 
-(defun swift-mode:function-name-pos-p (pos limit)
+(defun swift-mode:declared-function-name-pos-p (pos limit)
   "Return t if POS is just before the name of a function declaration.
 
 This function does not search beyond LIMIT."
@@ -176,6 +236,103 @@ This function does not search beyond LIMIT."
      (skip-syntax-forward " " limit)
      (not (eq (char-after) ?\()))))
 
+(defun swift-mode:standard-name-pos-p (identifiers pos limit)
+  "Return t if an identifier in the hash IDENTIFIERS appears at POS.
+
+This function does not search beyond LIMIT."
+  (goto-char pos)
+  (skip-syntax-forward "w_" limit)
+  (gethash (buffer-substring-no-properties pos (point)) identifiers))
+
+(defun swift-mode:standard-type-name-pos-p (pos limit)
+  "Return t if POS is just before a standard type name.
+
+This function does not search beyond LIMIT."
+  (swift-mode:standard-name-pos-p swift-mode:standard-types-hash pos limit))
+
+(defun swift-mode:standard-enum-case-name-pos-p (pos limit)
+  "Return t if POS is just before a standard enum case name.
+
+This function does not search beyond LIMIT."
+  (and
+   (eq (char-before pos) ?.)
+   (swift-mode:standard-name-pos-p
+    swift-mode:standard-enum-cases-hash pos limit)))
+
+(defun swift-mode:standard-method-trailing-closure-name-pos-p (pos limit)
+  "Return t if POS is just before a standard method name.
+
+It must followed by open curly bracket.
+This function does not search beyond LIMIT."
+  (and
+   (eq (char-before pos) ?.)
+   (progn
+     (goto-char pos)
+     (skip-syntax-forward "w_" limit)
+     (skip-chars-forward "?")
+     (skip-syntax-forward " " limit)
+     (eq (char-after) ?{))
+   (swift-mode:standard-name-pos-p swift-mode:standard-methods-hash pos limit)))
+
+(defun swift-mode:standard-method-name-pos-p (pos limit)
+  "Return t if POS is just before a standard method name.
+
+This function does not search beyond LIMIT."
+  (and
+   (eq (char-before pos) ?.)
+   (progn
+     (goto-char pos)
+     (skip-syntax-forward "w_" limit)
+     (skip-chars-forward "?")
+     (skip-syntax-forward " " limit)
+     (eq (char-after) ?\())
+   (swift-mode:standard-name-pos-p swift-mode:standard-methods-hash pos limit)))
+
+(defun swift-mode:standard-property-name-pos-p (pos limit)
+  "Return t if POS is just before a standard property name.
+
+This function does not search beyond LIMIT."
+  (and
+   (swift-mode:property-access-pos-p pos limit)
+   (swift-mode:standard-name-pos-p
+    swift-mode:standard-properties-hash pos limit)))
+
+(defun swift-mode:standard-function-trailing-closure-name-pos-p (pos limit)
+  "Return t if POS is just before a standard function name.
+
+It must followed by open curly bracket.
+This function does not search beyond LIMIT."
+  (and
+   (progn
+     (goto-char pos)
+     (skip-syntax-forward "w_" limit)
+     (skip-chars-forward "?")
+     (skip-syntax-forward " " limit)
+     (eq (char-after) ?{))
+   (swift-mode:standard-name-pos-p
+    swift-mode:standard-functions-hash pos limit)))
+
+(defun swift-mode:standard-function-name-pos-p (pos limit)
+  "Return t if POS is just before a standard function name.
+
+This function does not search beyond LIMIT."
+  (and
+   (progn
+     (goto-char pos)
+     (skip-syntax-forward "w_" limit)
+     (skip-chars-forward "?")
+     (skip-syntax-forward " " limit)
+     (eq (char-after) ?\())
+   (swift-mode:standard-name-pos-p
+    swift-mode:standard-functions-hash pos limit)))
+
+(defun swift-mode:standard-constant-name-pos-p (pos limit)
+  "Return t if POS is just before a standard constant name.
+
+This function does not search beyond LIMIT."
+   (swift-mode:standard-name-pos-p
+    swift-mode:standard-constants-hash pos limit))
+
 (defun swift-mode:font-lock-match-expr (limit match-p)
   "Move the cursor just after an identifier that satisfy given predicate.
 
@@ -194,14 +351,15 @@ The predicate MATCH-P is called with two arguments:
         (funcall match-p (match-beginning 0) limit)))
     (swift-mode:font-lock-match-expr limit match-p))))
 
-(defun swift-mode:font-lock-match-function-names (limit)
+(defun swift-mode:font-lock-match-declared-function-names (limit)
   "Move the cursor just after a function name or others.
 
 Others includes enum, struct, class, protocol, and extension name.
 Set `match-data', and return t if a function name or others found before
 position LIMIT.
 Return nil otherwise."
-  (swift-mode:font-lock-match-expr limit #'swift-mode:function-name-pos-p))
+  (swift-mode:font-lock-match-expr
+   limit #'swift-mode:declared-function-name-pos-p))
 
 (defun swift-mode:font-lock-match-property-accesss (limit)
   "Move the cursor just after a property access.
@@ -209,238 +367,86 @@ Set `match-data', and return t if a property access found before position LIMIT.
 Return nil otherwise."
   (swift-mode:font-lock-match-expr limit #'swift-mode:property-access-pos-p))
 
+(defun swift-mode:font-lock-match-standard-type-names (limit)
+  "Move the cursor just after a standard type name.
+
+Set `match-data', and return t if a standard type name found before position
+LIMIT.
+Return nil otherwise."
+  (swift-mode:font-lock-match-expr
+   limit #'swift-mode:standard-type-name-pos-p))
+
+(defun swift-mode:font-lock-match-standard-enum-case-names (limit)
+  "Move the cursor just after a standard enum case name.
+
+Set `match-data', and return t if a standard enum case name found before
+position LIMIT.
+Return nil otherwise."
+  (swift-mode:font-lock-match-expr
+   limit #'swift-mode:standard-enum-case-name-pos-p))
+
+(defun swift-mode:font-lock-match-standard-method-trailing-closure-names (limit)
+  "Move the cursor just after a standard method name with trailing closure.
+
+Set `match-data', and return t if a standard method name found before position
+LIMIT.
+Return nil otherwise."
+  (swift-mode:font-lock-match-expr
+   limit #'swift-mode:standard-method-trailing-closure-name-pos-p))
+
+(defun swift-mode:font-lock-match-standard-method-names (limit)
+  "Move the cursor just after a standard method name.
+
+Set `match-data', and return t if a standard method name found before
+position LIMIT.
+Return nil otherwise."
+  (swift-mode:font-lock-match-expr
+   limit #'swift-mode:standard-method-name-pos-p))
+
+(defun swift-mode:font-lock-match-standard-property-names (limit)
+  "Move the cursor just after a standard property name.
+
+Set `match-data', and return t if a standard property name found before
+position LIMIT.
+Return nil otherwise."
+  (swift-mode:font-lock-match-expr
+   limit #'swift-mode:standard-property-name-pos-p))
+
+(defun swift-mode:font-lock-match-standard-function-trailing-closure-names
+    (limit)
+  "Move the cursor just after a standard function name with trailing closure.
+
+Set `match-data', and return t if a standard function name found before
+position LIMIT.
+Return nil otherwise."
+  (swift-mode:font-lock-match-expr
+   limit #'swift-mode:standard-function-trailing-closure-name-pos-p))
+
+(defun swift-mode:font-lock-match-standard-function-names (limit)
+  "Move the cursor just after a standard function name.
+
+Set `match-data', and return t if a standard function name found before
+position LIMIT.
+Return nil otherwise."
+  (swift-mode:font-lock-match-expr
+   limit #'swift-mode:standard-function-name-pos-p))
+
+(defun swift-mode:font-lock-match-standard-constant-names (limit)
+  "Move the cursor just after a standard constant name.
+
+Set `match-data', and return t if a standard constant name found before
+position LIMIT.
+Return nil otherwise."
+  (swift-mode:font-lock-match-expr
+   limit #'swift-mode:standard-constant-name-pos-p))
+
 ;;; Keywords and standard identifiers
 
 ;; Keywords
 ;; https://developer.apple.com/library/ios/documentation/Swift/Conceptual/Swift_Programming_Language/LexicalStructure.html#//apple_ref/doc/uid/TP40014097-CH30-ID410
 
-(defconst swift-mode:standard-member-functions-trailing-closure
-  '("sort" "sorted" "split" "contains" "index" "partition" "filter" "first"
-    "forEach" "flatMap" "withMutableCharacters" "withCString"
-    "withUnsafeMutableBufferPointer" "withUnsafeMutablePointers"
-    "withUnsafeMutablePointerToElements" "withUnsafeMutablePointerToHeader"
-    "withUnsafeBufferPointer" "withUTF8Buffer" "min" "map" "max" "compactMap")
-  "Member functions with closures in the standard library in Swift 3.
-
-They may be used with trailing closures and no parentheses.")
-
-(defconst swift-mode:standard-member-functions
-  '("symmetricDifference" "storeBytes" "starts" "stride" "sortInPlace"
-    "successor" "suffix" "subtract" "subtracting" "subtractInPlace"
-    "subtractWithOverflow" "squareRoot" "samePosition" "holdsUniqueReference"
-    "holdsUniqueOrPinnedReference" "hasSuffix" "hasPrefix" "negate" "negated"
-    "next" "countByEnumerating" "copy" "copyBytes" "clamp" "clamped" "create"
-    "toIntMax" "toOpaque" "toUIntMax" "takeRetainedValue" "takeUnretainedValue"
-    "truncatingRemainder" "transcodedLength" "trailSurrogate"
-    "isMutableAndUniquelyReferenced" "isMutableAndUniquelyReferencedOrPinned"
-    "isStrictSuperset" "isStrictSupersetOf" "isStrictSubset" "isStrictSubsetOf"
-    "isSuperset" "isSupersetOf" "isSubset" "isSubsetOf" "isContinuation"
-    "isTotallyOrdered" "isTrailSurrogate" "isDisjoint" "isDisjointWith"
-    "isUniqueReference" "isUniquelyReferenced" "isUniquelyReferencedOrPinned"
-    "isEqual" "isLess" "isLessThanOrEqualTo" "isLeadSurrogate" "insert"
-    "insertContentsOf" "intersect" "intersection" "intersectInPlace"
-    "initialize" "initializeMemory" "initializeFrom" "indexOf" "indexForKey"
-    "overlaps" "objectAt" "distance" "distanceTo" "divide" "divided"
-    "divideWithOverflow" "descendant" "destroy" "decode" "decodeCString"
-    "deinitialize" "dealloc" "deallocate" "deallocateCapacity" "dropFirst"
-    "dropLast" "union" "unionInPlace" "underestimateCount" "unwrappedOrError"
-    "update" "updateValue" "uppercased" "joined" "joinWithSeparator" "popFirst"
-    "popLast" "passRetained" "passUnretained" "predecessor" "prefix" "escape"
-    "escaped" "encode" "enumerate" "enumerated" "elementsEqual" "exclusiveOr"
-    "exclusiveOrInPlace" "formRemainder" "formSymmetricDifference"
-    "formSquareRoot" "formTruncatingRemainder" "formIntersection" "formIndex"
-    "formUnion" "flatten" "fromCString" "fromCStringRepairingIllFormedUTF8"
-    "fromOpaque" "withMemoryRebound" "width" "write" "writeTo" "lowercased"
-    "load" "leadSurrogate" "lexicographicalCompare" "lexicographicallyPrecedes"
-    "assign" "assignBackwardFrom" "assignFrom" "assumingMemoryBound" "add"
-    "adding" "addingProduct" "addProduct" "addWithOverflow" "advanced"
-    "advancedBy" "autorelease" "append" "appendContentsOf" "alloc" "allocate"
-    "abs" "round" "rounded" "reserveCapacity" "retain" "reduce" "replace"
-    "replaceRange" "replaceSubrange" "reverse" "reversed" "requestNativeBuffer"
-    "requestUniqueMutableBackingBuffer" "release" "remove" "removeRange"
-    "removeSubrange" "removeValue" "removeValueForKey" "removeFirst"
-    "removeLast" "removeAtIndex" "removeAll" "remainder" "remainderWithOverflow"
-    "generate" "getObjects" "getElement" "minimum" "minimumMagnitude"
-    "minElement" "move" "moveInitialize" "moveInitializeMemory"
-    "moveInitializeBackwardFrom" "moveInitializeFrom" "moveAssign"
-    "moveAssignFrom" "multiply" "multiplyWithOverflow" "multiplied" "measure"
-    "makeIterator" "makeDescription" "maximum" "maximumMagnitude" "maxElement"
-    "bindMemory")
-  "Member functions in the standard library in Swift 3.")
-
-(defconst swift-mode:standard-global-functions-trailing-closure
-  '("anyGenerator" "autoreleasepool")
-  "Global functions with closures available in Swift 3.
-
-They may be used with trailing closures and no parentheses.")
-
-(defconst swift-mode:standard-global-functions
-  '("stride" "strideof" "strideofValue" "sizeof" "sizeofValue" "sequence" "swap"
-    "numericCast" "transcode" "isUniquelyReferenced"
-    "isUniquelyReferencedNonObjC" "isKnownUniquelyReferenced" "zip" "dump"
-    "debugPrint" "unsafeBitCast" "unsafeDowncast" "unsafeUnwrap" "unsafeAddress"
-    "unsafeAddressOf" "print" "precondition" "preconditionFailure" "fatalError"
-    "withUnsafeMutablePointer" "withUnsafePointer" "withExtendedLifetime"
-    "withVaList" "assert" "assertionFailure" "alignof" "alignofValue" "abs"
-    "repeatElement" "readLine" "getVaList" "min" "max")
-  "Global functions available in Swift 3.")
-
-(defconst swift-mode:standard-properties
-  '("startIndex" "stringValue" "stride" "size" "sign" "signBitIndex"
-    "significand" "significandBitCount" "significandBitPattern"
-    "significandWidth" "signalingNaN" "superclassMirror" "summary"
-    "subscriptBaseAddress" "header" "hashValue" "hasPointerRepresentation"
-    "nulTerminatedUTF8" "nextDown" "nextUp" "nan" "nativeOwner" "characters"
-    "count" "countTrailingZeros" "customMirror" "customPlaygroundQuickLook"
-    "capacity" "isSignMinus" "isSignaling" "isSignalingNaN" "isSubnormal"
-    "isNormal" "isNaN" "isCanonical" "isInfinite" "isZero" "isEmpty" "isFinite"
-    "isASCII" "indices" "infinity" "identity" "owner" "description"
-    "debugDescription" "unsafelyUnwrapped" "unicodeScalar" "unicodeScalars"
-    "underestimatedCount" "utf16" "utf8" "utf8Start" "utf8CString"
-    "utf8CodeUnitCount" "uintValue" "uppercaseString" "ulp" "ulpOfOne" "pi"
-    "pointee" "endIndex" "elements" "exponent" "exponentBitCount"
-    "exponentBitPattern" "value" "values" "keys" "quietNaN" "first"
-    "firstElementAddress" "firstElementAddressIfContiguous" "floatingPointClass"
-    "littleEndian" "lowercaseString" "leastNonzeroMagnitude"
-    "leastNormalMagnitude" "last" "lazy" "alignment" "allocatedElementCount"
-    "allZeros" "array" "arrayPropertyIsNativeTypeChecked" "radix" "rawValue"
-    "greatestFiniteMagnitude" "min" "memory" "max" "byteSize" "byteSwapped"
-    "binade" "bitPattern" "bigEndian" "buffer" "base" "baseAddress" "arguments"
-    "argc" "unsafeArgv")
-  "Properties in the standard library in Swift 3.")
-
-(defconst swift-mode:standard-enum-cases
-  '("scalarValue" "size" "signalingNaN" "sound" "some" "suppressed" "sprite"
-    "set" "none" "negativeSubnormal" "negativeNormal" "negativeInfinity"
-    "negativeZero" "color" "collection" "customized" "toNearestOrEven"
-    "toNearestOrAwayFromZero" "towardZero" "tuple" "text" "int" "image"
-    "optional" "dictionary" "double" "down" "uInt" "up" "url"
-    "positiveSubnormal" "positiveNormal" "positiveInfinity" "positiveZero"
-    "point" "plus" "error" "emptyInput" "view" "quietNaN" "float"
-    "attributedString" "awayFromZero" "rectangle" "range" "generated" "minus"
-    "bool" "bezierPath")
-  "Enum cases in the standard library.
-
-Note that there is some overlap between these and the properties.")
-
-(defconst swift-mode:standard-enum-types
-  '("ImplicitlyUnwrappedOptional" "Representation" "MemoryLayout"
-    "FloatingPointClassification" "SetIndexRepresentation"
-    "SetIteratorRepresentation" "FloatingPointRoundingRule"
-    "UnicodeDecodingResult" "Optional" "DictionaryIndexRepresentation"
-    "AncestorRepresentation" "DisplayStyle" "PlaygroundQuickLook" "Never"
-    "FloatingPointSign" "Bit" "DictionaryIteratorRepresentation")
-  "Enum types in the standard library in Swift 3.")
-
-(defconst swift-mode:standard-protocols
-  '("RandomAccessCollection" "RandomAccessIndexable"
-    "RangeReplaceableCollection" "RangeReplaceableIndexable" "RawRepresentable"
-    "MirrorPath" "MutableCollection" "MutableIndexable" "BinaryFloatingPoint"
-    "BitwiseOperations" "BidirectionalCollection" "BidirectionalIndexable"
-    "Strideable" "Streamable" "SignedNumber" "SignedInteger" "SetAlgebra"
-    "Sequence" "Hashable" "Collection" "Comparable" "CustomReflectable"
-    "CustomStringConvertible" "CustomDebugStringConvertible"
-    "CustomPlaygroundQuickLookable" "CustomLeafReflectable" "CVarArg"
-    "TextOutputStream" "Integer" "IntegerArithmetic" "Indexable" "IndexableBase"
-    "IteratorProtocol" "OptionSet" "UnsignedInteger" "UnicodeCodec" "Equatable"
-    "Error" "ExpressibleByBooleanLiteral" "ExpressibleByStringInterpolation"
-    "ExpressibleByStringLiteral" "ExpressibleByNilLiteral"
-    "ExpressibleByIntegerLiteral" "ExpressibleByDictionaryLiteral"
-    "ExpressibleByUnicodeScalarLiteral"
-    "ExpressibleByExtendedGraphemeClusterLiteral" "ExpressibleByFloatLiteral"
-    "ExpressibleByArrayLiteral" "FloatingPoint" "LosslessStringConvertible"
-    "LazySequenceProtocol" "LazyCollectionProtocol" "AnyObject"
-    "AbsoluteValuable")
-  "Protocols in the standard library in Swift 3.")
-
-(defconst swift-mode:foundation-protocols
-  '("CustomNSError" "LocalizedError" "NSKeyValueObservingCustomization"
-    "RecoverableError" "ReferenceConvertible")
-  "Protocols in Foundation.")
-
-(defconst swift-mode:standard-structs
-  '("Repeat" "Repeated" "ReversedRandomAccessCollection"
-    "ReversedRandomAccessIndex" "ReversedCollection" "ReversedIndex"
-    "RandomAccessSlice" "Range" "RangeReplaceableRandomAccessSlice"
-    "RangeReplaceableBidirectionalSlice" "RangeReplaceableSlice"
-    "RangeGenerator" "GeneratorSequence" "GeneratorOfOne" "Mirror"
-    "MutableRandomAccessSlice" "MutableRangeReplaceableRandomAccessSlice"
-    "MutableRangeReplaceableBidirectionalSlice" "MutableRangeReplaceableSlice"
-    "MutableBidirectionalSlice" "MutableSlice" "ManagedBufferPointer"
-    "BidirectionalSlice" "Bool" "StaticString" "String" "StrideThrough"
-    "StrideThroughGenerator" "StrideThroughIterator" "StrideTo"
-    "StrideToGenerator" "StrideToIterator" "Set" "SetIndex" "SetIterator"
-    "Slice" "HalfOpenInterval" "Character" "CharacterView" "ContiguousArray"
-    "CountableRange" "CountableClosedRange" "CollectionOfOne" "COpaquePointer"
-    "ClosedRange" "ClosedRangeIndex" "ClosedRangeIterator" "ClosedInterval"
-    "CVaListPointer" "Int" "Int16" "Int8" "Int32" "Int64" "Indices" "Index"
-    "IndexingGenerator" "IndexingIterator" "Iterator" "IteratorSequence"
-    "IteratorOverOne" "Zip2Sequence" "Zip2Iterator" "OpaquePointer"
-    "ObjectIdentifier" "Dictionary" "DictionaryIndex" "DictionaryIterator"
-    "DictionaryLiteral" "Double" "DefaultRandomAccessIndices"
-    "DefaultBidirectionalIndices" "DefaultIndices" "UnsafeRawPointer"
-    "UnsafeMutableRawPointer" "UnsafeMutableBufferPointer"
-    "UnsafeMutablePointer" "UnsafeBufferPointer" "UnsafeBufferPointerGenerator"
-    "UnsafeBufferPointerIterator" "UnsafePointer" "UnicodeScalar"
-    "UnicodeScalarView" "UnfoldSequence" "Unmanaged" "UTF16" "UTF16View" "UTF8"
-    "UTF8View" "UTF32" "UInt" "UInt16" "UInt8" "UInt32" "UInt64" "JoinGenerator"
-    "JoinedSequence" "JoinedIterator" "PermutationGenerator"
-    "EnumerateGenerator" "EnumerateSequence" "EnumeratedSequence"
-    "EnumeratedIterator" "EmptyGenerator" "EmptyCollection" "EmptyIterator"
-    "Float" "Float80" "FlattenGenerator" "FlattenBidirectionalCollection"
-    "FlattenBidirectionalCollectionIndex" "FlattenSequence" "FlattenCollection"
-    "FlattenCollectionIndex" "FlattenIterator" "LegacyChildren"
-    "LazyRandomAccessCollection" "LazyMapRandomAccessCollection"
-    "LazyMapGenerator" "LazyMapBidirectionalCollection" "LazyMapSequence"
-    "LazyMapCollection" "LazyMapIterator" "LazyBidirectionalCollection"
-    "LazySequence" "LazyCollection" "LazyFilterGenerator"
-    "LazyFilterBidirectionalCollection" "LazyFilterSequence"
-    "LazyFilterCollection" "LazyFilterIndex" "LazyFilterIterator"
-    "AnyRandomAccessCollection" "AnyGenerator" "AnyBidirectionalCollection"
-    "AnySequence" "AnyHashable" "AnyCollection" "AnyIndex" "AnyIterator"
-    "AutoreleasingUnsafeMutablePointer" "Array" "ArraySlice")
-  "Structs in the standard library in Swift 3.")
-
-(defconst swift-mode:foundation-structs
-  '("Calendar" "CharacterSet" "CocoaError" "Data" "Date" "DateComponents"
-    "DateInterval" "ErrorUserInfoKey" "IndexPath" "IndexSet" "Locale"
-    "MachError" "Measurement" "NSFastEnumerationIterator" "NSIndexSetIterator"
-    "NSKeyValueObservedChange" "Notification" "POSIXError"
-    "PersonNameComponents" "TimeZone" "URL" "URLComponents" "URLError"
-    "URLQueryItem" "URLRequest" "URLResourceValues" "UUID")
-  "Structs in Foundation.")
-
-(defconst swift-mode:standard-typealiases
-  '("RawSignificand" "RawExponent" "RawValue" "BooleanLiteralType" "Buffer"
-    "Base" "Storage" "StringLiteralType" "Stride" "Stream1" "Stream2"
-    "SubSequence" "NativeBuffer" "Child" "Children" "CBool" "CShort"
-    "CSignedChar" "CodeUnit" "CChar" "CChar16" "CChar32" "CInt" "CDouble"
-    "CUnsignedShort" "CUnsignedChar" "CUnsignedInt" "CUnsignedLong"
-    "CUnsignedLongLong" "CFloat" "CWideChar" "CLong" "CLongLong" "IntMax"
-    "IntegerLiteralType" "Indices" "Index" "IndexDistance" "Iterator" "Distance"
-    "UnicodeScalarType" "UnicodeScalarIndex" "UnicodeScalarView"
-    "UnicodeScalarLiteralType" "UnfoldFirstSequence" "UTF16Index" "UTF16View"
-    "UTF8Index" "UIntMax" "Element" "Elements" "ExtendedGraphemeClusterType"
-    "ExtendedGraphemeClusterLiteralType" "Exponent" "Void" "Value" "Key"
-    "Float32" "FloatLiteralType" "Float64" "AnyClass" "Any")
-  "Typealiases in the standard library in Swift 3.")
-
-(defconst swift-mode:standard-class-types
-  '("ManagedBuffer" "ManagedProtoBuffer" "NonObjectiveCBase" "AnyGenerator")
-  "Built-in class types.")
-
-(defconst swift-mode:standard-precedence-groups
-  '("BitwiseShift" "Assignment" "RangeFormation" "Casting" "Addition"
-    "NilCoalescing" "Comparison" "LogicalConjunction" "LogicalDisjunction"
-    "Default" "Ternary" "Multiplication" "FunctionArrow")
-  "Precedence groups in the standard library.")
-
 (defconst swift-mode:constant-keywords
-  '("true" "false" "nil"
-    ;; CommandLine is an enum, but it acts like a constant.
-    "CommandLine" "Process"
-    ;; The return type of a function that never returns.
-    "Never")
+  '("true" "false" "nil")
   "Keywords used as constants.")
 
 (defconst swift-mode:preprocessor-keywords
@@ -480,6 +486,22 @@ Excludes true, false, and keywords begin with a number sign.")
     "arm64" "iOSApplicationExtension" "OSXApplicationExtension")
   "Keywords for build configuration statements.")
 
+(defconst swift-mode:standard-precedence-groups
+  '("AssignmentPrecedence"
+    "FunctionArrowPrecedence"
+    "TernaryPrecedence"
+    "DefaultPrecedence"
+    "LogicalDisjunctionPrecedence"
+    "LogicalConjunctionPrecedence"
+    "ComparisonPrecedence"
+    "NilCoalescingPrecedence"
+    "CastingPrecedence"
+    "RangeFormationPrecedence"
+    "AdditionPrecedence"
+    "MultiplicationPrecedence"
+    "BitwiseShiftPrecedence")
+  "Precedence groups in the standard library.")
+
 ;;; font-lock definition
 
 (defconst swift-mode:font-lock-keywords
@@ -503,56 +525,45 @@ Excludes true, false, and keywords begin with a number sign.")
      .
      'swift-mode:keyword-face)
 
-    (,(concat "\\."
-              (regexp-opt swift-mode:standard-member-functions-trailing-closure
-                          'words)
-              "\\s-*[({]")
-     1
+    (swift-mode:font-lock-match-standard-type-names
+     .
+     'swift-mode:builtin-type-face)
+
+    (swift-mode:font-lock-match-standard-enum-case-names
+     .
+     'swift-mode:builtin-enum-case-face)
+
+    (swift-mode:font-lock-match-standard-method-trailing-closure-names
+     .
      'swift-mode:builtin-method-trailing-closure-face)
 
-    (,(concat "\\."
-              (regexp-opt swift-mode:standard-member-functions 'words)
-              "\\s-*(")
-     1
+    (swift-mode:font-lock-match-standard-method-names
+     .
      'swift-mode:builtin-method-face)
 
-    (,(concat (regexp-opt swift-mode:standard-global-functions-trailing-closure
-                          'words)
-              "\\s-*[({]")
-     1
-     'swift-mode:builtin-function-trailing-closure-face)
-
-    (,(concat (regexp-opt swift-mode:standard-global-functions 'words)
-              "\\s-*(")
-     1
-     'swift-mode:builtin-function-face)
-
-    (,(concat "\\." (regexp-opt swift-mode:standard-properties 'words))
-     1
+    (swift-mode:font-lock-match-standard-property-names
+     .
      'swift-mode:builtin-property-face)
 
-    (,(concat "\\." (regexp-opt swift-mode:standard-enum-cases 'words))
-     1
-     'swift-mode:builtin-enum-case-face)
+    (swift-mode:font-lock-match-standard-function-trailing-closure-names
+     .
+     'swift-mode:builtin-function-trailing-closure-face)
+
+    (swift-mode:font-lock-match-standard-function-names
+     .
+     'swift-mode:builtin-function-face)
+
+    (swift-mode:font-lock-match-standard-constant-names
+     .
+     'swift-mode:builtin-constant-face)
 
     (,(regexp-opt swift-mode:build-config-keywords 'words)
      .
      'swift-mode:build-config-keyword-face)
 
-    (,(regexp-opt (append swift-mode:standard-class-types
-                          swift-mode:standard-enum-types
-                          swift-mode:foundation-protocols
-                          swift-mode:foundation-structs
-                          swift-mode:standard-protocols
-                          swift-mode:standard-structs
-                          swift-mode:standard-typealiases)
-                  'words)
-     .
-     'swift-mode:builtin-type-face)
-
     (,(concat "\\<"
               (regexp-opt swift-mode:standard-precedence-groups 'non-nil)
-              "Precedence\\>")
+              "\\>")
      .
      'swift-mode:builtin-precedence-group-face)
 
@@ -561,8 +572,8 @@ Excludes true, false, and keywords begin with a number sign.")
      1
      'swift-mode:function-call-face)
 
-    ;; Function declarations
-    (swift-mode:font-lock-match-function-names
+    ;; Function and type declarations
+    (swift-mode:font-lock-match-declared-function-names
      .
      'swift-mode:function-name-face)
 
