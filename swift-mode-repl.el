@@ -45,6 +45,7 @@
   "REPL."
   :group 'swift)
 
+;;;###autoload
 (defcustom swift-mode:repl-executable
   "xcrun swift"
   "Path to the Swift CLI.  The string is splitted by spaces, then unquoted."
@@ -52,6 +53,7 @@
   :group 'swift-mode:repl
   :safe 'stringp)
 
+;;;###autoload
 (defcustom swift-mode:swift-package-executable
   "xcrun swift package"
   "Path to the Swift command for package manipulation.
@@ -60,6 +62,7 @@ The string is splitted by spaces, then unquoted."
   :group 'swift-mode:repl
   :safe 'stringp)
 
+;;;###autoload
 (defcustom swift-mode:swift-build-executable
   "xcrun swift build"
   "Path to the Swift command for building.
@@ -68,6 +71,7 @@ The string is splitted by spaces, then unquoted."
   :group 'swift-mode:repl
   :safe 'stringp)
 
+;;;###autoload
 (defcustom swift-mode:debugger-executable
   "xcrun lldb"
   "Path to the debugger command.
@@ -76,6 +80,7 @@ The string is splitted by spaces, then unquoted."
   :group 'swift-mode:repl
   :safe 'stringp)
 
+;;;###autoload
 (defcustom swift-mode:ios-deploy-executable
   "ios-deploy"
   "Path to ios-deploy command.
@@ -84,6 +89,7 @@ The string is splitted by spaces, then unquoted."
   :group 'swift-mode:repl
   :safe 'stringp)
 
+;;;###autoload
 (defcustom swift-mode:simulator-controller-executable
   "xcrun simctl"
   "Path to the simulator controller command.
@@ -92,6 +98,7 @@ The string is splitted by spaces, then unquoted."
   :group 'swift-mode:repl
   :safe 'stringp)
 
+;;;###autoload
 (defcustom swift-mode:xcodebuild-executable
   "xcrun xcodebuild"
   "Path to the Xcode builder.
@@ -100,6 +107,7 @@ The string is splitted by spaces, then unquoted."
   :group 'swift-mode:repl
   :safe 'stringp)
 
+;;;###autoload
 (defcustom swift-mode:xcode-select-executable
   "xcode-select"
   "Path to the Xcode selector.
@@ -108,6 +116,7 @@ The string is splitted by spaces, then unquoted."
   :group 'swift-mode:repl
   :safe 'stringp)
 
+;;;###autoload
 (defcustom swift-mode:debugger-prompt-regexp "^(lldb) +\\|^[0-9]+> +"
   "Regexp to search a debugger prompt."
   :type 'string
