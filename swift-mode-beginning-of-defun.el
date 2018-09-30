@@ -70,6 +70,9 @@ marks the `outer' function.  Likewise, it marks `inner1' if the preference is
   :group 'swift
   :safe 'symbolp)
 
+(defvar swift-mode:last-mark-direction 'containing
+  "Last direction of `swift-mode:mark-generic-block'.")
+
 (defun swift-mode:beginning-of-defun (&optional arg)
   "Move backward to the beginning of a defun.
 
@@ -479,19 +482,22 @@ Return nil otherwise."
         (eq (swift-mode:token:type next-token) '{)
         (member (swift-mode:token:text next-token) '("catch" "else")))))))
 
-
-(defun swift-mode:mark-defun (&optional allow-extend)
+(defun swift-mode:mark-defun (&optional arg allow-extend)
   "Put mark at the end of defun, point at the beginning of defun.
 
 If the point is between defuns, mark depend on
 `swift-mode:mark-defun-preference'.
 
+If ARG is a positive number, mark that many following defuns.  If ARG is
+negative, reverse direction of marking.  If those defuns have lesser nesting
+level than the initial one, mark the whole outer defun.
+
 If ALLOW-EXTEND is non-nil or called interactively, and the command is repeated
 or the region is active, mark the following (if the point is before the mark)
-or preceding (if the point is after the mark) defun.  If that defun has lesser
-nesting level, mark the whole outer defun."
-  (interactive (list t))
+or preceding (if the point is after the mark) defun."
+  (interactive (list (prefix-numeric-value current-prefix-arg) t))
   (let ((region (swift-mode:mark-generic-block
+                 arg
                  allow-extend
                  #'swift-mode:end-of-defun
                  #'swift-mode:beginning-of-defun)))
@@ -534,64 +540,142 @@ Return t if a sentence is found.  Return nil otherwise."
         (setq arg (1- arg)))
       result)))
 
-(defun swift-mode:mark-generic-block (allow-extend move-forward move-backward)
+(defun swift-mode:mark-generic-block (arg
+                                      allow-extend
+                                      move-forward
+                                      move-backward)
   "Put mark at the end of generic block, point at the beginning of it.
 
-If the point is between generic blocks, mark depend on
-`swift-mode:mark-defun-preference'.
+The direction of marking depend on `swift-mode:mark-defun-preference'.
+
+If ARG is a positive number, mark that many blocks.  If ARG is negative,
+reverse direction of marking.  If those blocks have lesser nesting level than
+the initial one, mark the whole outer block.
 
 If ALLOW-EXTEND is non-nil or called interactively, and the command is repeated
-or the region is active, mark the following (if the point is before the mark)
-or preceding (if the point is after the mark) block.  If that statement has
-lesser nesting level, mark the whole outer statement.
+or the region is active, extend region.
 
 MOVE-FORWARD is a function moving the cursor to the next end of block.
 MOVE-BACKWARD is a function moving the cursor to the previous beginning of
 block.
 Both functions return t if succeeded, return nil otherwise."
-  (if (and allow-extend
-           (or
-            (and (eq last-command this-command) (mark t))
-            (region-active-p)))
-      ;; Extends region.
-      (let ((is-forward (<= (point) (mark))))
-        (set-mark
-         (save-excursion
-           (goto-char (mark))
-           (if is-forward
-               (funcall move-forward)
-             (funcall move-backward))
-           (point)))
-        ;; Marks the whole outer block if the mark got out of the outer block.
-        (goto-char
-         (if is-forward
-             (min (point)
-                  (save-excursion
-                    (goto-char (mark))
-                    (funcall move-backward)
-                    (point)))
-           (max (point)
-                (save-excursion
-                  (goto-char (mark))
-                  (funcall move-forward)
-                  (point))))))
-    ;; Marks new region.
-    (let ((region
-           (cond
-            ((eq swift-mode:mark-defun-preference 'containing)
-             (swift-mode:containing-generic-block-region
-              move-forward move-backward))
-            ((eq swift-mode:mark-defun-preference 'preceding)
-             (swift-mode:preceding-generic-block-region
-              move-forward move-backward))
-            ((eq swift-mode:mark-defun-preference 'following)
-             (swift-mode:following-generic-block-region
-              move-forward move-backward)))))
-      (and
-       region
-       (progn (push-mark (cdr region) nil t)
-              (goto-char (car region))
-              region)))))
+  (setq arg (or arg 1))
+
+  (let ((reversed (< arg 0))
+        (count (abs arg))
+        (direction
+         (if (and allow-extend
+                  (and (eq last-command this-command) (mark t)))
+             swift-mode:last-mark-direction
+           swift-mode:mark-defun-preference))
+        (original-region
+         (if (and allow-extend
+                  (or
+                   (and (eq last-command this-command) (mark t))
+                   (region-active-p)))
+             (cons (min (point) (mark t))
+                   (max (point) (mark t)))
+           (cons (point) (point))))
+        (point-was-after-mark
+         (and (mark t)
+              (< (mark t) (point))))
+        new-region-and-direction
+        new-region
+        new-direction
+        last-successful-region)
+    (when reversed
+      (setq direction
+            (cond
+             ((eq direction 'containing) 'containing)
+             ((eq direction 'preceding) 'following)
+             ((eq direction 'following) 'preceding))))
+
+    (setq new-region original-region)
+    (setq new-direction direction)
+
+    (while (and new-region (< 0 count))
+      (let ((new-region-and-direction
+             (swift-mode:extend-region-to-be-marked
+              new-region
+              new-direction
+              move-forward
+              move-backward
+              (if reversed 'preceding 'following))))
+        (setq new-region (nth 0 new-region-and-direction))
+        (setq new-direction (nth 1 new-region-and-direction)))
+      (when new-region
+        (setq last-successful-region new-region))
+      (setq count (1- count)))
+
+    (setq new-region (or new-region last-successful-region))
+    (setq swift-mode:last-mark-direction new-direction)
+
+    (and
+     new-region
+     (progn
+       (goto-char (car new-region))
+       (push-mark (cdr new-region) nil t)
+
+       (if (eq (car original-region) (cdr original-region))
+           (when (eq new-direction 'preceding)
+             (exchange-point-and-mark))
+         (when point-was-after-mark
+           (exchange-point-and-mark)))
+       new-region))))
+
+(defun swift-mode:extend-region-to-be-marked (original-region
+                                              direction
+                                              move-forward
+                                              move-backward
+                                              preferred-direction)
+  "Return cons representing the extended region.
+
+ORIGINAL-REGION is the region to be extended.
+DIRECTION is the direction of extension.
+MOVE-FORWARD is a function moving the cursor to the next end of block.
+MOVE-BACKWARD is a function moving the cursor to the previous beginning of
+block.
+Both functions return t if succeeded, return nil otherwise.
+PREFERRED-DIRECTION is the preferred direction of extension when DIRECTION is
+ `containing'."
+  (let* ((new-region-and-direction
+          (cond
+           ((eq direction 'containing)
+            (swift-mode:containing-generic-block-region
+             original-region
+             move-forward move-backward
+             preferred-direction))
+           ((eq direction 'preceding)
+            (list
+             (save-excursion
+               (goto-char (car original-region))
+               (swift-mode:preceding-generic-block-region
+                move-forward move-backward))
+             'preceding))
+           ((eq direction 'following)
+            (list
+             (save-excursion
+               (goto-char (cdr original-region))
+               (swift-mode:following-generic-block-region
+                move-forward move-backward))
+             'following))))
+         (new-region (nth 0 new-region-and-direction))
+         (new-direction (nth 1 new-region-and-direction)))
+    (when new-region
+      (setq new-region
+            (cons
+             (min (car original-region) (car new-region))
+             (max (cdr original-region) (cdr new-region))))
+      ;; Marks the whole outer block if the mark got out of the outer block.
+      (save-excursion
+        (goto-char (cdr new-region))
+        (funcall move-backward)
+        (setcar new-region (min (car new-region) (point))))
+      (save-excursion
+        (goto-char (car new-region))
+        (funcall move-forward)
+        (setcdr new-region (max (cdr new-region) (point)))))
+    (list new-region new-direction)))
 
 (defun swift-mode:following-generic-block-region (move-forward move-backward)
   "Return cons representing a region of following generic block.
@@ -617,54 +701,103 @@ Both functions return t if succeeded, return nil otherwise."
            (end (and beginning (funcall move-forward) (point))))
       (and end (cons beginning end)))))
 
-(defun swift-mode:containing-generic-block-region (move-forward move-backward)
-  "Return cons representing a region of containing generic block.
+(defun swift-mode:containing-generic-block-region (original-region
+                                                   move-forward
+                                                   move-backward
+                                                   &optional
+                                                   preferred-direction)
+  "Return list representing a region of containing generic block.
+
+Its first element is a cons representing the region.
+The second element is a symbol one of `containing', `preceding', or `following',
+which indicates which defun is marked.
+
+The region contains ORIGINAL-REGION.
 
 MOVE-FORWARD is a function moving the cursor to the next end of block.
 MOVE-BACKWARD is a function moving the cursor to the previous beginning of
 block.
-Both functions return t if succeeded, return nil otherwise."
-  (let* ((pos (point))
-         (region (swift-mode:following-generic-block-region
-                  move-forward move-backward))
-         (extended (and region
-                        (swift-mode:extend-region-with-spaces region))))
+Both functions return t if succeeded, return nil otherwise.
+If PREFERRED-DIRECTION is `preceding' try to mark the preceding defun first.
+Otherwise, try to mark the following one."
+  (let* ((start-pos (min (car original-region) (cdr original-region)))
+         (end-pos (max (car original-region) (cdr original-region)))
+         region extended)
     (cond
-     ((and extended (<= (car extended) pos (cdr extended)))
-      region)
 
+     ;; /* original-region is here */ func foo() {
+     ;;                               }
      ((progn
-        (setq region (swift-mode:preceding-generic-block-region
-                      move-forward move-backward))
+        (setq region
+              (if (eq preferred-direction 'preceding)
+                  (save-excursion
+                    (goto-char start-pos)
+                    (swift-mode:preceding-generic-block-region
+                     move-forward move-backward))
+                (save-excursion
+                  (goto-char end-pos)
+                  (swift-mode:following-generic-block-region
+                   move-forward move-backward))))
         (setq extended (swift-mode:extend-region-with-spaces region))
-        (and extended (<= (car extended) pos (cdr extended))))
-      region)
+        (and extended (<= (car extended) start-pos end-pos (cdr extended))))
+      (list region preferred-direction))
 
+     ;; func foo() {
+     ;; } /* original-region is here */
+     ((progn
+        (setq region
+              (if (eq preferred-direction 'preceding)
+                  (save-excursion
+                    (goto-char end-pos)
+                    (swift-mode:following-generic-block-region
+                     move-forward move-backward))
+                (save-excursion
+                  (goto-char start-pos)
+                  (swift-mode:preceding-generic-block-region
+                   move-forward move-backward))))
+        (setq extended (swift-mode:extend-region-with-spaces region))
+        (and extended (<= (car extended) start-pos end-pos (cdr extended))))
+      (list region
+            (if (eq preferred-direction 'preceding) 'following 'preceding)))
+
+     ;; class Foo {
+     ;;   func foo() {
+     ;;   }
+     ;;
+     ;;   /* original-region is here */
+     ;;
+     ;;   func bar() {
+     ;;   }
+     ;; }
      (t
       (save-excursion
         (catch 'swift-mode:found-block
-          (let ((start pos)
-                (end pos))
+          (let ((start start-pos)
+                (end end-pos))
+            (goto-char end-pos)
             (while (and (funcall move-forward) (/= end (point)))
               (setq end (point))
               (save-excursion
                 (funcall move-backward)
-                (when (<= (point) pos end)
-                  (throw 'swift-mode:found-block (cons (point) end)))))
+                (when (<= (point) start-pos end-pos end)
+                  (throw 'swift-mode:found-block
+                         (list (cons (point) end) 'containing)))))
             (when (= end (point))
               ;; Got unmatched parens.
               ;; Scans backward.
-              (goto-char pos)
+              (goto-char start-pos)
               (while (and (funcall move-backward) (/= start (point)))
                 (setq start (point))
                 (save-excursion
                   (funcall move-forward)
-                  (when (<= start pos (point))
-                    (throw 'swift-mode:found-block (cons start (point))))
+                  (when (<= start start-pos end-pos (point))
+                    (throw 'swift-mode:found-block
+                           (list (cons start (point)) 'containing)))
                   (funcall move-backward)
                   (when (/= start (point))
-                    (throw 'swift-mode:found-block (cons start end)))))))
-          (cons (point-min) (point-max))))))))
+                    (throw 'swift-mode:found-block
+                           (list (cons start end)) 'containing))))))
+          (list (cons (point-min) (point-max)) 'containing)))))))
 
 (defun swift-mode:extend-region-with-spaces (region)
   "Return REGION extended with surrounding spaces."
@@ -703,8 +836,9 @@ Both functions return t if succeeded, return nil otherwise."
       (setq region
             (cond
              ((eq swift-mode:mark-defun-preference 'containing)
-              (swift-mode:containing-generic-block-region
-               move-forward move-backward))
+              (nth 0 (swift-mode:containing-generic-block-region
+                      (cons (point) (point))
+                      move-forward move-backward)))
              ((eq swift-mode:mark-defun-preference 'preceding)
               (swift-mode:preceding-generic-block-region
                move-forward move-backward))
@@ -1178,18 +1312,22 @@ kill forwards."
    (point)
    (save-excursion (swift-mode:backward-sentence arg) (point))))
 
-(defun swift-mode:mark-sentence (&optional allow-extend)
+(defun swift-mode:mark-sentence (&optional arg allow-extend)
   "Put mark at the end of sentence, point at the beginning of sentence.
 
 If the point is between sentence, mark depend on
 `swift-mode:mark-defun-preference'.
 
+If ARG is a positive number, mark that many following sentences.  If ARG is
+negative, reverse direction of marking.  If those sentences have lesser
+nesting level than the initial one, mark the whole outer sentence.
+
 If ALLOW-EXTEND is non-nil or called interactively, and the command is repeated
 or the region is active, mark the following (if the point is before the mark)
-or preceding (if the point is after the mark) statement.  If that statement has
-lesser nesting level, mark the whole outer statement."
-  (interactive (list t))
-  (let ((region (swift-mode:mark-generic-block allow-extend
+or preceding (if the point is after the mark) sentence."
+  (interactive (list (prefix-numeric-value current-prefix-arg) t))
+  (let ((region (swift-mode:mark-generic-block arg
+                                               allow-extend
                                                #'swift-mode:forward-sentence
                                                #'swift-mode:backward-sentence)))
     (if (and (not region)  (called-interactively-p 'interactive))
@@ -1241,9 +1379,10 @@ of ancestors."
         keyword-text
         next-token
         name-token)
-    (goto-char (car (swift-mode:containing-generic-block-region
-                     #'swift-mode:end-of-defun
-                     #'swift-mode:beginning-of-defun)))
+    (goto-char (caar (swift-mode:containing-generic-block-region
+                      (cons (point) (point))
+                      #'swift-mode:end-of-defun
+                      #'swift-mode:beginning-of-defun)))
 
     (save-excursion
       (setq keyword-token (swift-mode:find-defun-keyword))
