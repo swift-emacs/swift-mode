@@ -76,7 +76,7 @@
 (defun swift-mode:token (type text start end)
   "Construct and return a token.
 
-TYPE is the type of the token such as `inix-operator' or {.
+TYPE is the type of the token such as `infix-operator' or {.
 TEXT is the text of the token.
 START is the start position of the token.
 END is the point after the token."
@@ -98,7 +98,7 @@ END is the point after the token."
   "Return the end position of TOKEN."
   (nth 3 token))
 
-;; Token types is one of the follwing symbols:
+;; Token types is one of the following symbols:
 ;;
 ;; - prefix-operator (including try, try?, and try!)
 ;; - postfix-operator
@@ -124,7 +124,7 @@ END is the point after the token."
 ;; - string-chunk-before-interpolated-expression (part of a string ending with "\\(")
 ;; - outside-of-buffer
 ;;
-;; Additionaly, `swift-mode:backward-token-or-list' may return a parenthesized
+;; Additionally, `swift-mode:backward-token-or-list' may return a parenthesized
 ;; expression as a token with one of the following types:
 ;; - ()
 ;; - []
@@ -376,13 +376,13 @@ Return nil otherwise."
       (setq next-token (swift-mode:token 'identifier "" (point) (point))))
     (cond
      ((or
-       ;; Supresses implicit semicolon around binary operators and separators.
+       ;; Suppresses implicit semicolon around binary operators and separators.
        (memq (swift-mode:token:type previous-token)
              '(binary-operator \; \, :))
        (memq (swift-mode:token:type next-token)
              '(binary-operator \; \, :))
 
-       ;; Supresses implicit semicolon after try, try?, and try!.
+       ;; Suppresses implicit semicolon after try, try?, and try!.
        (member (swift-mode:token:text previous-token)
                '("try" "try?" "try!"))
 
@@ -419,7 +419,7 @@ Return nil otherwise."
      ;; }
      ((eq (swift-mode:token:type next-token) '\{) t)
 
-     ;; Supress implicit semicolon after attributes.
+     ;; Suppress implicit semicolon after attributes.
      ((eq (swift-mode:token:type previous-token) 'attribute)
       nil)
 
@@ -450,7 +450,7 @@ Return nil otherwise."
 
      ;; Insert implicit semicolon before modifiers.
      ;;
-     ;; Preceding mofidiers takes precedence over this.
+     ;; Preceding modifiers takes precedence over this.
      ((member (swift-mode:token:text next-token)
               '("indirect" "convenience" "dynamic" "final" "infix" "lazy"
                 "mutating" "nonmutating" "optional" "override" "postfix"
@@ -681,7 +681,7 @@ Return nil otherwise."
            ;; switch foo {
            ;; case let x where x is Foo ?
            ;;                    a : // This function should return nil but it
-           ;;                        // actually retuns t.
+           ;;                        // actually returns t.
            ;;                    b: // This function should return t but it
            ;;                       // actually return nil.
            ;;   let y = a ? b : c // This function returns nil correctly for
@@ -695,7 +695,7 @@ Return nil otherwise."
            '("case" "default"))
         (setq swift-mode:in-recursive-call-of-case-colon-p nil)))))
 
-(defun swift-mode:anonyous-parameter-in-p ()
+(defun swift-mode:anonymous-parameter-in-p ()
   "Return t if a 'in' token at the cursor is for anonymous function parameters."
   (save-excursion
     (eq
@@ -811,7 +811,7 @@ type `out-of-buffer'"
         (when (and (equal (swift-mode:token:text token) "in")
                    (save-excursion
                      (goto-char (swift-mode:token:start token))
-                     (swift-mode:anonyous-parameter-in-p)))
+                     (swift-mode:anonymous-parameter-in-p)))
           (setq token
                 (swift-mode:token
                  'anonymous-function-parameter-in
@@ -853,7 +853,7 @@ This function does not return `implicit-;' or `type-:'."
    ;; Open angle bracket for type parameters
    ;;
    ;; We use a heuristic: spaces are inserted around inequality sign, but not
-   ;; for angle bracket, and a type paramer starts with an upper case
+   ;; for angle bracket, and a type parameter starts with an upper case
    ;; character, a square bracket, a parenthesis, or keyword 'protocol'.
    ((and (eq (char-after) ?<)
          (looking-at "<\\([[:upper:]\\[[(]\\|protocol\\)"))
@@ -1023,7 +1023,7 @@ type `out-of-buffer'."
         (when (and (equal (swift-mode:token:text token) "in")
                    (save-excursion
                      (goto-char (swift-mode:token:start token))
-                     (swift-mode:anonyous-parameter-in-p)))
+                     (swift-mode:anonymous-parameter-in-p)))
           (setq token
                 (swift-mode:token
                  'anonymous-function-parameter-in
@@ -1095,7 +1095,7 @@ This function does not return `implicit-;' or `type-:'."
    ;; Open angle bracket for type parameters
    ;;
    ;; We use a heuristic: spaces are inserted around inequality sign, but not
-   ;; for angle bracket, and a type paramer starts with an upper case
+   ;; for angle bracket, and a type parameter starts with an upper case
    ;; character, a square bracket, a parenthesis, or keyword `protocol'.
    ((and (eq (char-before) ?<)
          (looking-at "\\([[:upper:]\\[[(]\\|protocol\\)"))
@@ -1273,7 +1273,7 @@ If this line ends with a single-line comment, goto just before the comment."
              (swift-mode:chunk:comment-p chunk))
       ;; The cursor is in a comment.
       (if (swift-mode:chunk:single-line-comment-p chunk)
-          ;; This ia a single-line comment
+          ;; This is a single-line comment
           ;; Back to the beginning of the comment.
           (goto-char (swift-mode:chunk:start chunk))
         ;; This is a multiline comment

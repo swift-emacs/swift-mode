@@ -372,7 +372,7 @@ declaration and its offset is `swift-mode:basic-offset'."
       ;; Searches sibling "case" at the beginning of a line. If found, aligns
       ;; with it.
       ;;
-      ;; Otherwise, searches "switch" and aligh with it with offset.
+      ;; Otherwise, searches "switch" and align with it with offset.
       (let ((parent (swift-mode:backward-sexps-until
                      '("switch") nil '("case" "default"))))
         (if (equal (swift-mode:token:text parent) "switch")
@@ -992,9 +992,9 @@ Assuming the cursor is on the comma."
   (swift-mode:align-with-next-token
    (swift-mode:find-parent-of-list-element nil)))
 
-(defun swift-mode:find-parent-of-list-element (&optional utrecht-sytle)
+(defun swift-mode:find-parent-of-list-element (&optional utrecht-style)
   "Move point backward to the parent token of the comma under the cursor.
-If UTRECHT-SYTLE is non-nil, stop at a comma at bol.  Otherwise, stop at a
+If UTRECHT-STYLE is non-nil, stop at a comma at bol.  Otherwise, stop at a
 comma at eol."
   ;; Various examples:
   ;;
@@ -1092,8 +1092,8 @@ comma at eol."
         (parent (swift-mode:backward-sexps-until
                  ;; Includes "if" to stop at the last else-if.
                  (append swift-mode:statement-parent-tokens '("if" \( \[ <))
-                 (if utrecht-sytle nil '(\,))
-                 (if utrecht-sytle '(\,) nil))))
+                 (if utrecht-style nil '(\,))
+                 (if utrecht-style '(\,) nil))))
     (cond
      ((memq (swift-mode:token:type parent) '(\( \[ \,))
       parent)
@@ -1228,10 +1228,10 @@ Assuming the cursor is before the string chunk."
 Return the token.
 When this function returns, the cursor is at the start of the token.
 
-TOKEN-TYPES is a list of guard token typess.  This function backs to a token
+TOKEN-TYPES is a list of guard token types.  This function backs to a token
 with  one of those token types.
 STOP-AT-EOL-TOKEN-TYPES is a list of token types that if we skipped the end of
-a line just after a token with one of given toke typen, the function returns.
+a line just after a token with one of given token type, the function returns.
 Typically, this is a list of token types that separates list elements
 \(e.g.  ',', ';').  If STOP-AT-EOL-TOKEN-TYPES is the symbol `any', it matches
 all tokens.
@@ -1416,7 +1416,7 @@ It is a Generic parameter list if:
    #'swift-mode:forward-token-or-list
    ">" "<"))
 
-(defconst siwft-mode:tokens-not-in-generic-parameter-list
+(defconst swift-mode:tokens-not-in-generic-parameter-list
   ;; Whitelisting tend to be fragile. So we list tokens that are
   ;; unlikely to appear in generic parameter lists in the current
   ;; version and future ones.
@@ -1459,7 +1459,7 @@ UNMATCHING-BRACKET-TEXT is a text of the current bracket."
   (let ((pos (point))
         (prohibited-tokens (append
                             unmatching-bracket-text
-                            siwft-mode:tokens-not-in-generic-parameter-list))
+                            swift-mode:tokens-not-in-generic-parameter-list))
         (next-token (funcall skip-token-or-list-function)))
     (while
         (cond

@@ -186,7 +186,7 @@ The cursor must be at the beginning of a statement."
       ;; // Nested class named "final"
       ;; class Foo { class final {} }
       ;;
-      ;; // Nonoverridable class method named "foo"
+      ;; // Non-overridable class method named "foo"
       ;; class Foo { class final func foo() {} }
       ;;
       ;; Keeps scanning and returns the token if there are no other
@@ -318,7 +318,7 @@ Intended for internal use."
        (memq (swift-mode:token:type previous-token)
              '(\; anonymous-function-parameter-in))
        (eq (swift-mode:token:end previous-token) pos))
-      ;; Already at the eod of statement.  Returns next token.
+      ;; Already at the end of statement.  Returns next token.
       (save-excursion (swift-mode:forward-token)))
      ((memq (swift-mode:token:type previous-token)
             '(implicit-\; outside-of-buffer))
@@ -525,7 +525,7 @@ Interactively, the behavior depends on ‘narrow-to-defun-include-comments’."
 (defun swift-mode:forward-sentence (&optional arg)
   "Skip forward sentences or statements.
 
-In comments or strings, skip a sentence.  Otherwise, skip a stateement.
+In comments or strings, skip a sentence.  Otherwise, skip a statement.
 
 With ARG, repeat ARG times.  If ARG is negative, Skip backwards.
 
@@ -865,7 +865,7 @@ Both functions return t if succeeded, return nil otherwise."
 (defun swift-mode:backward-sentence (&optional arg)
 "Skip backward sentences or statements.
 
-In comments or strings, skip a sentence.  Otherwise, skip a stateement.
+In comments or strings, skip a sentence.  Otherwise, skip a statement.
 
 With ARG, repeat ARG times.  If ARG is negative, Skip forwards.
 
@@ -883,7 +883,7 @@ Return t if a sentence is found.  Return nil otherwise."
 (defun swift-mode:forward-sentence-1 ()
   "Skip forward a sentence or a statement.
 
-In comments or strings, skip a sentence.  Otherwise, skip a stateement."
+In comments or strings, skip a sentence.  Otherwise, skip a statement."
   (let ((chunk (swift-mode:chunk-after)))
     (cond
      ((swift-mode:chunk:comment-p chunk)
@@ -924,7 +924,7 @@ In comments or strings, skip a sentence.  Otherwise, skip a stateement."
 (defun swift-mode:backward-sentence-1 ()
   "Skip backward a sentence or a statement.
 
-In comments or strings, skip a sentence.  Otherwise, skip a stateement."
+In comments or strings, skip a sentence.  Otherwise, skip a statement."
   (let ((chunk (swift-mode:chunk-after)))
     (cond
      ((swift-mode:chunk:comment-p chunk)

@@ -48,7 +48,7 @@
 ;;;###autoload
 (defcustom swift-mode:repl-executable
   "xcrun swift"
-  "Path to the Swift CLI.  The string is splitted by spaces, then unquoted."
+  "Path to the Swift CLI.  The string is split by spaces, then unquoted."
   :type '(choice string (list string))
   :group 'swift-mode:repl
   :safe 'stringp)
@@ -57,7 +57,7 @@
 (defcustom swift-mode:swift-package-executable
   "xcrun swift package"
   "Path to the Swift command for package manipulation.
-The string is splitted by spaces, then unquoted."
+The string is split by spaces, then unquoted."
   :type '(choice string (list string))
   :group 'swift-mode:repl
   :safe 'stringp)
@@ -66,7 +66,7 @@ The string is splitted by spaces, then unquoted."
 (defcustom swift-mode:swift-build-executable
   "xcrun swift build"
   "Path to the Swift command for building.
-The string is splitted by spaces, then unquoted."
+The string is split by spaces, then unquoted."
   :type '(choice string (list string))
   :group 'swift-mode:repl
   :safe 'stringp)
@@ -75,7 +75,7 @@ The string is splitted by spaces, then unquoted."
 (defcustom swift-mode:debugger-executable
   "xcrun lldb"
   "Path to the debugger command.
-The string is splitted by spaces, then unquoted."
+The string is split by spaces, then unquoted."
   :type '(choice string (list string))
   :group 'swift-mode:repl
   :safe 'stringp)
@@ -84,7 +84,7 @@ The string is splitted by spaces, then unquoted."
 (defcustom swift-mode:ios-deploy-executable
   "ios-deploy"
   "Path to ios-deploy command.
-The string is splitted by spaces, then unquoted."
+The string is split by spaces, then unquoted."
   :type '(choice string (list string))
   :group 'swift-mode:repl
   :safe 'stringp)
@@ -93,7 +93,7 @@ The string is splitted by spaces, then unquoted."
 (defcustom swift-mode:simulator-controller-executable
   "xcrun simctl"
   "Path to the simulator controller command.
-The string is splitted by spaces, then unquoted."
+The string is split by spaces, then unquoted."
   :type '(choice string (list string))
   :group 'swift-mode:repl
   :safe 'stringp)
@@ -102,7 +102,7 @@ The string is splitted by spaces, then unquoted."
 (defcustom swift-mode:xcodebuild-executable
   "xcrun xcodebuild"
   "Path to the Xcode builder.
-The string is splitted by spaces, then unquoted."
+The string is split by spaces, then unquoted."
   :type '(choice string (list string))
   :group 'swift-mode:repl
   :safe 'stringp)
@@ -111,7 +111,7 @@ The string is splitted by spaces, then unquoted."
 (defcustom swift-mode:xcode-select-executable
   "xcode-select"
   "Path to the Xcode selector.
-The string is splitted by spaces, then unquoted."
+The string is split by spaces, then unquoted."
   :type '(choice string (list string))
   :group 'swift-mode:repl
   :safe 'stringp)
@@ -168,7 +168,7 @@ switch to that buffer.
 CMD is a string or a list, interpreted as a command line.  The default value is
 `swift-mode:repl-executable'.  This function updates the buffer local variable
 `swift-mode:repl-executable' with the given CMD if KEEP-DEFAULT is nil,
-so it will be used as the default value for the next invocatoin in the current
+so it will be used as the default value for the next invocation in the current
 buffer.
 If KEEP-DEFAULT is non-nil, the `swift-mode:repl-executable' and the global
 variable `swift-mode:repl-buffer' are not updated.  The buffer local variable
@@ -235,7 +235,7 @@ You can send text to the REPL process from other buffers containing source.
 (defun swift-mode:call-process (executable &rest args)
   "Call EXECUTABLE synchronously in separate process.
 
-EXECUTABLE may be a string or a list.  The string is splitted by spaces,
+EXECUTABLE may be a string or a list.  The string is split by spaces,
 then unquoted.
 ARGS are rest arguments, appended to the argument list.
 Returns the exit status."
@@ -244,7 +244,7 @@ Returns the exit status."
 (defun swift-mode:call-process-async (executable &rest args)
   "Call EXECUTABLE asynchronously in separate process.
 
-EXECUTABLE may be a string or a list.  The string is splitted by spaces,
+EXECUTABLE may be a string or a list.  The string is split by spaces,
 then unquoted.
 ARGS are rest arguments, appended to the argument list."
   (swift-mode:do-call-process executable nil 0 nil args))
@@ -252,7 +252,7 @@ ARGS are rest arguments, appended to the argument list."
 (defun swift-mode:do-call-process (executable infile destination display args)
   "Wrapper for `call-process'.
 
-EXECUTABLE may be a string or a list.  The string is splitted by spaces,
+EXECUTABLE may be a string or a list.  The string is split by spaces,
 then unquoted.
 For INFILE, DESTINATION, DISPLAY, see `call-process'.
 ARGS are rest arguments, appended to the argument list.
@@ -269,7 +269,7 @@ Returns the exit status."
   "Call EXECUTABLE synchronously in separate process.
 
 The output is parsed as a JSON document.
-EXECUTABLE may be a string or a list.  The string is splitted by spaces,
+EXECUTABLE may be a string or a list.  The string is split by spaces,
 then unquoted.
 ARGS are rest arguments, appended to the argument list."
   (with-temp-buffer
@@ -526,7 +526,7 @@ Typically, it is /Applications/Xcode.app/Contents/Developer."
 (defun swift-mode:build-swift-module (&optional project-directory args)
   "Build a Swift module in the PROJECT-DIRECTORY.
 
-If PROJECT-DIRECTORY is nil or omited, it is searched from `default-directory'
+If PROJECT-DIRECTORY is nil or omitted, it is searched from `default-directory'
 or its ancestors.
 An list ARGS are appended for builder command line arguments."
   (interactive
@@ -634,7 +634,7 @@ the value of `swift-mode:ios-project-scheme' is used."
 (defun swift-mode:wait-for-prompt-then-execute-commands (string)
   "Execute the next command from the queue if the point is on a prompt.
 
-Itended for used as a `comint-output-filter-functions'.
+Intended for used as a `comint-output-filter-functions'.
 STRING is passed to the command."
   (let ((command (car swift-mode:repl-command-queue)))
     (when (and
@@ -707,7 +707,7 @@ STRING is passed to the command."
 (defun swift-mode:debug-swift-module (&optional project-directory)
   "Run debugger on a Swift module in the PROJECT-DIRECTORY.
 
-If PROJECT-DIRECTORY is nil or omited, it is searched from `default-directory'
+If PROJECT-DIRECTORY is nil or omitted, it is searched from `default-directory'
 or its ancestors."
   (interactive
    (let ((default-project-directory (swift-mode:find-swift-project-directory)))
@@ -896,7 +896,7 @@ in Xcode build settings."
                                            device-identifier
                                            scheme)
   "Run debugger on an iOS app in the PROJECT-DIRECTORY.
-Run it for the iOS simulator devie DEVICE-IDENTIFIER for the given SCHEME.
+Run it for the iOS simulator device DEVICE-IDENTIFIER for the given SCHEME.
 If PROJECT-DIRECTORY is nil or omitted, it is searched from `default-directory'
 or its ancestors.
 DEVICE-IDENTIFIER is the device identifier of the iOS simulator.  If it is

@@ -73,7 +73,7 @@ That is, true, false, and nil."
   '((t . (:inherit font-lock-preprocessor-face)))
   "Face for highlighting preprocessor keywords.
 
-Exmpale: #if, #endif, and #selector."
+Example: #if, #endif, and #selector."
   :group 'swift-mode:faces)
 
 ;;;###autoload
@@ -162,7 +162,7 @@ Exmpale: #if, #endif, and #selector."
 
 
 (defun swift-mode:make-set (list)
-  "Return a hash where its keys are elemetns of the LIST.
+  "Return a hash where its keys are elements of the LIST.
 
 All values are t."
   (let ((hash (make-hash-table :test 'equal)))
@@ -394,7 +394,7 @@ Return nil otherwise."
   (swift-mode:font-lock-match-expr
    limit #'swift-mode:declared-function-name-pos-p))
 
-(defun swift-mode:font-lock-match-property-accesss (limit)
+(defun swift-mode:font-lock-match-property-access (limit)
   "Move the cursor just after a property access.
 Set `match-data', and return t if a property access found before position LIMIT.
 Return nil otherwise."
@@ -675,7 +675,7 @@ Excludes true, false, and keywords begin with a number sign.")
      'swift-mode:function-name-face)
 
     ;; Property accesses
-    (swift-mode:font-lock-match-property-accesss
+    (swift-mode:font-lock-match-property-access
      .
      'swift-mode:property-access-face))
   "Swift mode keywords for Font Lock.")
