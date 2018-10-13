@@ -662,10 +662,11 @@ PREFERRED-DIRECTION is the preferred direction of extension when DIRECTION is
          (new-region (nth 0 new-region-and-direction))
          (new-direction (nth 1 new-region-and-direction)))
     (when new-region
-      (setq new-region
-            (cons
-             (min (car original-region) (car new-region))
-             (max (cdr original-region) (cdr new-region))))
+      (when (/= (car original-region) (cdr original-region))
+        (setq new-region
+              (cons
+               (min (car original-region) (car new-region))
+               (max (cdr original-region) (cdr new-region)))))
       ;; Marks the whole outer block if the mark got out of the outer block.
       (save-excursion
         (goto-char (cdr new-region))
