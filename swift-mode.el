@@ -73,7 +73,7 @@
     (easy-menu-define swift-menu map "Swift Mode menu"
       `("Swift"
         :help "Swift-specific Features"
-        ["Run REPL" swift-mode-run-repl
+        ["Run REPL" swift-mode:run-repl
          :help "Run Swift REPL"]
         ["Send buffer to REPL" swift-mode:send-buffer
          :help "Send the current buffer's contents to the REPL"]
