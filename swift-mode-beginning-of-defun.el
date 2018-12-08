@@ -579,7 +579,6 @@ Both functions return t if succeeded, return nil otherwise."
         (point-was-after-mark
          (and (mark t)
               (< (mark t) (point))))
-        new-region-and-direction
         new-region
         new-direction
         last-successful-region)
