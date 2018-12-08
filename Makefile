@@ -42,11 +42,16 @@ install: package
 	  --eval '(package-install-file "$(PACKAGE)")'
 
 clean:
-## Cleans the dist directory.
-	rm -rf dist
+## Cleans the dist directory and *.elc.
+	rm -rf dist *.elc
 
 test:
 ## Tests the package.
+	$(CASK) exec $(EMACS) --batch -q \
+	  --eval "(add-to-list 'load-path \""$(shell readlink -f .)"\")" \
+	  --eval "(add-to-list 'load-path \""$(shell readlink -f .)"/test\")" \
+	  -f batch-byte-compile \
+	  *.el
 	$(CASK) exec $(EMACS) --batch -q \
 	  --eval "(add-to-list 'load-path \""$(shell readlink -f .)"\")" \
 	  --eval "(add-to-list 'load-path \""$(shell readlink -f .)"/test\")" \
