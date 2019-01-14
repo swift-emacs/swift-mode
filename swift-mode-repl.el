@@ -47,7 +47,7 @@
 
 ;;;###autoload
 (defcustom swift-mode:repl-executable
-  "xcrun swift"
+  (concat (when (executable-find "xcrun") "xcrun ") "swift")
   "Path to the Swift CLI.  The string is split by spaces, then unquoted."
   :type '(choice string (list string))
   :group 'swift-mode:repl
@@ -55,7 +55,7 @@
 
 ;;;###autoload
 (defcustom swift-mode:swift-package-executable
-  "xcrun swift package"
+  (concat (when (executable-find "xcrun") "xcrun ") "swift package")
   "Path to the Swift command for package manipulation.
 The string is split by spaces, then unquoted."
   :type '(choice string (list string))
@@ -64,7 +64,7 @@ The string is split by spaces, then unquoted."
 
 ;;;###autoload
 (defcustom swift-mode:swift-build-executable
-  "xcrun swift build"
+  (concat (when (executable-find "xcrun") "xcrun ") "swift build")
   "Path to the Swift command for building.
 The string is split by spaces, then unquoted."
   :type '(choice string (list string))
@@ -73,7 +73,7 @@ The string is split by spaces, then unquoted."
 
 ;;;###autoload
 (defcustom swift-mode:debugger-executable
-  "xcrun lldb"
+  (concat (when (executable-find "xcrun") "xcrun ") "lldb")
   "Path to the debugger command.
 The string is split by spaces, then unquoted."
   :type '(choice string (list string))
@@ -91,7 +91,7 @@ The string is split by spaces, then unquoted."
 
 ;;;###autoload
 (defcustom swift-mode:simulator-controller-executable
-  "xcrun simctl"
+  (concat (when (executable-find "xcrun") "xcrun ") "simctl")
   "Path to the simulator controller command.
 The string is split by spaces, then unquoted."
   :type '(choice string (list string))
@@ -100,7 +100,7 @@ The string is split by spaces, then unquoted."
 
 ;;;###autoload
 (defcustom swift-mode:xcodebuild-executable
-  "xcrun xcodebuild"
+  (concat (when (executable-find "xcrun") "xcrun ") "xcodebuild")
   "Path to the Xcode builder.
 The string is split by spaces, then unquoted."
   :type '(choice string (list string))
