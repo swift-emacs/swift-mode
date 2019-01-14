@@ -184,7 +184,7 @@ Runs the hook `swift-repl-mode-hook' \(after the `comint-mode-hook' is run).
   (let* ((original-buffer (current-buffer))
          (cmd-string (swift-mode:command-list-to-string cmd))
          (cmd-list (swift-mode:command-string-to-list cmd))
-         (buffer-name (concat "*" cmd-string "*"))
+         (buffer-name (concat "*Swift REPL [" cmd-string "]*"))
          (buffer (get-buffer-create buffer-name)))
     (unless dont-switch
       (pop-to-buffer buffer))
