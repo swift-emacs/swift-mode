@@ -1,6 +1,6 @@
 ;;; swift-mode-repl.el --- Run Apple's Swift processes in Emacs buffers -*- lexical-binding: t -*-
 
-;; Copyright (C) 2014-2018 taku0, Chris Barrett, Bozhidar Batsov,
+;; Copyright (C) 2014-2019 taku0, Chris Barrett, Bozhidar Batsov,
 ;;                         Arthur Evstifeev, Michael Sanders
 
 ;; Authors: taku0 (http://github.com/taku0)
