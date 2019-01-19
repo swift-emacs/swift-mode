@@ -50,25 +50,22 @@
 (defvar swift-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map prog-mode-map)
-    (define-key map (kbd "M-j") #'swift-mode:indent-new-comment-line)
-    (define-key map (kbd "C-M-j") #'swift-mode:indent-new-comment-line)
+    (define-key map [remap indent-new-comment-line]
+      #'swift-mode:indent-new-comment-line)
     (define-key map (kbd "C-c C-z") #'swift-mode:run-repl)
     (define-key map (kbd "C-c C-f") #'swift-mode:send-buffer)
     (define-key map (kbd "C-c C-r") #'swift-mode:send-region)
-    (define-key map (kbd "C-M-a") #'swift-mode:beginning-of-defun)
-    (define-key map (kbd "C-M-e") #'swift-mode:end-of-defun)
-    (define-key map (kbd "<C-M-home>") #'swift-mode:beginning-of-defun)
-    (define-key map (kbd "<C-M-end>") #'swift-mode:end-of-defun)
-    (define-key map (kbd "ESC <C-home>") #'swift-mode:beginning-of-defun)
-    (define-key map (kbd "ESC <C-end>") #'swift-mode:end-of-defun)
-    (define-key map (kbd "C-M-h") #'swift-mode:mark-defun)
-    (define-key map (kbd "C-x n d") #'swift-mode:narrow-to-defun)
-    (define-key map (kbd "M-a") #'swift-mode:backward-sentence)
-    (define-key map (kbd "M-e") #'swift-mode:forward-sentence)
-    (define-key map (kbd "M-k") #'swift-mode:kill-sentence)
-    (define-key map (kbd "C-x DEL") #'swift-mode:backward-kill-sentence)
+    (define-key map [remap beginning-of-defun] #'swift-mode:beginning-of-defun)
+    (define-key map [remap end-of-defun] #'swift-mode:end-of-defun)
+    (define-key map [remap mark-defun] #'swift-mode:mark-defun)
+    (define-key map [remap narrow-to-defun] #'swift-mode:narrow-to-defun)
+    (define-key map [remap backward-sentence] #'swift-mode:backward-sentence)
+    (define-key map [remap forward-sentence] #'swift-mode:forward-sentence)
+    (define-key map [remap kill-sentence] #'swift-mode:kill-sentence)
+    (define-key map [remap backward-kill-sentence]
+      #'swift-mode:backward-kill-sentence)
     ;; (define-key map (kbd "???") #'swift-mode:mark-sentence)
-    (define-key map (kbd "C-x n s") #'swift-mode:narrow-to-sentence)
+    (define-key map [remap narrow-to-sentence] #'swift-mode:narrow-to-sentence)
 
     (easy-menu-define swift-menu map "Swift Mode menu"
       `("Swift"
