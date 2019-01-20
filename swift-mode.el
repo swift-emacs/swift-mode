@@ -38,6 +38,7 @@
 (require 'swift-mode-font-lock)
 (require 'swift-mode-beginning-of-defun)
 (require 'swift-mode-repl)
+(require 'swift-mode-imenu)
 
 ;;;###autoload
 (defgroup swift nil
@@ -134,29 +135,6 @@ Signal `scan-error' if it hits opening parentheses."
                     (swift-mode:token:end token))))
     token))
 
-
-;; Imenu
-
-(defun swift-mode:mk-regex-for-def (keyword)
-  "Make a regex matching the identifier introduced by KEYWORD."
-  (concat "\\<" (regexp-quote keyword) "\\>"
-          "\\s *"
-          "\\("
-          "\\(?:" "\\sw" "\\|" "\\s_" "\\)" "+"
-          "\\)"))
-
-(defconst swift-mode:imenu-generic-expression
-  (list
-   (list "Functions" (swift-mode:mk-regex-for-def "func") 1)
-   (list "Classes"   (swift-mode:mk-regex-for-def "class") 1)
-   (list "Enums"     (swift-mode:mk-regex-for-def "enum") 1)
-   (list "Protocols" (swift-mode:mk-regex-for-def "protocol") 1)
-   (list "Structs"   (swift-mode:mk-regex-for-def "struct") 1)
-   (list "Extensions"   (swift-mode:mk-regex-for-def "extension") 1)
-   (list "Constants" (swift-mode:mk-regex-for-def "let") 1)
-   (list "Variables" (swift-mode:mk-regex-for-def "var") 1))
-  "Value for `imenu-generic-expression' in `swift-mode'.")
-
 ;;;###autoload
 (define-derived-mode swift-mode prog-mode "Swift"
   "Major mode for editing Swift code.
@@ -202,7 +180,7 @@ Signal `scan-error' if it hits opening parentheses."
 
   (add-hook 'post-self-insert-hook #'swift-mode:post-self-insert nil t)
 
-  (setq-local imenu-generic-expression swift-mode:imenu-generic-expression)
+  (setq-local imenu-create-index-function #'swift-mode:imenu-create-index)
 
   (setq-local beginning-of-defun-function #'swift-mode:beginning-of-defun)
   (setq-local end-of-defun-function #'swift-mode:end-of-defun)
@@ -218,6 +196,12 @@ Signal `scan-error' if it hits opening parentheses."
   (setq-local add-log-current-defun-function #'swift-mode:current-defun-name))
 
 ;;;###autoload (add-to-list 'auto-mode-alist '("\\.swift\\'" . swift-mode))
+
+;;;###autoload (if (fboundp 'speedbar-add-supported-extension)
+;;;###autoload     (speedbar-add-supported-extension ".swift")
+;;;###autoload   (add-hook 'speedbar-load-hook
+;;;###autoload             (lambda ()
+;;;###autoload               (speedbar-add-supported-extension ".swift"))))
 
 (provide 'swift-mode)
 
