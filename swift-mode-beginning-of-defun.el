@@ -45,7 +45,6 @@
 (require 'swift-mode-lexer)
 (require 'swift-mode-indent)
 
-;;;###autoload
 (defcustom swift-mode:mark-defun-preference 'containing
   "Preference for `swift-mode:mark-defun' for nested declarations.
 

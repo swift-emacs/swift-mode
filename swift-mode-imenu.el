@@ -36,7 +36,6 @@
   "Imenu."
   :group 'swift)
 
-;;;###autoload
 (defcustom swift-mode:imenu-style
   'nested
   "Style of Imenu hierarchy.

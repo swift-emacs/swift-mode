@@ -44,7 +44,6 @@
   "Font faces."
   :group 'swift)
 
-;;;###autoload
 (defcustom swift-mode:highlight-symbols-in-standard-library
   t
   "Highlight symbols in the standard library."
@@ -52,7 +51,6 @@
   :group 'swift-mode:faces
   :safe 'booleanp)
 
-;;;###autoload
 (defcustom swift-mode:highlight-symbols-in-foundation-framework
   t
   "Highlight symbols in the Foundation framework."
@@ -60,7 +58,6 @@
   :group 'swift-mode:faces
   :safe 'booleanp)
 
-;;;###autoload
 (defface swift-mode:constant-keyword-face
   '((t . (:inherit font-lock-constant-face)))
   "Face for highlighting constant keywords
@@ -68,7 +65,6 @@
 That is, true, false, and nil."
   :group 'swift-mode:faces)
 
-;;;###autoload
 (defface swift-mode:preprocessor-keyword-face
   '((t . (:inherit font-lock-preprocessor-face)))
   "Face for highlighting preprocessor keywords.
@@ -76,85 +72,71 @@ That is, true, false, and nil."
 Example: #if, #endif, and #selector."
   :group 'swift-mode:faces)
 
-;;;###autoload
 (defface swift-mode:keyword-face
   '((t . (:inherit font-lock-keyword-face)))
   "Face for highlighting keywords."
   :group 'swift-mode:faces)
 
-;;;###autoload
 (defface swift-mode:builtin-method-trailing-closure-face
   '((t . (:inherit font-lock-builtin-face)))
   "Face for highlighting builtin methods with trailing closure."
   :group 'swift-mode:faces)
 
-;;;###autoload
 (defface swift-mode:builtin-method-face
   '((t . (:inherit font-lock-builtin-face)))
   "Face for highlighting builtin methods."
   :group 'swift-mode:faces)
 
-;;;###autoload
 (defface swift-mode:builtin-function-trailing-closure-face
   '((t . (:inherit font-lock-builtin-face)))
   "Face for highlighting builtin functions with trailing closure."
   :group 'swift-mode:faces)
 
-;;;###autoload
 (defface swift-mode:builtin-function-face
   '((t . (:inherit font-lock-builtin-face)))
   "Face for highlighting builtin functions."
   :group 'swift-mode:faces)
 
-;;;###autoload
 (defface swift-mode:builtin-property-face
   '((t . (:inherit font-lock-builtin-face)))
   "Face for highlighting builtin properties."
   :group 'swift-mode:faces)
 
-;;;###autoload
 (defface swift-mode:builtin-constant-face
   '((t . (:inherit font-lock-builtin-face)))
   "Face for highlighting builtin constants."
   :group 'swift-mode:faces)
 
-;;;###autoload
 (defface swift-mode:builtin-enum-case-face
   '((t . (:inherit font-lock-builtin-face)))
   "Face for highlighting builtin enum cases."
   :group 'swift-mode:faces)
 
-;;;###autoload
 (defface swift-mode:build-config-keyword-face
   '((t . (:inherit font-lock-builtin-face)))
   "Face for highlighting build configuration keywords."
   :group 'swift-mode:faces)
 
-;;;###autoload
 (defface swift-mode:builtin-type-face
   '((t . (:inherit font-lock-builtin-face)))
   "Face for highlighting builtin types."
   :group 'swift-mode:faces)
 
-;;;###autoload
 (defface swift-mode:builtin-precedence-group-face
   '((t . (:inherit font-lock-builtin-face)))
   "Face for highlighting builtin precedence groups."
   :group 'swift-mode:faces)
 
-;;;###autoload
 (defface swift-mode:function-call-face
   '((t . (:inherit font-lock-function-name-face)))
   "Face for highlighting function calls."
   :group 'swift-mode:faces)
 
-;;;###autoload
 (defface swift-mode:function-name-face
   '((t . (:inherit font-lock-function-name-face)))
   "Face for highlighting function names."
   :group 'swift-mode:faces)
 
-;;;###autoload
 (defface swift-mode:property-access-face
   '((t . (:inherit font-lock-variable-name-face)))
   "Face for highlighting property accesses."
