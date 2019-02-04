@@ -6,6 +6,8 @@ env:
   - EVM_EMACS=emacs-24.5-travis
   - EVM_EMACS=emacs-25.1-travis
   - EVM_EMACS=emacs-25.2-travis
+  - EVM_EMACS=emacs-25.3-travis
+  - EVM_EMACS=emacs-26.1-travis
 
 before_install:
   - curl -fsSkL https://raw.github.com/rejeep/evm/master/go | bash
