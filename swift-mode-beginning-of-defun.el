@@ -1442,7 +1442,7 @@ of ancestors."
 
         ;; Ignored: "import" "get" "set" "willSet" "didSet"
         (t nil))))
-    (if (memq (swift-mode:token:type name-token) '(identifier operator))
+    (if (eq (swift-mode:token:type name-token) identifier)
         name-token
       nil)))
 

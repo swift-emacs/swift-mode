@@ -632,8 +632,7 @@ Return nil otherwise."
              ;; FIXME: mutual dependency
              (progn (swift-mode:try-backward-generic-parameters) (point)))
          (swift-mode:function-parameter-clause-p)))
-       ((or (eq previous-type 'operator)
-            (eq previous-type 'identifier))
+       ((eq previous-type 'identifier)
         (equal (swift-mode:token:text (swift-mode:backward-token-simple))
                "func"))
        (t nil)))))
