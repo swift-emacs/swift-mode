@@ -30,6 +30,7 @@
 ;;; Code:
 
 (require 'swift-mode-lexer)
+(require 'seq)
 
 ;;;###autoload
 (defgroup swift-mode:imenu nil
@@ -102,7 +103,8 @@ names."
   "Scan declarations from current point.
 
 Return found declarations in reverse order."
-  (let (next-token
+  (let (previous-token
+        next-token
         next-type
         next-text
         name-token
@@ -178,21 +180,35 @@ Return found declarations in reverse order."
            (swift-mode:declaration (intern next-text) name-token nil)
            declarations)))
 
-       ((equal next-text "func")
+       ((member next-text '("func" "init" "subscript"))
         (setq last-class-token nil)
-        (setq name-token
-              (swift-mode:forward-token-or-list-except-curly-bracket))
-        ;; TODO parse parameter names?
-        (when (memq (swift-mode:token:type name-token) '(identifier operator))
-          (push
-           (swift-mode:declaration 'func name-token nil)
-           declarations)))
+        (unless (equal next-text "func")
+          (goto-char (swift-mode:token:start next-token)))
+        (let ((declaration-type (intern next-text))
+              (names (swift-mode:scan-function-name-and-parameter-names)))
+          (when names
+            (setq name-token (car names))
+            (push
+             (swift-mode:declaration
+              declaration-type
+              (swift-mode:token
+               (swift-mode:token:type name-token)
+               (concat (swift-mode:token:text name-token)
+                       "("
+                       (mapconcat
+                        (lambda (token)
+                          (concat (swift-mode:token:text token) ":"))
+                        (cdr names)
+                        "")
+                       ")")
+               (swift-mode:token:start name-token)
+               (swift-mode:token:end name-token))
+              nil)
+             declarations))))
 
-       ((member next-text '("init" "deinit" "subscript"))
+       ((equal next-text "deinit")
         (setq last-class-token nil)
-        (push
-         (swift-mode:declaration (intern next-text) next-token nil)
-         declarations))
+        (push (swift-mode:declaration 'deinit next-token nil) declarations))
 
        ((member next-text '("let" "var"))
         (setq last-class-token nil)
@@ -208,7 +224,7 @@ Return found declarations in reverse order."
         (when (equal (swift-mode:token:text next-token) "operator")
           (setq name-token
                 (swift-mode:forward-token-or-list-except-curly-bracket))
-          (when (eq (swift-mode:token:type name-token) 'operator)
+          (when (eq (swift-mode:token:type name-token) 'identifier)
             (push
              (swift-mode:declaration 'operator name-token nil)
              declarations))))
@@ -296,6 +312,51 @@ TYPE is one of `case', `let', or `var'."
     (when (eq (swift-mode:token:type next-token) '})
       (goto-char (swift-mode:token:start next-token)))
     items))
+
+(defun swift-mode:scan-function-name-and-parameter-names ()
+  (let* ((name-token
+         (swift-mode:forward-token-or-list-except-curly-bracket))
+         next-token
+         parameter-end
+         (parameter-names '())
+         (is-operator (seq-contains "/=-+!*%<>&|^~?."
+                                    (elt (swift-mode:token:text name-token) 0))))
+    (cond
+     ((eq (swift-mode:token:type name-token) 'identifier)
+      (while (progn
+               (setq next-token
+                     (swift-mode:forward-token-or-list-except-curly-bracket))
+               (not (memq (swift-mode:token:type next-token)
+                          '(\(\) \( { \; implicit-\; outside-of-buffer)))))
+      (if (eq (swift-mode:token:type next-token) '\(\))
+          (progn
+            (setq parameter-end (swift-mode:token:end next-token))
+            (goto-char (swift-mode:token:start next-token))
+            (swift-mode:forward-token)
+
+            (while (< (point) parameter-end)
+              (setq next-token (swift-mode:forward-token))
+
+              (when (eq (swift-mode:token:type next-token) 'identifier)
+                (when (or is-operator
+                          (and (equal (swift-mode:token:text name-token)
+                                      "subscript")
+                               (eq (swift-mode:token:type
+                                    (swift-mode:forward-token-or-list))
+                                   ':)))
+                  (setq next-token (swift-mode:token
+                                    'identifier
+                                    "_"
+                                    (swift-mode:token:start next-token)
+                                    (swift-mode:token:end next-token))))
+                (push next-token parameter-names))
+
+              (while (and (< (point) parameter-end)
+                          (not (eq (swift-mode:token:type next-token) '\,)))
+                (setq next-token (swift-mode:forward-token-or-list))))
+            (cons name-token (reverse parameter-names)))
+        (list name-token)))
+     (t nil))))
 
 (defun swift-mode:format-for-imenu:flat (declarations)
   "Convert list of DECLARATIONS to alist for `imenu--index-alist'.
