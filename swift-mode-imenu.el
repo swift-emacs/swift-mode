@@ -103,8 +103,7 @@ names."
   "Scan declarations from current point.
 
 Return found declarations in reverse order."
-  (let (previous-token
-        next-token
+  (let (next-token
         next-type
         next-text
         name-token
@@ -320,6 +319,16 @@ TYPE is one of `case', `let', or `var'."
     items))
 
 (defun swift-mode:scan-function-name-and-parameter-names ()
+  "Parse function name and parameter names.
+
+The point is assumed to be before a function name.
+
+Return tokens of function names and parameter names.
+
+For example, given the following code, this return tokens \"foo\", \"a\",
+and \"c\".
+
+  func foo(a b: Int, c: Int)"
   (let* ((name-token
          (swift-mode:forward-token-or-list-except-curly-bracket))
          next-token
@@ -368,19 +377,21 @@ TYPE is one of `case', `let', or `var'."
   "Convert list of DECLARATIONS to alist for `imenu--index-alist'.
 
 Declarations are organized as trees."
-  (mapcan
-   (lambda (declaration)
-     (let* ((name-token (swift-mode:declaration:name-token declaration))
-            (name (swift-mode:token:text name-token))
-            (position (swift-mode:token:start name-token))
-            (children (swift-mode:declaration:children declaration)))
-       (cons
-        (cons name position)
-        (mapcar
-         (lambda (pair)
-           (cons (concat name "." (car pair)) (cdr pair)))
-         (swift-mode:format-for-imenu:flat children)))))
-   declarations))
+  (apply
+   'nconc
+   (mapcar
+    (lambda (declaration)
+      (let* ((name-token (swift-mode:declaration:name-token declaration))
+             (name (swift-mode:token:text name-token))
+             (position (swift-mode:token:start name-token))
+             (children (swift-mode:declaration:children declaration)))
+        (cons
+         (cons name position)
+         (mapcar
+          (lambda (pair)
+            (cons (concat name "." (car pair)) (cdr pair)))
+          (swift-mode:format-for-imenu:flat children)))))
+    declarations)))
 
 (defun swift-mode:format-for-imenu:nested (declarations)
   "Convert list of DECLARATIONS to alist for `imenu--index-alist'.
