@@ -118,6 +118,12 @@ Return found declarations in reverse order."
       (setq next-text (swift-mode:token:text next-token))
 
       (cond
+       ((equal next-text "import")
+        ;; Skips an import kind, for example, "class" token below:
+        ;;
+        ;; import class Foo.Bar
+        (swift-mode:forward-token-or-list-except-curly-bracket))
+
        ((equal next-text "class")
         ;; "class" token may be either a class declaration keyword or a
         ;; modifier:
