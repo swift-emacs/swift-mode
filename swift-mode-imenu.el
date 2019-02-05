@@ -377,21 +377,19 @@ and \"c\".
   "Convert list of DECLARATIONS to alist for `imenu--index-alist'.
 
 Declarations are organized as trees."
-  (apply
-   'nconc
-   (mapcar
-    (lambda (declaration)
-      (let* ((name-token (swift-mode:declaration:name-token declaration))
-             (name (swift-mode:token:text name-token))
-             (position (swift-mode:token:start name-token))
-             (children (swift-mode:declaration:children declaration)))
-        (cons
-         (cons name position)
-         (mapcar
-          (lambda (pair)
-            (cons (concat name "." (car pair)) (cdr pair)))
-          (swift-mode:format-for-imenu:flat children)))))
-    declarations)))
+  (seq-mapcat
+   (lambda (declaration)
+     (let* ((name-token (swift-mode:declaration:name-token declaration))
+            (name (swift-mode:token:text name-token))
+            (position (swift-mode:token:start name-token))
+            (children (swift-mode:declaration:children declaration)))
+       (cons
+        (cons name position)
+        (mapcar
+         (lambda (pair)
+           (cons (concat name "." (car pair)) (cdr pair)))
+         (swift-mode:format-for-imenu:flat children)))))
+   declarations))
 
 (defun swift-mode:format-for-imenu:nested (declarations)
   "Convert list of DECLARATIONS to alist for `imenu--index-alist'.
