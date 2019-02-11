@@ -84,6 +84,12 @@
   :group 'swift
   :safe 'booleanp)
 
+(defcustom swift-mode:break-line-before-comment-close t
+  "If non-nil, break line before the closing delimiter of multiline comments."
+  :type 'boolean
+  :group 'swift
+  :safe 'booleanp)
+
 (defcustom swift-mode:highlight-anchor nil
   "Highlight anchor point for indentation if non-nil.
 
@@ -172,22 +178,55 @@ declaration and its offset is `swift-mode:basic-offset'."
 (defun swift-mode:calculate-indent-of-multiline-comment ()
   "Return the indentation of the current line inside a multiline comment."
   (back-to-indentation)
-  (let ((comment-beginning-position (nth 8 (syntax-ppss))))
+  (let ((comment-beginning-position (nth 8 (syntax-ppss)))
+        (starts-with-asterisk (eq (char-after) ?*)))
     (forward-line -1)
     (back-to-indentation)
-    (if (<= (point) comment-beginning-position)
-        ;; The cursor was on the 2nd line of the comment, so aligns with
-        ;; the asterisk of the comment starter.
-        (progn
-          (goto-char comment-beginning-position)
-          (forward-char)
-          (swift-mode:indentation (point) 0))
-      ;; The cursor was on the 3rd or following lines of the comment, so aligns
-      ;; with a non-empty preceding line.
-      (if (eolp)
-          ;; The cursor is on an empty line, so seeks a non-empty-line.
-          (swift-mode:calculate-indent-of-multiline-comment)
-        (swift-mode:indentation (point) 0)))))
+    (cond
+     ((<= (point) comment-beginning-position)
+      ;; The cursor was on the 2nd line of the comment.
+      (goto-char comment-beginning-position)
+      (forward-char)
+      ;; If there are extra characters or spaces after asterisks, aligns with
+      ;; the first non-space character or end of line.  Otherwise, aligns with
+      ;; the first asterisk.
+      (when (and
+             (looking-at "\\**[^*\n]+")
+             (not (and swift-mode:prepend-asterisk-to-comment-line
+                       starts-with-asterisk)))
+        (skip-chars-forward "*")
+        (skip-syntax-forward " "))
+      (swift-mode:indentation (point) 0))
+
+     ;; The cursor was on the 3rd or following lines of the comment.
+
+     ((= (save-excursion
+           (forward-line)
+           (back-to-indentation)
+           (point))
+         (save-excursion
+           (goto-char comment-beginning-position)
+           (if (forward-comment 1)
+               (progn
+                 (backward-char)
+                 (skip-chars-backward "*")
+                 (point))
+             -1)))
+      ;; Before the closing delimiter.  Aligns with the first asterisk of the
+      ;; opening delimiter.
+      (goto-char comment-beginning-position)
+      (forward-char)
+      (swift-mode:indentation (point) 0))
+
+     ;; Otherwise, aligns with a non-empty preceding line.
+
+     ((and (bolp) (eolp))
+      ;; The previous line is empty, so seeks a non-empty-line.
+      (swift-mode:calculate-indent-of-multiline-comment))
+
+     (t
+      ;; The previous line is not empty, so aligns to this line.
+      (swift-mode:indentation (point) 0)))))
 
 (defun swift-mode:calculate-indent-of-multiline-string ()
   "Return the indentation of the current line inside a multiline string."
@@ -213,7 +252,7 @@ declaration and its offset is `swift-mode:basic-offset'."
              swift-mode:multiline-statement-offset))
         ;; The cursor was on the 3rd or following lines of the comment, so
         ;; aligns with a non-empty preceding line.
-        (if (eolp)
+        (if (and (bolp) (eolp))
             ;; The cursor is on an empty line, so seeks a non-empty-line.
             (swift-mode:calculate-indent-of-multiline-string)
           (swift-mode:indentation (point) 0))))))
@@ -1527,15 +1566,14 @@ Return nil otherwise."
   "Skips forward whitespaces and newlines."
   (skip-syntax-forward " >"))
 
-(defun swift-mode:incomplete-comment-p ()
-  "Return t if the point is inside an incomplete comment.
+(defun swift-mode:incomplete-comment-p (chunk)
+  "Return t if the CHUNK is incomplete comment.
 
 Return nil otherwise."
-  (let ((chunk (swift-mode:chunk-after)))
-    (and (swift-mode:chunk:comment-p chunk)
-         (save-excursion
-           (goto-char (swift-mode:chunk:start chunk))
-           (not (forward-comment 1))))))
+  (and (swift-mode:chunk:comment-p chunk)
+       (save-excursion
+         (goto-char (swift-mode:chunk:start chunk))
+         (not (forward-comment 1)))))
 
 (defun swift-mode:indent-new-comment-line (&optional soft)
   "Break the line at the point and indent the new line.
@@ -1550,12 +1588,13 @@ See `indent-new-comment-line' for SOFT."
     (if soft (insert-and-inherit ?\n) (newline 1))
     (delete-horizontal-space)
 
+    ;; Inserts a prefix and indents the line.
     (cond
      ((not (swift-mode:chunk:comment-p chunk))
       (indent-according-to-mode))
 
      ((swift-mode:chunk:single-line-comment-p chunk)
-      (insert-before-markers-and-inherit
+      (insert-and-inherit
        (save-excursion
          (goto-char comment-beginning-position)
          (looking-at "/+\\s *")
@@ -1563,7 +1602,7 @@ See `indent-new-comment-line' for SOFT."
       (indent-according-to-mode))
 
      ((not comment-multi-line)
-      (insert-before-markers-and-inherit
+      (insert-and-inherit
        (save-excursion
          (goto-char comment-beginning-position)
          (looking-at "/\\*+\\s *")
@@ -1573,33 +1612,98 @@ See `indent-new-comment-line' for SOFT."
         (forward-line 0)
         (backward-char)
         (delete-horizontal-space)
-        (insert-before-markers-and-inherit " */"))
+        (insert-and-inherit " */"))
       (indent-according-to-mode))
 
+     (t
+      (swift-mode:format-multiline-comment-line-after-newline chunk soft)))
+
+    ;; Cleans up the previous line.
+    (save-excursion
+      (forward-line 0)
+      (backward-char)
+      (delete-horizontal-space))))
+
+(defun swift-mode:format-multiline-comment-line-after-newline (chunk soft)
+  "Insert prefix and indent current line in multiline comment.
+
+The point is assumed inside multiline comment and just after newline.
+
+The closing delimiter is also inserted and/or formatted depending on custom
+variables `swift-mode:auto-close-multiline-comment' and
+`swift-mode:break-line-before-comment-close'.
+
+CHUNK is the comment chunk.
+
+See `indent-new-comment-line' for SOFT."
+  (let ((comment-beginning-position (swift-mode:chunk:start chunk)))
+    (cond
      ((save-excursion
         (forward-line -1)
         (<= (point) comment-beginning-position))
       ;; The cursor was on the 2nd line of the comment.
-      ;; Uses default prefix.
-      (when swift-mode:prepend-asterisk-to-comment-line
-        (insert-before-markers-and-inherit "*")
-        (when swift-mode:insert-space-after-asterisk-in-comment
-          (insert-before-markers-and-inherit " ")))
+
+      ;; If the comment have only one line, delete a space after asterisk.
+      ;;
+      ;; Example:
+      ;; /** aaa */
+      ;; ↓
+      ;; /**
+      ;;  aaa
+      ;;  */
+      ;;
+      ;; /** aaa
+      ;;  */
+      ;; ↓
+      ;; /**
+      ;;     aaa
+      ;;  */
+      (when (= (line-beginning-position)
+               (save-excursion
+                 (goto-char comment-beginning-position)
+                 (forward-comment 1)
+                 (line-beginning-position)))
+        (save-excursion
+          (goto-char comment-beginning-position)
+          (forward-char)
+          (skip-chars-forward "*")
+          (when (looking-at " [ \t]*$")
+            (delete-char 1))))
+
+      ;; If the point is just before the closing delimiter, breaks the line.
+      (when (and swift-mode:break-line-before-comment-close
+                 (= (point)
+                    (save-excursion
+                      (goto-char comment-beginning-position)
+                      (if (forward-comment 1)
+                          (progn
+                            (backward-char)
+                            (skip-chars-backward "*")
+                            (point))
+                        -1))))
+        (save-excursion
+          (if soft (insert-and-inherit ?\n) (newline 1))
+          (indent-according-to-mode)))
+
+      ;; Invokes `swift-mode:indent-line`
       (indent-according-to-mode)
-      (insert-before-markers-and-inherit
-       (save-excursion
-         (goto-char comment-beginning-position)
-         (forward-char 1)
-         (looking-at "\\**\\(\\s *\\)")
-         (let ((prefix (match-string-no-properties 0)))
-           (if (= (length (match-string-no-properties 1)) 0)
-               ""
-             (substring
-              (replace-regexp-in-string "\\*" " " prefix)
-              (if swift-mode:prepend-asterisk-to-comment-line
-                  (if swift-mode:insert-space-after-asterisk-in-comment 2 1)
-                0)
-              (length prefix)))))))
+
+      ;; Inserts or replaces a space to an asterisk.
+      (when swift-mode:prepend-asterisk-to-comment-line
+        (let ((columns-from-end (- (line-end-position) (point))))
+          (move-to-column
+           (save-excursion
+             (goto-char comment-beginning-position)
+             (forward-char)
+             (current-column)))
+          (insert-and-inherit "*")
+          (when (eq (char-after) ?\s)
+            (delete-char 1))
+          (when (and
+                 swift-mode:insert-space-after-asterisk-in-comment
+                 (not (eq (char-after) ?\s)))
+            (insert-and-inherit " "))
+          (goto-char (- (line-end-position) columns-from-end)))))
 
      ;; The cursor was on the 3nd or following lines of
      ;; the comment.
@@ -1611,39 +1715,34 @@ See `indent-new-comment-line' for SOFT."
          (forward-line -1)
          (looking-at "\\s *\\(\\*+\\s *\\)")))
       ;; The previous line has a prefix.  Uses it.
-      (insert-before-markers-and-inherit (match-string-no-properties 1))
-      (indent-according-to-mode))
-
-     ((save-excursion
-        (forward-line -1)
-        (looking-at "$"))
-      ;; The previous line is empty.  Uses the default indentation.
+      (insert-and-inherit (match-string-no-properties 1))
       (indent-according-to-mode))
 
      (t
-      ;; Uses the prefix of the previous line.
-      (insert-before-markers-and-inherit
-       (save-excursion
-         (forward-line -1)
-         (looking-at "\\s *")
-         (match-string-no-properties 0)))))
-
-    ;; Cleans up the previous line.
-    (save-excursion
-      (forward-line 0)
-      (backward-char)
-      (delete-horizontal-space))
+      ;; Uses the default indentation.
+      (indent-according-to-mode)))
 
     ;; Closes incomplete multiline comment.
     (when (and swift-mode:auto-close-multiline-comment
-               (swift-mode:chunk:multiline-comment-p chunk)
-               (swift-mode:incomplete-comment-p))
+               (swift-mode:incomplete-comment-p chunk))
       (save-excursion
         (end-of-line)
         (when comment-multi-line
           (if soft (insert-and-inherit ?\n) (newline 1)))
         (insert-and-inherit "*/")
-        (indent-according-to-mode)))))
+        (indent-according-to-mode)))
+
+    ;; Make sure the closing delimiter is on its own line.
+    (when swift-mode:break-line-before-comment-close
+      (save-excursion
+        (goto-char comment-beginning-position)
+        (when (forward-comment 1)
+          (backward-char)
+          (skip-chars-backward "*")
+          (skip-syntax-backward " ")
+          (when (not (bolp))
+            (if soft (insert-and-inherit ?\n) (newline 1))
+            (indent-according-to-mode)))))))
 
 (defun swift-mode:post-self-insert ()
   "Miscellaneous logic for electric indentation."
@@ -1656,21 +1755,24 @@ See `indent-new-comment-line' for SOFT."
      (swift-mode:chunk:comment-p (swift-mode:chunk-after))
      (save-excursion (backward-char) (skip-syntax-backward " ") (bolp)))
     (when swift-mode:insert-space-after-asterisk-in-comment
-      (insert-before-markers-and-inherit " "))
-    (indent-according-to-mode))
+      (insert-and-inherit " "))
+    (when electric-indent-mode
+      (indent-according-to-mode)))
 
    ;; Fixes "* /" at the end of a multiline comment to "*/".
    ((and
-     (= last-command-event ?/)
      swift-mode:fix-comment-close
-     (swift-mode:chunk:comment-p (swift-mode:chunk-after))
-     (save-excursion
-       (let ((pos (point)))
-         (forward-line 0)
-         (and
-          (looking-at "^\\s *\\*\\s +/")
-          (eq (match-end 0) pos)
-          (swift-mode:incomplete-comment-p)))))
+     (= last-command-event ?/)
+     (let ((chunk (swift-mode:chunk-after))
+           (pos (point)))
+       (and
+        (swift-mode:chunk:comment-p chunk)
+        (save-excursion
+          (forward-line 0)
+          (and
+           (looking-at "^\\s *\\*\\s +/")
+           (eq (match-end 0) pos)
+           (swift-mode:incomplete-comment-p chunk))))))
     (backward-char)
     (delete-horizontal-space)
     (forward-char))
@@ -1678,9 +1780,29 @@ See `indent-new-comment-line' for SOFT."
    ;; Indents electrically when ")" is inserted at bol as the end of a string
    ;; interpolation.
    ((and
+     electric-indent-mode
      (= last-command-event ?\))
-     (save-excursion (backward-char) (skip-syntax-backward " ") (bolp)))
-    (indent-according-to-mode))))
+     (save-excursion (backward-char) (skip-syntax-backward " ") (bolp))
+     (= (swift-mode:chunk:start (swift-mode:chunk-after)) (1- (point))))
+    (indent-according-to-mode))
+
+   ;; Indents electrically after newline inside strings and comments.
+   ;; Unlike `electric-indent-mode', the previous line is not indented.
+   ((and
+     electric-indent-mode
+     (= last-command-event ?\n))
+    (let ((chunk (swift-mode:chunk-after)))
+      (if (swift-mode:chunk:multiline-comment-p chunk)
+          (progn
+            (delete-horizontal-space)
+            (swift-mode:format-multiline-comment-line-after-newline
+             chunk
+             (not use-hard-newlines)))
+        (indent-according-to-mode)))
+    (save-excursion
+      (forward-line 0)
+      (backward-char)
+      (delete-horizontal-space)))))
 
 (defun swift-mode:highlight-anchor (indentation)
   "Highlight the anchor point of the INDENTATION."
