@@ -178,7 +178,17 @@ Signal `scan-error' if it hits opening parentheses."
                "\\*+ "
                "\\)"
                "\\s *"))
-  (setq-local adaptive-fill-regexp comment-start-skip)
+  (setq-local adaptive-fill-regexp
+              (concat
+               "\\s *"
+               "\\(?:"
+               ;; Single-line comment
+               "//+" ":?" "\\|"
+               ;; Middle of multi-line-comment
+               "\\*+ "
+               "\\)"
+               "\\s *"))
+  (setq-local fill-indent-according-to-mode t)
   (setq-local comment-multi-line t)
 
   (setq-local parse-sexp-lookup-properties t)
