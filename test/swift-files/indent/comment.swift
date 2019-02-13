@@ -21,10 +21,10 @@
       // ccc // swift-mode:test:keep-indent
       // ddd
       /* // swift-mode:test:known-bug
-       * aa
-         * aa // swift-mode:test:keep-indent
          * aa
-         */
+           * aa // swift-mode:test:keep-indent
+           * aa
+       */
 }
 
 @Annotation(aaa)
