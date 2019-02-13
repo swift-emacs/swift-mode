@@ -1354,9 +1354,9 @@ Return the token skipped."
           (progn
             (backward-list)
             (swift-mode:token
-             (cdr (assoc previous-type '((} . {})
-                                         (\) . \(\))
-                                         (\] . \[\]))))
+             (assoc-default previous-type '((} . {})
+                                            (\) . \(\))
+                                            (\] . \[\])))
              (buffer-substring-no-properties (point) previous-end)
              (point)
              previous-end))
@@ -1394,9 +1394,9 @@ Return the token skipped."
           (progn
             (forward-list)
             (swift-mode:token
-             (cdr (assoc next-type '(({ . {})
-                                     (\( . \(\))
-                                     (\[ . \[\]))))
+             (assoc-default next-type '(({ . {})
+                                        (\( . \(\))
+                                        (\[ . \[\])))
              (buffer-substring-no-properties next-start (point))
              next-start
              (point)))
