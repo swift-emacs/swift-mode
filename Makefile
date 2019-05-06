@@ -12,7 +12,7 @@ help:
 # Process this Makefile with following filters
 #
 # - Remove empty line.
-# - Remove lien containing ## no-doc.
+# - Remove line containing ## no-doc.
 # - Remove after colon if the line is not a comment line.
 # - Replace /^## / to "  ".
 # - Remove other comment lines.

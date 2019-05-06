@@ -178,7 +178,7 @@ To build the package locally, run `make package`. You need [Cask](https://github
 
 To install the built package, run `make install`.
 
-To run tests, run `make check`.
+To run tests, run `make test`.
 
 For other commands, run `make help`.
 
