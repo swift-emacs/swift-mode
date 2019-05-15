@@ -782,7 +782,9 @@ Otherwise, try to mark the following one."
                 (when (<= (point) start-pos end-pos end)
                   (throw 'swift-mode:found-block
                          (list (cons (point) end) 'containing)))))
-            (when (= end (point))
+            (when (and
+                   (= end (point))
+                   (not (eobp)))
               ;; Got unmatched parens.
               ;; Scans backward.
               (goto-char start-pos)
