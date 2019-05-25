@@ -4,7 +4,7 @@
 
 ;; Authors: taku0 (http://github.com/taku0)
 ;;
-;; Version: 7.1.0
+;; Version: 8.0.0
 ;; Package-Requires: ((emacs "24.4") (seq "2.3"))
 ;; Keywords: languages swift
 

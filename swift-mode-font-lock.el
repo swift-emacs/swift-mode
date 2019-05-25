@@ -9,7 +9,7 @@
 ;;       Arthur Evstifeev <lod@pisem.net>
 ;;       Michael Sanders <michael.sanders@fastmail.com>
 ;;
-;; Version: 7.1.0
+;; Version: 8.0.0
 ;; Package-Requires: ((emacs "24.4") (seq "2.3"))
 ;; Keywords: languages swift
 
