@@ -463,6 +463,12 @@ Return nil otherwise." ;; FIXME pound-count
                     "fileprivate")))))
       nil)
 
+     ;; Suppress implicit semicolon after declaration starters.
+     ((member (swift-mode:token:text previous-token)
+              '("class" "struct" "protocol" "enum" "extension" "func"
+                "typealias" "associatedtype" "precedencegroup" "operator"))
+      nil)
+
      ;; Insert implicit semicolon before modifiers.
      ;;
      ;; Preceding modifiers takes precedence over this.
@@ -524,12 +530,6 @@ Return nil otherwise." ;; FIXME pound-count
      ((member (swift-mode:token:text next-token)
               '("get" "set" "willSet" "didSet" "subscript" "init" "deinit"))
       t)
-
-     ;; Suppress implicit semicolon after declaration starters.
-     ((member (swift-mode:token:text previous-token)
-              '("class" "struct" "protocol" "enum" "extension" "func"
-                "typealias" "associatedtype" "precedencegroup" "operator"))
-      nil)
 
      ;; Inserts implicit semicolon before declaration starters.
      ;; Modifiers take precedence over this.

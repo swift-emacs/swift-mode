@@ -460,3 +460,59 @@ precedencegroup
     associativity:
       left
 }
+
+// Declaration modifiers
+
+class Foo {
+    open
+      class
+      mutating
+      nonmutating
+      func
+      foo() {
+    }
+
+    public
+      (
+        set
+      )
+      class
+      dynamic
+      final
+      lazy
+      optional
+      required
+      static
+      unowned
+      unowned
+      (
+        safe
+      )
+      unowned
+      (
+        unsafe
+      )
+      weak
+      var
+      x = 1
+
+    internal
+      class
+      let
+      x = 1
+
+    fileprivate
+      class
+      init() {
+    }
+
+    private
+      class
+      deinit {
+    }
+
+    class
+      subscript(foo: Int) -> Int {
+        return foo
+    }
+}
