@@ -3,6 +3,39 @@
 // swift-mode:test:eval (setq-local swift-mode:multiline-statement-offset 2)
 // swift-mode:test:eval (setq-local swift-mode:switch-case-offset 0)
 
+// Import declaration
+
+import
+  Foo
+
+import
+  class
+  Foo
+  .Bar
+
+import class
+  Foo
+
+import
+  let
+  Foo
+
+import
+  var
+  Foo.
+  bar
+
+import
+  func
+  Foo.+
+
+import
+  func
+  Foo
+  .+
+
+let x = 1  // swift-mode:test:known-bug
+
 // Constant declarations
 
 let
