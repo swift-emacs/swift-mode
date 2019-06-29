@@ -103,6 +103,9 @@ func foo() {
     foo(
       var: 1
     )
+    foo(
+      some: 1
+    )
 
     // Keywords used in statements
     foo(

@@ -416,9 +416,9 @@ Return nil otherwise." ;; FIXME pound-count
        ;; Suppress implicit semicolon around keywords that cannot start or end
        ;; statements.
        (member (swift-mode:token:text previous-token)
-               '("inout" "throws" "rethrows" "in" "where"))
+               '("some" "inout" "throws" "rethrows" "in" "where"))
        (member (swift-mode:token:text next-token)
-               '("inout" "throws" "rethrows" "in" "where")))
+               '("some" "inout" "throws" "rethrows" "in" "where")))
       nil)
 
      ;; Inserts semicolon before open curly bracket.
