@@ -48,14 +48,14 @@ PROGRESS-REPORTER is the progress-reporter."
   (if (not swift-mode:test:running)
       (swift-mode:run-test '(swift-mode:run-test:beginning-of-defun))
     (let ((current-line 0)
+          expected-positions
           expected-positions-desc
           expected-positions-asc
-          tests)
+          test-parameters)
       (setq default-directory
             (concat (file-name-as-directory swift-mode:test:basedir)
                     (file-name-as-directory "swift-files")
                     "beginning-of-defun"))
-      ;; TODO forward-sentence, backward-sentence
       (dolist (swift-file (file-expand-wildcards "*.swift"))
         (redisplay)
         (with-temp-buffer
