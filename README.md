@@ -186,6 +186,8 @@ For other commands, run `make help`.
 
 - [Official swift-mode.el by Apple](https://github.com/apple/swift/blob/master/utils/swift-mode.el): Seems still in very early stage for now. We cannot contribute to it due to the license incompatibility.
 - [sourcekit-lsp](https://github.com/apple/sourcekit-lsp): Language Server Protocol implementation for Swift and C-based languages.
+- [lsp-sourcekit](https://github.com/emacs-lsp/lsp-sourcekit): Emacs client for lsp-sourcekit.
+- [swift-helpful](https://github.com/danielmartin/swift-helpful): Shows documentation about Swift keywords, attributes, and API.
 - [company-sourcekit](https://github.com/nathankot/company-sourcekit): Completion for Swift projects via SourceKit with the help of SourceKitten.
 - [flycheck-swift](https://github.com/swift-emacs/flycheck-swift): Flycheck extensions for Swift.
 - [swift-playground-mode](https://gitlab.com/michael.sanders/swift-playground-mode): Emacs support for Swift playgrounds.
