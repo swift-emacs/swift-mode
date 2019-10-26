@@ -12,6 +12,7 @@ help:
 # Process this Makefile with following filters
 #
 # - Remove empty line.
+# - Remove line starting with whitespace, dot, or uppercase letters.
 # - Remove line containing ## no-doc.
 # - Remove after colon if the line is not a comment line.
 # - Replace /^## / to "  ".

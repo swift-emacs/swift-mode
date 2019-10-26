@@ -61,6 +61,8 @@
 ;;     or interpolated expressions.
 ;;     Suppose a string "aaa\( foo() )bbb\( bar() )ccc",
 ;;     "aaa\(, )bbb\(, and )ccc" are string chunks.
+;;
+;;     This is not a official term; used only in swift-mode.
 
 (declare-function swift-mode:backward-sexps-until "swift-mode-indent.el"
                   (token-types
@@ -358,7 +360,7 @@ pound signs."
 
 A position is escaped if it is proceeded by POUND-COUNT or more of pound signs
 and odd number of backslashes.
-Return nil otherwise." ;; FIXME pound-count
+Return nil otherwise."
   (let ((p position)
         (backslash-count 0))
     (while (eq (char-before p) ?#)
