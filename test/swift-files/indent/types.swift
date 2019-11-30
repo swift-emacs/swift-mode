@@ -202,13 +202,14 @@ let foo: (
   A,
   B
 )
+  throws
   ->
-  throws (
+  (
     A,
     B
   )
-  ->
   throws
+  ->
   [
     A
   ]
@@ -220,14 +221,14 @@ let foo:
     A,
     B
   )
-  ->
   throws
+  ->
   (
     A,
     B
   )
-  ->
   throws
+  ->
   [
     B
   ]
@@ -238,22 +239,22 @@ let foo
     A,
     B
   )
-  ->
   throws
+  ->
   B
   = abc
 
 let foo:
   (A, B)
-  ->
   rethrows
+  ->
   B
   = abc
 
 let foo
   :(A, B)
-  ->
   rethrows
+  ->
   B
   = abc
 

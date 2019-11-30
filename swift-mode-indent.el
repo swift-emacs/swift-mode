@@ -407,7 +407,7 @@ declaration and its offset is `swift-mode:basic-offset'."
                      '("switch") nil '("case" "default"))))
         (if (equal (swift-mode:token:text parent) "switch")
             ;; Inside a switch-statement. Aligns with the "switch"
-            (swift-mode:find-and-align-with-parents
+            (swift-mode:find-parent-and-align-with-next
              swift-mode:statement-parent-tokens
              swift-mode:switch-case-offset)
           ;; Other cases. Aligns with the previous case.
@@ -415,7 +415,7 @@ declaration and its offset is `swift-mode:basic-offset'."
 
      ;; After "catch"
      ((equal previous-text "catch")
-      (swift-mode:find-and-align-with-parents
+      (swift-mode:find-parent-and-align-with-next
        swift-mode:statement-parent-tokens
        swift-mode:multiline-statement-offset))
 
@@ -476,7 +476,7 @@ declaration and its offset is `swift-mode:basic-offset'."
       ;;       in
       ;;   a
       ;; }
-      (swift-mode:find-and-align-with-parents '("for" {)))
+      (swift-mode:find-parent-and-align-with-next '("for" {)))
 
      ;; Before "where" on the current line
      ((and next-is-on-current-line (equal next-text "where"))
@@ -542,9 +542,9 @@ declaration and its offset is `swift-mode:basic-offset'."
            swift-mode:multiline-statement-offset
            swift-mode:multiline-statement-offset))
          ((equal (swift-mode:token:text parent) "for")
-          (swift-mode:find-and-align-with-parents '("for")))
+          (swift-mode:find-parent-and-align-with-next '("for")))
          (t
-          (swift-mode:find-and-align-with-parents
+          (swift-mode:find-parent-and-align-with-next
            (append swift-mode:statement-parent-tokens '(<))
            swift-mode:multiline-statement-offset)))))
 
@@ -628,14 +628,14 @@ declaration and its offset is `swift-mode:basic-offset'."
                 (swift-mode:calculate-indent-of-expression
                  swift-mode:multiline-statement-offset
                  swift-mode:multiline-statement-offset))
-            (swift-mode:find-and-align-with-parents
+            (swift-mode:find-parent-and-align-with-next
              (append swift-mode:statement-parent-tokens '(< "for"))
              swift-mode:multiline-statement-offset)))))
 
      ;; After implicit-\; or ;
      ((memq previous-type '(implicit-\; \;))
       (goto-char (swift-mode:token:start previous-token))
-      (swift-mode:find-and-align-with-parents
+      (swift-mode:find-parent-and-align-with-next
        (remove '\; (remove 'implicit-\; swift-mode:statement-parent-tokens))
        0
        '(implicit-\; \;)))
@@ -677,20 +677,20 @@ declaration and its offset is `swift-mode:basic-offset'."
      ;; After case ... : or default:
      ((eq previous-type 'case-:)
       (goto-char (swift-mode:token:start previous-token))
-      (swift-mode:find-and-align-with-parents
+      (swift-mode:find-parent-and-align-with-next
        swift-mode:statement-parent-tokens
        (- swift-mode:basic-offset swift-mode:switch-case-offset)))
 
      ;; Before ; on the current line
      ((and next-is-on-current-line (eq next-type '\;))
-      (swift-mode:find-and-align-with-parents
+      (swift-mode:find-parent-and-align-with-next
        (remove '\; (remove 'implicit-\; swift-mode:statement-parent-tokens))
        0
        '(implicit-\; \;)))
 
      ;; After if, guard, and while
      ((member previous-text '("if" "guard" "while"))
-      (swift-mode:find-and-align-with-parents
+      (swift-mode:find-parent-and-align-with-next
        swift-mode:statement-parent-tokens
        swift-mode:multiline-statement-offset))
 
@@ -710,14 +710,17 @@ declaration and its offset is `swift-mode:basic-offset'."
       (swift-mode:calculate-indent-of-expression
        swift-mode:multiline-statement-offset)))))
 
-(defun swift-mode:find-and-align-with-parents
+(defun swift-mode:find-parent-and-align-with-next
     (parents
      &optional
      offset
      stop-at-eol-token-types
      stop-at-bol-token-types
      bol-offset)
-  "Return start column of the current expressions or statement plus offset.
+  "Find the parent and return indentation based on it.
+
+A parent is, for example, the open bracket of the containing block or
+semicolon of the preceding statement.
 
 PARENTS is a list of token types that precedes an expression or a statement.
 OFFSET is the offset.  If it is omitted, assumed to be 0.
@@ -727,8 +730,9 @@ If scanning stops at STOP-AT-EOL-TOKEN-TYPES, align with the next token with
 BOL-OFFSET.
 If scanning stops at STOP-AT-BOL-TOKEN-TYPES, align with that token with
 BOL-OFFSET.
-If STOP-AT-BOL-TOKEN-TYPES is the symbol `any', the cursor is assumed to be
-on the previous line."
+If STOP-AT-BOL-TOKEN-TYPES or STOP-AT-BOL-TOKEN-TYPES is the symbol
+`any', it matches all tokens.
+The point is assumed to be on the previous line."
   (save-excursion
     (let* ((parent (swift-mode:backward-sexps-until
                     parents
@@ -749,17 +753,11 @@ on the previous line."
                     stop-at-eol-token-types)
               (member (swift-mode:token:text parent)
                       stop-at-eol-token-types)))))
-      (when (or stopped-at-parent stopped-at-eol)
-        (goto-char parent-end)
-        (forward-comment (point-max)))
-      ;; Now, the cursor is at the first token of the expression.
-
       (if stopped-at-parent
-          ;; The cursor is at the start of the entire expression.
-          ;; Aligns with the start of the expression with offset.
           (swift-mode:align-with-next-token parent offset)
-        ;; The cursor is at the middle of the expression.
-        ;; Aligns with this line with bol-offset.
+        (when stopped-at-eol
+          (goto-char parent-end)
+          (forward-comment (point-max)))
         (swift-mode:align-with-current-line bol-offset)))))
 
 (defun swift-mode:calculate-indent-of-expression
@@ -767,7 +765,7 @@ on the previous line."
      offset
      bol-offset
      after-attributes)
-  "Return start column of the current expressions plus offset.
+  "Return indentation of the current expression.
 
 the cursor is assumed to be on the previous line.
 
@@ -975,7 +973,7 @@ This function is also used for close-curly-brace."
                 (setq next-token (swift-mode:forward-token-or-list))
               (goto-char (1+ pos))))))))
     (if is-declaration-or-control-statement-body
-        (swift-mode:find-and-align-with-parents
+        (swift-mode:find-parent-and-align-with-next
          swift-mode:statement-parent-tokens
          offset)
       (swift-mode:calculate-indent-of-expression offset offset))))
@@ -1487,7 +1485,7 @@ SKIP-TOKEN-OR-LIST-FUNCTION skips forward/backward a token or a list.
 MATCHING-BRACKET-TEXT is a text of the matching bracket.
 UNMATCHING-BRACKET-TEXT is a text of the current bracket."
   (let ((pos (point))
-        (prohibited-tokens (append
+        (prohibited-tokens (cons
                             unmatching-bracket-text
                             swift-mode:tokens-not-in-generic-parameter-list))
         (next-token (funcall skip-token-or-list-function)))

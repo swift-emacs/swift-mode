@@ -786,8 +786,7 @@ https://github.com/apple/swift-evolution/blob/master/proposals/0071-member-keywo
   "Move point forward to the next position of the end of a token.
 
 Return the token object.  If no more tokens available, return a token with
-type `out-of-buffer'"
-
+type `outside-of-buffer'."
   (let ((pos (point)))
     (let ((chunk (swift-mode:chunk-after)))
       (when (swift-mode:chunk:comment-p chunk)
@@ -872,22 +871,22 @@ This function does not return `implicit-;' or `type-:'."
    ;; for angle bracket, and a type parameter starts with an upper case
    ;; character, a square bracket, a parenthesis, or keyword 'protocol'.
    ((and (eq (char-after) ?<)
-         (looking-at "<\\([[:upper:]\\[[(]\\|protocol\\)"))
+         (looking-at "<\\([[:upper:][(]\\|protocol\\)"))
     (forward-char)
     (swift-mode:token '< "<" (1- (point)) (point)))
 
    ;; Close angle bracket for type parameters
    ;;
    ;; Close angle bracket follows identifier, a square bracket, a parenthesis,
-   ;; or another another bracket (e.g. Foo<Bar<[(Int, String)]>>)
+   ;; or another angle bracket (e.g. Foo<Bar<[(Int, String)]>>)
    ((and (eq (char-after) ?>)
          (save-excursion
            ;; You know that regular languages can be reversed. Thus you may
            ;; think that `looking-back' reverses the given regexp and scans
-           ;; chars backwards. Nevertheless, `looking-back' function does not
-           ;; do that. It just repeats `looking-at' with decrementing start
+           ;; chars backwards.  Nevertheless, `looking-back' function does not
+           ;; do that.  It just repeats `looking-at' with decrementing start
            ;; position until it succeeds. The document says that it is not
-           ;; recommended to use. So using `skip-chars-backward',
+           ;; recommended to use.  So using `skip-chars-backward',
            ;; `skip-syntax-backward', and `looking-at' here.
            (skip-chars-backward "])>")
            (skip-syntax-backward "w_")
@@ -999,7 +998,7 @@ This function does not return `implicit-;' or `type-:'."
   "Move point backward to the previous position of the end of a token.
 
 Return the token object.  If no more tokens available, return a token with
-type `out-of-buffer'."
+type `outside-of-buffer'."
 
   (let ((pos (point)))
     (let ((chunk (swift-mode:chunk-after)))
@@ -1115,14 +1114,14 @@ This function does not return `implicit-;' or `type-:'."
    ;; for angle bracket, and a type parameter starts with an upper case
    ;; character, a square bracket, a parenthesis, or keyword `protocol'.
    ((and (eq (char-before) ?<)
-         (looking-at "\\([[:upper:]\\[[(]\\|protocol\\)"))
+         (looking-at "\\([[:upper:][(]\\|protocol\\)"))
     (backward-char)
     (swift-mode:token '< "<" (point) (1+ (point))))
 
    ;; Close angle bracket for type parameters
    ;;
    ;; Close angle bracket follows identifier, a square bracket, a parenthesis,
-   ;; or another another bracket (e.g. Foo<Bar<[(Int, String)]>>)
+   ;; or another angle bracket (e.g. Foo<Bar<[(Int, String)]>>)
    ((and (eq (char-before) ?>)
          (save-excursion
            (skip-chars-backward "])>")
@@ -1230,6 +1229,7 @@ This function does not return `implicit-;' or `type-:'."
 
 (defun swift-mode:forward-string-chunk ()
   "Skip forward a string chunk.
+
 A string chunk is a part of single-line/multiline string delimited with
 quotation marks or interpolated expressions."
   (condition-case nil
@@ -1238,6 +1238,7 @@ quotation marks or interpolated expressions."
 
 (defun swift-mode:backward-string-chunk ()
   "Skip backward a string chunk.
+
 A string chunk is a part of single-line/multiline string delimited with
 quotation marks or interpolated expressions."
   (condition-case nil
@@ -1246,6 +1247,7 @@ quotation marks or interpolated expressions."
 
 (defun swift-mode:beginning-of-string ()
   "Move point to the beginning of single-line/multiline string.
+
 Assuming the cursor is on a string."
   (goto-char (or (nth 8 (syntax-ppss)) (point)))
   (let (matching-parenthesis)
@@ -1259,6 +1261,7 @@ Assuming the cursor is on a string."
 
 (defun swift-mode:end-of-string ()
   "Move point to the end of single-line/multiline string.
+
 Assuming the cursor is on a string."
   (goto-char (or (nth 8 (syntax-ppss)) (point)))
   (let (matching-parenthesis)

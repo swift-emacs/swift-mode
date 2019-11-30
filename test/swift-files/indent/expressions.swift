@@ -305,8 +305,8 @@ let x = { (
             x: Int,
             y: Int
           )
-            ->
             throws
+            ->
             Foo
           in
     println("Hello, World! " + x + y)

@@ -76,17 +76,17 @@ class Foo {
       xx
 
     let f
-      = g
       :
       (
         Int,
         Int
       )
-      ->
       throws
+      ->
       [
         X
       ]
+      = g
 
 
     let x = 1,
@@ -420,7 +420,7 @@ struct A {
 // Protocol declarations
 
 protocol Foo {
-    func foo(x, y) -> throws (A, B)
+    func foo(x, y) throws -> (A, B)
     init<A, B>(x: Int) throws
       where
         A: C
