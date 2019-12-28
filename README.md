@@ -191,6 +191,9 @@ For other commands, run `make help`.
 - [company-sourcekit](https://github.com/nathankot/company-sourcekit): Completion for Swift projects via SourceKit with the help of SourceKitten.
 - [flycheck-swift](https://github.com/swift-emacs/flycheck-swift): Flycheck extensions for Swift.
 - [swift-playground-mode](https://gitlab.com/michael.sanders/swift-playground-mode): Emacs support for Swift playgrounds.
+- [swift-format](https://github.com/apple/swift-format): Formatter for Swift by Apple (`swift format` command).
+- [SwiftRewriter](https://github.com/inamiy/SwiftRewriter): Formatter for Swift using SwiftSyntax.
+- [SwiftFormat](https://github.com/nicklockwood/SwiftFormat): Formatter for Swift.
 
 ## Contributing
 
