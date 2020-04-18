@@ -282,5 +282,5 @@ let foo: protocol<A<[B]>,
 let foo: protocol<
   A, // swift-mode:test:known-bug
   B
-> // swift-mode:test:known-bug
+>
   = a

@@ -408,6 +408,16 @@ Return nil otherwise."
        (memq (swift-mode:token:type previous-token) '({ \( \[))
        (memq (swift-mode:token:type next-token) '(} \) \]))
 
+       ;; Supress implicit semicolon before/after open angle bracket.
+       (and (equal (swift-mode:token:text previous-token) "<")
+            (save-excursion
+              (goto-char (swift-mode:token:start previous-token))
+              (swift-mode:generic-parameter-clause-start-p)))
+       (and (equal (swift-mode:token:text next-token) "<")
+            (save-excursion
+              (goto-char (swift-mode:token:start next-token))
+              (swift-mode:generic-parameter-clause-start-p)))
+
        ;; Suppress implicit semicolon after/before string chunks inside
        ;; interpolated expressions.
        (eq (swift-mode:token:type previous-token)
@@ -720,6 +730,16 @@ Return nil otherwise."
                              '(\; { \( \[ "for")))
      '{)))
 
+(defun swift-mode:generic-parameter-clause-start-p ()
+  "Return t if the `<' at the cursor is a start of generic parameters.
+
+Return nil otherwise."
+  (save-excursion
+    (or (member (swift-mode:token:text (swift-mode:backward-token-simple))
+                '("init" "subscript"))
+        (member (swift-mode:token:text (swift-mode:backward-token-simple))
+                '("typealias" "func" "enum" "struct" "class" "init")))))
+
 (defun swift-mode:fix-operator-type (token)
   "Return new operator token with proper token type.
 
@@ -816,6 +836,15 @@ type `outside-of-buffer'."
                          ((swift-mode:case-colon-p) 'case-:)
                          (t ':))
                         ":"
+                        (progn (forward-char) (1- (point)))
+                        (point)))
+
+     ;; Start of generic-parameter-clause
+     ((and
+       (eq (char-after) ?<)
+       (swift-mode:generic-parameter-clause-start-p))
+      (swift-mode:token '<
+                        "<"
                         (progn (forward-char) (1- (point)))
                         (point)))
 
@@ -1029,6 +1058,18 @@ type `outside-of-buffer'."
                          ((swift-mode:case-colon-p) 'case-:)
                          (t ':))
                         ":"
+                        (point)
+                        (1+ (point))))
+
+     ;; Start of generic-parameter-clause
+     ((and
+       (eq (char-before) ?<)
+       (save-excursion
+         (backward-char)
+         (swift-mode:generic-parameter-clause-start-p)))
+      (backward-char)
+      (swift-mode:token '<
+                        "<"
                         (point)
                         (1+ (point))))
 

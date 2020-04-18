@@ -316,6 +316,16 @@ declaration and its offset is `swift-mode:basic-offset'."
       (backward-list)
       (swift-mode:calculate-indent-of-expression 0))
 
+     ;; Before > as a close angle bracket on the current line
+     ((and next-is-on-current-line
+           (save-excursion
+             (goto-char (swift-mode:token:start next-token))
+             (and (eq (char-after) ?>)
+                  (progn (swift-mode:try-backward-generic-parameters)
+                         (< (point) (swift-mode:token:start next-token))))))
+      (swift-mode:try-backward-generic-parameters)
+      (swift-mode:calculate-indent-of-expression 0))
+
      ;; Before end of a interpolated expression on the current line
      ((and next-is-on-current-line
            (eq next-type 'string-chunk-after-interpolated-expression))
@@ -425,8 +435,8 @@ declaration and its offset is `swift-mode:basic-offset'."
       (swift-mode:calculate-indent-after-open-curly-brace
        swift-mode:basic-offset))
 
-     ;; After ( or [
-     ((memq previous-type '(\( \[))
+     ;; After (, [,  or < as a open angle bracket
+     ((memq previous-type '(\( \[ <))
       (goto-char (swift-mode:token:start previous-token))
       (swift-mode:calculate-indent-of-expression
        swift-mode:parenthesized-expression-offset
@@ -830,7 +840,7 @@ the expression."
 (defun swift-mode:calculate-indent-after-open-curly-brace (offset)
   "Return indentation after open curly braces.
 
-Assuming the cursor is on the open parenthesis.
+Assuming the cursor is on the open brace.
 OFFSET is the offset of the contents.
 This function is also used for close-curly-brace."
   ;; If the statement is multiline expression, aligns with the start of
@@ -883,11 +893,22 @@ This function is also used for close-curly-brace."
   ;;   // The body of the for-statement.
   ;; }
   (let ((pos (point))
+        previous-token
         next-token
         is-declaration-or-control-statement-body)
     (if (save-excursion
-          (eq (swift-mode:token:type (swift-mode:backward-token))
-              'binary-operator))
+          (setq previous-token (swift-mode:backward-token))
+          (and (eq (swift-mode:token:type previous-token) 'binary-operator)
+               ;; not > as close angle bracket
+               (not
+                (progn
+                  (goto-char (swift-mode:token:end previous-token))
+                  (and (eq (char-before) ?>)
+                       (progn
+                         (backward-char)
+                         (swift-mode:try-backward-generic-parameters)
+                         (< (point)
+                            (1- (swift-mode:token:end previous-token)))))))))
         ;; for x in
         ;;     xs
         ;;     +++ { x in

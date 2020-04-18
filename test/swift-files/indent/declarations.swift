@@ -248,6 +248,50 @@ class Foo {
       =
       C
       .D
+
+    typealias Foo<
+      A: A,
+      A: A, A: A
+    > =
+      A
+
+    typealias Foo<
+      A: A,
+      A: A, A: A> =
+      A
+
+    typealias Foo <A: A,
+                   A: A, A: A> =
+      A
+
+    typealias Foo <A: A,
+                   A: A, A: A
+    > =
+      A
+
+    typealias Foo
+      <
+        A: A,
+        A: A, A: A
+      > =
+      A
+
+    typealias Foo
+      <
+        A: A,
+        A: A, A: A> =
+      A
+
+    typealias Foo
+      <A: A,
+       A: A, A: A> =
+      A
+
+    typealias Foo
+      <A: A,
+       A: A, A: A
+      > =
+      A
 }
 
 // Function declarations
@@ -298,6 +342,71 @@ func
   B {
     foo()
     foo()
+}
+
+func foo<
+  A: A,
+  A: A, A: A
+> (
+  a: A,
+  a: A
+){
+}
+
+func foo<
+  A: A,
+  A: A, A: A> (
+  a: A,
+  a: A) {
+}
+
+func foo<A: A,
+         A: A, A: A> (a: A,
+                      a: A) {
+}
+
+func foo<A: A,
+         A: A, A: A
+> (
+  a: A,
+  a: A
+) {
+}
+
+func foo
+  <
+    A: A,
+    A: A, A: A
+  >
+  (
+    a: A,
+    a: A
+  ){
+}
+
+func foo
+  <
+    A: A,
+    A: A, A: A>
+  (
+    a: A,
+    a: A) {
+}
+
+func foo
+  <A: A,
+   A: A, A: A>
+  (a: A,
+   a: A) {
+}
+
+func foo
+  <A: A,
+   A: A, A: A
+  >
+  (a: A,
+   a: A
+  ) {
 }
 
 // Enumeration declarations
@@ -415,6 +524,50 @@ struct A {
     }
     func foo() {
     }
+}
+
+struct Foo<
+  A: A,
+  A: A, A: A
+> {
+}
+
+struct Foo<
+  A: A,
+  A: A, A: A> {
+}
+
+struct Foo<A: A,
+           A: A, A: A> {
+}
+
+struct Foo<A: A,
+           A: A, A: A
+> {
+}
+
+struct Foo
+  <
+    A: A,
+    A: A, A: A
+  > {
+}
+
+struct Foo
+  <
+    A: A,
+    A: A, A: A> {
+}
+
+struct Foo
+  <A: A,
+   A: A, A: A> {
+}
+
+struct Foo
+  <A: A,
+   A: A, A: A
+  > {
 }
 
 // Protocol declarations
