@@ -1041,6 +1041,50 @@ catch
     foo()
 }
 
+// Multi-Pattern Catch Clauses
+// https://github.com/apple/swift-evolution/blob/master/proposals/0276-multi-pattern-catch-clauses.md
+
+do {
+} catch Foo(let a)
+          where
+            foo
+              .bar(),
+        Bar(let a)
+          where
+            foo
+              .bar(),
+        Baz(let a) where
+          foo
+            .bar() {
+    foo(a)
+} catch Foo(let a)
+          where
+            foo
+              .bar()
+      , Bar(let a)
+          where
+            foo
+              .bar()
+      , Baz(let a) where
+          foo
+            .bar() {
+    foo(a)
+} catch
+  Foo(let a)
+    where
+      foo
+        .bar(),
+  Bar(let a)
+    where
+      foo
+        .bar(),
+  Baz(let a) where
+    foo
+      .bar() {
+    foo(a)
+}
+
+
 // Conditional control statements
 
 func foo() {

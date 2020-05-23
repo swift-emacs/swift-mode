@@ -1137,10 +1137,19 @@ comma at eol."
   ;;      , E
   ;;      , F
   ;; }
+  ;;
+  ;; https://github.com/apple/swift-evolution/blob/master/proposals/0276-multi-pattern-catch-clauses.md
+  ;; do {
+  ;; } catch Foo(let a),
+  ;;         Bar(let a) {
+  ;;   foo(a)
+  ;; }
   (let ((pos (point))
         (parent (swift-mode:backward-sexps-until
                  ;; Includes "if" to stop at the last else-if.
-                 (append swift-mode:statement-parent-tokens '("if" \( \[ <))
+                 ;; Includes "catch" to stop at the last catch.
+                 (append swift-mode:statement-parent-tokens
+                         '("if" "catch" \( \[ <))
                  (if utrecht-style nil '(\,))
                  (if utrecht-style '(\,) nil))))
     (cond
@@ -1151,7 +1160,7 @@ comma at eol."
       (goto-char pos)
       (swift-mode:backward-sexps-until '(< "where")))
 
-     ((equal (swift-mode:token:text parent) "if")
+     ((member (swift-mode:token:text parent) '("if" "catch"))
       parent)
 
      (t
