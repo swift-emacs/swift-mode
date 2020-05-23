@@ -1,6 +1,6 @@
 ;;; swift-mode-font-lock.el --- Major-mode for Apple's Swift programming language, Font Locks. -*- lexical-binding: t -*-
 
-;; Copyright (C) 2014-2019 taku0, Chris Barrett, Bozhidar Batsov,
+;; Copyright (C) 2014-2020 taku0, Chris Barrett, Bozhidar Batsov,
 ;;                         Arthur Evstifeev, Michael Sanders
 
 ;; Authors: taku0 (http://github.com/taku0)
@@ -531,8 +531,8 @@ Return nil otherwise."
 
 (defconst swift-mode:preprocessor-keywords
   '("#available" "#colorLiteral" "#column" "#dsohandle" "#else" "#elseif"
-    "#endif" "#error" "#file" "#fileLiteral" "#function" "#if" "#imageLiteral"
-    "#keyPath" "#line" "#selector" "#sourceLocation" "#warning")
+    "#endif" "#error" "#file" "#filePath" "#fileLiteral" "#function" "#if"
+    "#imageLiteral" "#keyPath" "#line" "#selector" "#sourceLocation" "#warning")
   "Keywords that begin with a number sign (#).")
 
 (defconst swift-mode:declaration-keywords
