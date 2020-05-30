@@ -569,3 +569,20 @@ foo[
 
 foo
 [1] // this is not a subscript expression
+
+
+// Multiple Trailing Closures
+// https://github.com/apple/swift-evolution/blob/master/proposals/0279-multiple-trailing-closures.md
+
+let x = foo
+  .bar {
+      aaa()
+  } baz: {
+      aaa()
+  }
+
+let x = foo.bar {
+    aaa()
+} baz: {
+    aaa()
+}
