@@ -176,21 +176,25 @@ Runs the hook `swift-repl-mode-hook' \(after the `comint-mode-hook' is run).
          (cmd-string (swift-mode:command-list-to-string cmd))
          (cmd-list (swift-mode:command-string-to-list cmd))
          (buffer-name (concat "*Swift REPL [" cmd-string "]*"))
-         (buffer (get-buffer-create buffer-name)))
-    (unless dont-switch
-      (pop-to-buffer buffer))
-    (with-current-buffer buffer
-      (unless (comint-check-proc buffer-name)
-        (save-excursion
-          (apply 'make-comint-in-buffer
-                 cmd-string buffer (car cmd-list) nil (cdr cmd-list))
-          (swift-repl-mode)))
-      (setq-local swift-mode:repl-buffer buffer-name))
+         (buffer (get-buffer-create buffer-name))
+         old-size)
     (with-current-buffer original-buffer
-      (setq-local swift-mode:repl-buffer buffer-name)
+      (setq-local swift-mode:repl-buffer buffer)
       (unless keep-default
         (setq-local swift-mode:repl-executable cmd)
-        (setq-default swift-mode:repl-buffer swift-mode:repl-buffer)))))
+        (setq-default swift-mode:repl-buffer swift-mode:repl-buffer)))
+    (with-current-buffer buffer
+      (setq old-size (buffer-size))
+      (swift-repl-mode)
+      (setq-local swift-mode:repl-buffer buffer))
+    (unless (comint-check-proc buffer)
+      (apply 'make-comint-in-buffer
+             cmd-string buffer (car cmd-list) nil (cdr cmd-list))
+      (with-current-buffer buffer
+        (while (= old-size (buffer-size))
+          (sleep-for .1))))
+    (unless dont-switch
+      (pop-to-buffer buffer))))
 
 ;;;###autoload
 (defalias 'run-swift 'swift-mode:run-repl)
