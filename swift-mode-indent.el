@@ -689,7 +689,8 @@ declaration and its offset is `swift-mode:basic-offset'."
       (goto-char (swift-mode:token:start previous-token))
       (swift-mode:find-parent-and-align-with-next
        swift-mode:statement-parent-tokens
-       (- swift-mode:basic-offset swift-mode:switch-case-offset)))
+       (let ((relative-case-offset (- swift-mode:basic-offset swift-mode:switch-case-offset)))
+         (if (<= relative-case-offset 0) swift-mode:basic-offset relative-case-offset))))
 
      ;; Before ; on the current line
      ((and next-is-on-current-line (eq next-type '\;))
