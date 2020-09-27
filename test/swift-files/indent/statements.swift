@@ -923,6 +923,22 @@ switch foo {
 
 // swift-mode:test:eval (setq-local swift-mode:switch-case-offset 0)
 
+// swift-mode:test:eval (setq-local swift-mode:switch-case-offset 4)
+
+switch foo {
+    case foo:
+        foo()
+        if let x = y {
+            bar()
+        }
+        foo()
+    default:
+        foo()
+        foo()
+}
+
+// swift-mode:test:eval (setq-local swift-mode:switch-case-offset 0)
+
 
 
 // Labeled statements
