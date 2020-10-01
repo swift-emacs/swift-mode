@@ -334,8 +334,8 @@ and \"c\".
          next-token
          parameter-end
          (parameter-names '())
-         (is-operator (seq-contains "/=-+!*%<>&|^~?."
-                                    (elt (swift-mode:token:text name-token) 0))))
+         (is-operator (seq-contains-p "/=-+!*%<>&|^~?."
+                                      (elt (swift-mode:token:text name-token) 0))))
     (cond
      ((eq (swift-mode:token:type name-token) 'identifier)
       (while (progn
