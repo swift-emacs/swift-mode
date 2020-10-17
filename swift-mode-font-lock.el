@@ -358,14 +358,16 @@ Return nil otherwise.
 The predicate MATCH-P is called with two arguments:
 - the position of the identifier, and
 - the limit of search functions."
-  (and
-   (< (point) limit)
-   (re-search-forward "\\<\\(\\sw\\|\\s_\\)+\\>" limit t)
-   (or
-    (save-excursion
-      (save-match-data
-        (funcall match-p (match-beginning 0) limit)))
-    (swift-mode:font-lock-match-expr limit match-p))))
+  (let ((result nil))
+    (while (and
+            (< (point) limit)
+            (re-search-forward "\\<\\(\\sw\\|\\s_\\)+\\>" limit t)
+            (not result))
+      (when (save-excursion
+              (save-match-data
+                (funcall match-p (match-beginning 0) limit)))
+        (setq result t)))
+    result))
 
 (defun swift-mode:font-lock-match-declared-function-names (limit)
   "Move the cursor just after a function name or others.
