@@ -8,10 +8,6 @@
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Arthur Evstifeev <lod@pisem.net>
 ;;       Michael Sanders <michael.sanders@fastmail.com>
-;;
-;; Version: 8.1.1
-;; Package-Requires: ((emacs "24.4") (seq "2.3"))
-;; Keywords: languages swift
 
 ;; This file is not part of GNU Emacs.
 
@@ -398,16 +394,16 @@ LIST-OF-SETS is a list of set of names."
         (limit2 (make-symbol "limit"))
         (matched (make-symbol "matched"))
         (names (make-symbol "names")))
-  `(swift-mode:font-lock-match-expr
-    ,limit
-    (lambda (,pos ,limit2)
-      (seq-reduce
-       (lambda (,matched ,names)
-         (or ,matched
-             (and ,names
-                  (funcall ,f ,names ,pos ,limit2))))
-       (list ,@list-of-sets)
-       nil)))))
+    `(swift-mode:font-lock-match-expr
+      ,limit
+      (lambda (,pos ,limit2)
+        (seq-reduce
+         (lambda (,matched ,names)
+           (or ,matched
+               (and ,names
+                    (funcall ,f ,names ,pos ,limit2))))
+         (list ,@list-of-sets)
+         nil)))))
 
 (defun swift-mode:font-lock-match-builtin-type-names (limit)
   "Move the cursor just after a builtin type name.

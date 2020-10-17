@@ -1,5 +1,5 @@
 [![License GPL 3][badge-license]][copying]
-[![Build Status][badge-travis]][travis]
+[![Run Tests][badge-run-test]][action-run-test]
 [![MELPA](https://melpa.org/packages/swift-mode-badge.svg)](https://melpa.org/#/swift-mode)
 [![MELPA](https://stable.melpa.org/packages/swift-mode-badge.svg)](https://melpa.org/#/swift-mode)
 
@@ -222,6 +222,6 @@ Thanks to [@purcell](https://github.com/purcell) (Steve Purcell) for advices on 
 GPLv3. See [COPYING][] for details. Copyright (C) 2014-2016 taku0, Chris Barrett, Bozhidar Batsov, Arthur Evstifeev.
 
 [badge-license]: https://img.shields.io/badge/license-GPL_3-green.svg
-[badge-travis]: https://travis-ci.org/swift-emacs/swift-mode.png?branch=master
-[travis]: https://travis-ci.org/swift-emacs/swift-mode
+[badge-run-test]: https://github.com/swift-emacs/swift-mode/workflows/Run%20Tests/badge.svg
+[action-run-test]: https://github.com/swift-emacs/swift-mode/actions?query=workflow%3A%22Run+Tests%22
 [COPYING]: ./COPYING

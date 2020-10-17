@@ -3,10 +3,6 @@
 ;; Copyright (C) 2018-2020 taku0
 
 ;; Authors: taku0 (http://github.com/taku0)
-;;
-;; Version: 8.1.1
-;; Package-Requires: ((emacs "24.4") (seq "2.3"))
-;; Keywords: languages swift
 
 ;; This file is not part of GNU Emacs.
 

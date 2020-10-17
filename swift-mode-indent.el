@@ -1,15 +1,12 @@
 ;;; swift-mode-indent.el --- Major-mode for Apple's Swift programming language, indentation. -*- lexical-binding: t -*-
 
-;; Copyright (C) 2014-2020 taku0, Chris Barrett, Bozhidar Batsov, Arthur Evstifeev
+;; Copyright (C) 2014-2020 taku0, Chris Barrett, Bozhidar Batsov,
+;;                         Arthur Evstifeev
 
 ;; Authors: taku0 (http://github.com/taku0)
 ;;       Chris Barrett <chris.d.barrett@me.com>
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Arthur Evstifeev <lod@pisem.net>
-;;
-;; Version: 8.1.1
-;; Package-Requires: ((emacs "24.4") (seq "2.3"))
-;; Keywords: languages swift
 
 ;; This file is not part of GNU Emacs.
 
@@ -689,8 +686,11 @@ declaration and its offset is `swift-mode:basic-offset'."
       (goto-char (swift-mode:token:start previous-token))
       (swift-mode:find-parent-and-align-with-next
        swift-mode:statement-parent-tokens
-       (let ((relative-case-offset (- swift-mode:basic-offset swift-mode:switch-case-offset)))
-         (if (<= relative-case-offset 0) swift-mode:basic-offset relative-case-offset))))
+       (let ((relative-case-offset
+              (- swift-mode:basic-offset swift-mode:switch-case-offset)))
+         (if (<= relative-case-offset 0)
+             swift-mode:basic-offset
+           relative-case-offset))))
 
      ;; Before ; on the current line
      ((and next-is-on-current-line (eq next-type '\;))

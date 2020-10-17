@@ -1,15 +1,12 @@
 ;;; swift-mode-lexer.el --- Major-mode for Apple's Swift programming language, lexer. -*- lexical-binding: t -*-
 
-;; Copyright (C) 2014-2020 taku0, Chris Barrett, Bozhidar Batsov, Arthur Evstifeev
+;; Copyright (C) 2014-2020 taku0, Chris Barrett, Bozhidar Batsov,
+;;                         Arthur Evstifeev
 
 ;; Authors: taku0 (http://github.com/taku0)
 ;;       Chris Barrett <chris.d.barrett@me.com>
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Arthur Evstifeev <lod@pisem.net>
-;;
-;; Version: 8.1.1
-;; Package-Requires: ((emacs "24.4") (seq "2.3"))
-;; Keywords: languages swift
 
 ;; This file is not part of GNU Emacs.
 
@@ -106,7 +103,8 @@ END is the point after the token."
 ;; - postfix-operator
 ;; - binary-operator (including as, as?, as!, is, =, ., and ->)
 ;; - attribute (e.g. @objc, @abc(def))
-;; - identifier (including keywords, numbers, implicit parameters, and unknown tokens)
+;; - identifier (including keywords, numbers, implicit parameters, and unknown
+;;   tokens)
 ;; - [
 ;; - ]
 ;; - {
@@ -118,12 +116,16 @@ END is the point after the token."
 ;; - implicit-;
 ;; - < (as an angle bracket)
 ;; - > (as an angle bracket)
-;; - supertype-: (colon for supertype declaration or type declaration of let or var)
+;; - supertype-: (colon for supertype declaration or type declaration of let or
+;;   var)
 ;; - case-: (colon for case or default label)
-;; - : (part of conditional operator, key-value separator, label-statement separator)
+;; - : (part of conditional operator, key-value separator, label-statement
+;;   separator)
 ;; - anonymous-function-parameter-in ("in" after anonymous function parameter)
-;; - string-chunk-after-interpolated-expression (part of a string ending with ")")
-;; - string-chunk-before-interpolated-expression (part of a string ending with "\\(")
+;; - string-chunk-after-interpolated-expression (part of a string ending with
+;;   ")")
+;; - string-chunk-before-interpolated-expression (part of a string ending with
+;;   "\\(")
 ;; - outside-of-buffer
 ;;
 ;; Additionally, `swift-mode:backward-token-or-list' may return a parenthesized
@@ -268,12 +270,12 @@ stops where the level becomes zero."
             (skip-chars-backward "#")
             (setq pound-count (- start (point)))
             (setq start (point)))
-        (put-text-property start (1+ start)
-                           'syntax-table
-                           (string-to-syntax "|"))
-        (swift-mode:syntax-propertize:end-of-string
-         end quotation pound-count)
-        (put-text-property start (point) 'syntax-multiline t)))
+          (put-text-property start (1+ start)
+                             'syntax-table
+                             (string-to-syntax "|"))
+          (swift-mode:syntax-propertize:end-of-string
+           end quotation pound-count)
+          (put-text-property start (point) 'syntax-multiline t)))
 
        ((equal "//" (match-string-no-properties 0))
         (goto-char (match-beginning 0))
@@ -1113,20 +1115,20 @@ This function does not return `implicit-;' or `type-:'."
 
    ;; Attribute or close-parenthesis
    ((eq (char-before) ?\))
-     (let ((pos-before-comment (point)))
-       (condition-case nil
-           (progn
-             (backward-list)
-             (forward-comment (- (point)))
-             (forward-symbol -1)
-             (unless (eq (char-after) ?@)
-               (goto-char (1- pos-before-comment))))
-         (scan-error (goto-char (1- pos-before-comment))))
-       (swift-mode:token
-        (if (eq (char-after) ?@) 'attribute '\))
-        (buffer-substring-no-properties (point) pos-before-comment)
-        (point)
-        pos-before-comment)))
+    (let ((pos-before-comment (point)))
+      (condition-case nil
+          (progn
+            (backward-list)
+            (forward-comment (- (point)))
+            (forward-symbol -1)
+            (unless (eq (char-after) ?@)
+              (goto-char (1- pos-before-comment))))
+        (scan-error (goto-char (1- pos-before-comment))))
+      (swift-mode:token
+       (if (eq (char-after) ?@) 'attribute '\))
+       (buffer-substring-no-properties (point) pos-before-comment)
+       (point)
+       pos-before-comment)))
 
    ;; Separators and parentheses
    ((memq (char-before) '(?, ?\; ?\{ ?\} ?\[ ?\] ?\( ?\) ?:))

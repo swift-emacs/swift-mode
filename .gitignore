@@ -1,5 +1,5 @@
 *~
-/.cask/
+/.eldev/
 *.elc
 /dist/
 swift-mode-autoloads.el

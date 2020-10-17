@@ -1,6 +1,7 @@
-((emacs-lisp-mode
-  (eval . (checkdoc-minor-mode))
-  (indent-tabs-mode . nil)
-  (fill-column . 80)
-  (sentence-end-double-space . t)
-  (emacs-lisp-docstring-fill-column . 75)))
+((emacs-lisp-mode . ((package-lint-main-file . "swift-mode.el")
+                     (eval . (checkdoc-minor-mode))
+                     (indent-tabs-mode . nil)
+                     (fill-column . 80)
+                     (tab-width . 8)
+                     (sentence-end-double-space . t)
+                     (emacs-lisp-docstring-fill-column . 75))))

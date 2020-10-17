@@ -3,11 +3,6 @@
 ;; Copyright (C) 2016-2019 taku0
 
 ;; Authors: taku0 (http://github.com/taku0)
-;;
-;; Version: 8.1.1
-;; Package-Requires: ((emacs "24.4") (seq "2.3"))
-;; Keywords: languages swift
-;; URL: https://github.com/swift-emacs/swift-mode
 
 ;; This file is not part of GNU Emacs.
 

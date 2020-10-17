@@ -1,0 +1,64 @@
+;;; -*- mode: emacs-lisp; lexical-binding: t; no-byte-compile: t -*-
+
+(eldev-use-package-archive 'gnu)
+(eldev-use-package-archive 'melpa)
+(setq elisp-lint-indent-specs
+      '((swift-mode:with-temp-comment-buffer . 0)))
+
+(setq-default package-lint-main-file "swift-mode.el")
+(setq-default indent-tabs-mode nil)
+(setq-default fill-column 80)
+(setq-default tab-width 8)
+
+(with-eval-after-load 'package-lint
+  (advice-add #'package-lint--check-symbol-separators :override
+              (lambda (&rest args)
+                t))
+  (advice-add #'package-lint--valid-definition-name-p :around
+              (lambda (oldfun name prefix &rest args)
+                (or (equal name "run-swift")
+                    (apply oldfun name prefix args)))))
+
+(defvar elisp-lint--url-in-document-regexp
+  (concat "^"
+          "[[:blank:]]*"
+          "\\(?:;+\\|\"\\)?"
+          "[[:blank:]]*"
+          "https?://"
+          "[][;,/?:@&=+$_.!~*'()#%[:alnum:]-]+"
+          "[[:blank:]]*\"?[[:blank:]]*"
+          "[[:blank:]]*)*[[:blank:]]*"
+          "$")
+  "This regexp must match a URL in comments or strings.")
+
+(with-eval-after-load 'elisp-lint
+  (advice-add
+   #'elisp-lint--fill-column :override
+   ;; Copied from elisp-lint.el and modified.
+   ;; Copyright (C) 2013-2015 Nikolaj Schumacher
+   ;; Copyright (C) 2018-2020 Neil Okamoto
+   ;; GPL2+.
+   ;; https://github.com/gonewest818/elisp-lint/
+   (lambda (&rest args)
+     (save-excursion
+       (let ((line-number 1)
+             (too-long-lines nil))
+         (goto-char (point-min))
+         (while (not (eobp))
+           (let ((text (buffer-substring-no-properties
+                        (line-beginning-position)
+                        (line-end-position))))
+             (when
+                 (and (not
+                       (string-match elisp-lint--package-summary-regexp text))
+                      (not
+                       (string-match elisp-lint--package-requires-regexp text))
+                      (not
+                       (string-match elisp-lint--url-in-document-regexp text))
+                      (> (length text) fill-column))
+               (push (list line-number 0 'fill-column
+                           (format "line length %s exceeded" fill-column))
+                     too-long-lines)))
+           (setq line-number (1+ line-number))
+           (forward-line 1))
+         too-long-lines)))))

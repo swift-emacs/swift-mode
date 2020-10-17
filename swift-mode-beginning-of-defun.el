@@ -3,10 +3,6 @@
 ;; Copyright (C) 2014-2019 taku0
 
 ;; Authors: taku0 (http://github.com/taku0)
-;;
-;; Version: 8.1.1
-;; Package-Requires: ((emacs "24.4") (seq "2.3"))
-;; Keywords: languages swift
 
 ;; This file is not part of GNU Emacs.
 
@@ -866,7 +862,7 @@ Both functions return t if succeeded, return nil otherwise."
         nil))))
 
 (defun swift-mode:backward-sentence (&optional arg)
-"Skip backward sentences or statements.
+  "Skip backward sentences or statements.
 
 In comments or strings, skip a sentence.  Otherwise, skip a statement.
 
@@ -1338,14 +1334,14 @@ or preceding (if the point is after the mark) sentence."
       region)))
 
 (defun swift-mode:narrow-to-sentence (&optional include-comments)
-"Make text outside current sentence invisible.
+  "Make text outside current sentence invisible.
 
 If the point is between sentences, narrow depend on
 `swift-mode:mark-defun-preference'.
 
 Preceding comments are included if INCLUDE-COMMENTS is non-nil.
 Interactively, the behavior depends on ‘narrow-to-defun-include-comments’."
-(interactive (list (and (boundp 'narrow-to-defun-include-comments)
+  (interactive (list (and (boundp 'narrow-to-defun-include-comments)
                           narrow-to-defun-include-comments)))
   (let ((region (swift-mode:narrow-to-generic-block
                  include-comments

@@ -3,10 +3,6 @@
 ;; Copyright (C) 2019 taku0
 
 ;; Authors: taku0 (http://github.com/taku0)
-;;
-;; Version: 8.1.1
-;; Package-Requires: ((emacs "24.4") (seq "2.3"))
-;; Keywords: languages swift
 
 ;; This file is not part of GNU Emacs.
 
@@ -330,12 +326,13 @@ and \"c\".
 
   func foo(a b: Int, c: Int)"
   (let* ((name-token
-         (swift-mode:forward-token-or-list-except-curly-bracket))
+          (swift-mode:forward-token-or-list-except-curly-bracket))
          next-token
          parameter-end
          (parameter-names '())
-         (is-operator (seq-contains "/=-+!*%<>&|^~?."
-                                    (elt (swift-mode:token:text name-token) 0))))
+         (is-operator (seq-contains
+                       "/=-+!*%<>&|^~?."
+                       (elt (swift-mode:token:text name-token) 0))))
     (cond
      ((eq (swift-mode:token:type name-token) 'identifier)
       (while (progn

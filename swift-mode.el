@@ -1,6 +1,7 @@
-;;; swift-mode.el --- Major-mode for Apple's Swift programming language. -*- lexical-binding: t -*-
+;;; swift-mode.el --- Major-mode for Apple's Swift programming language -*- lexical-binding: t -*-
 
-;; Copyright (C) 2014-2019 taku0, Chris Barrett, Bozhidar Batsov, Arthur Evstifeev
+;; Copyright (C) 2014-2019 taku0, Chris Barrett, Bozhidar Batsov,
+;;                         Arthur Evstifeev
 
 ;; Authors: taku0 (http://github.com/taku0)
 ;;       Chris Barrett <chris.d.barrett@me.com>
@@ -146,6 +147,7 @@ Signal `scan-error' if it hits opening parentheses."
 
 ;;;###autoload
 (defsubst swift-mode:add-supported-extension-for-speedbar ()
+  "Register .swfit to speedbar."
   (if (fboundp 'speedbar-add-supported-extension)
       (speedbar-add-supported-extension ".swift")
     (add-hook 'speedbar-load-hook

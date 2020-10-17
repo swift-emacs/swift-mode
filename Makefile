@@ -1,11 +1,9 @@
-CASK ?= cask
-EMACS ?= emacs
-VERSION := $(shell EMACS=$(EMACS) $(CASK) version)
+ELDEV_DIR ?= .eldev
+ELDEV ?= eldev
 
-SRC = $(wildcard *.el)
-PACKAGE = dist/swift-mode-$(VERSION).tar
+INVOKE_ELDEV = ELDEV_DIR="${ELDEV_DIR}" ELDEV="${ELDEV}" ./scripts/invoke_eldev.sh
 
-.PHONY: help all deps package install test clean
+.PHONY: help all deps package install clean test test_in_docker lint
 
 help:
 ## Shows this message.
@@ -18,43 +16,39 @@ help:
 # - Replace /^## / to "  ".
 # - Remove other comment lines.
 # - Insert newline before rules.
-	@sed -e '/^\s*$$/d; /^[	.A-Z]/d; /## no-doc/d; s/^\([^#][^:]*\):.*/\1/; s/^## /  /; /^#/d; s/^[^ ]/\n&/' Makefile
+	@sed -e '/^\s*$$/d; /^[	_.A-Z]/d; /## no-doc/d; s/^\([^#][^:]*\):.*/\1/; s/^## /  /; /^#/d; s/^[^ ]/\n&/' Makefile
 
 all: package
 ## Builds the package.
 
 deps:
 ## Installs the dependencies.
-	$(CASK) install
+	${INVOKE_ELDEV} prepare
 
-$(PACKAGE): $(SRC) deps ## no-doc
-	rm -rf dist
-	$(CASK) package
-
-package: $(PACKAGE)
+package:
 ## Builds the package.
+	${INVOKE_ELDEV} package
 
 install: package
 ## Installs the package.
-	$(CASK) exec $(EMACS) --batch \
+	${INVOKE_ELDEV} emacs --batch \
 	  -l package \
 	  -f package-initialize \
 	  -f package-refresh-contents \
-	  --eval '(package-install-file "$(PACKAGE)")'
+	  --eval '(package-install-file "'"$$( ls dist/*.tar | sort | tail -n 1 )"'")'
 
 clean:
-## Cleans the dist directory and *.elc.
-	rm -rf dist *.elc
+## Cleans the dist directory, *.elc, and .eldev.
+	${INVOKE_ELDEV} clean all
 
 test:
 ## Tests the package.
-	$(CASK) exec $(EMACS) --batch -q \
-	  --eval "(add-to-list 'load-path \""$(shell readlink -f .)"\")" \
-	  --eval "(add-to-list 'load-path \""$(shell readlink -f .)"/test\")" \
-	  -f batch-byte-compile \
-	  *.el
-	$(CASK) exec $(EMACS) --batch -q \
-	  --eval "(add-to-list 'load-path \""$(shell readlink -f .)"\")" \
-	  --eval "(add-to-list 'load-path \""$(shell readlink -f .)"/test\")" \
-	  -l test/swift-mode-test.el \
-	  -f swift-mode:run-test
+	ELDEV_DIR="${ELDEV_DIR}" ELDEV="${ELDEV}" ./scripts/run_test.sh
+
+test_in_docker:
+## Run tests in Docker.
+	./scripts/test_in_docker.sh
+
+lint:
+## Run linters.
+	find ./*.el test/*.el '!' -name '*autoloads.el' -exec env ${INVOKE_ELDEV} lint '{}' '+'
