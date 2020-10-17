@@ -330,9 +330,13 @@ and \"c\".
          next-token
          parameter-end
          (parameter-names '())
-         (is-operator (seq-contains
-                       "/=-+!*%<>&|^~?."
-                       (elt (swift-mode:token:text name-token) 0))))
+         (seq-contains-p (if (fboundp 'seq-contains-p)
+                             'seq-contains-p
+                           'seq-contains))
+         (is-operator
+          (funcall seq-contains-p
+                   "/=-+!*%<>&|^~?."
+                   (elt (swift-mode:token:text name-token) 0))))
     (cond
      ((eq (swift-mode:token:type name-token) 'identifier)
       (while (progn
