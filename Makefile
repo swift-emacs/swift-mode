@@ -3,7 +3,7 @@ ELDEV ?= eldev
 
 INVOKE_ELDEV = ELDEV_DIR="${ELDEV_DIR}" ELDEV="${ELDEV}" ./scripts/invoke_eldev.sh
 
-.PHONY: help all deps package install clean test test_in_docker lint
+.PHONY: help all deps package install clean test test_in_docker lint lint_in_docker
 
 help:
 ## Shows this message.
@@ -51,4 +51,8 @@ test_in_docker:
 
 lint:
 ## Run linters.
-	find ./*.el test/*.el '!' -name '*autoloads.el' -exec env ${INVOKE_ELDEV} lint '{}' '+'
+	ELDEV_DIR="${ELDEV_DIR}" ELDEV="${ELDEV}" ./scripts/run_linter.sh
+
+lint_in_docker:
+## Run linter in Docker.
+	./scripts/lint_in_docker.sh

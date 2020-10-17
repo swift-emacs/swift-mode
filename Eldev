@@ -9,6 +9,7 @@
 (setq-default indent-tabs-mode nil)
 (setq-default fill-column 80)
 (setq-default tab-width 8)
+(setq-default checkdoc-arguments-in-order-flag nil)
 
 (with-eval-after-load 'package-lint
   (advice-add #'package-lint--check-symbol-separators :override
