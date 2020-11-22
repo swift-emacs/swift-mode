@@ -667,7 +667,7 @@ Excludes true, false, and keywords begin with a number sign.")
      'swift-mode:property-access-face)
 
     ;; Make negation chars easier to see
-    ("\\(?:^\\|[^[:alnum:]_]\\)\\(!+\\)[^=]"
+    ("\\(?:^\\|\\s-\\|\\s(\\|\\s>\\|[,:;]\\)\\(!+\\)[^=]"
      1
      'swift-mode:negation-char-face))
   "Swift mode keywords for Font Lock.")
