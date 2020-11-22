@@ -29,6 +29,7 @@
 (require 'swift-mode-test-indent)
 (require 'swift-mode-test-beginning-of-defun)
 (require 'swift-mode-test-imenu)
+(require 'swift-mode-test-font-lock)
 
 (defvar swift-mode:test:basedir
   (file-name-directory (or load-file-name buffer-file-name)))
@@ -48,7 +49,8 @@ Return the error-buffer"
 (defvar swift-mode:tests
   '(swift-mode:run-test:indent
     swift-mode:run-test:beginning-of-defun
-    swift-mode:run-test:imenu))
+    swift-mode:run-test:imenu
+    swift-mode:run-test:font-lock))
 
 (defun swift-mode:run-test (&optional tests)
   "Run TESTS for `swift-mode'."
