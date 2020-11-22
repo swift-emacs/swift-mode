@@ -138,6 +138,10 @@ Example: #if, #endif, and #selector."
   "Face for highlighting property accesses."
   :group 'swift-mode:faces)
 
+(defface swift-mode:negation-char-face
+  '((t . (:inherit font-lock-negation-char-face)))
+  "Face for highlighting the negation char."
+  :group 'swift-mode:faces)
 
 (defun swift-mode:make-set (list)
   "Return a hash where its keys are elements of the LIST.
@@ -660,7 +664,12 @@ Excludes true, false, and keywords begin with a number sign.")
     ;; Property accesses
     (swift-mode:font-lock-match-property-access
      .
-     'swift-mode:property-access-face))
+     'swift-mode:property-access-face)
+
+    ;; Make negation chars easier to see
+    ("\\(?:^\\|[^[:alnum:]_]\\)\\(!+\\)[^=]"
+     1
+     'swift-mode:negation-char-face))
   "Swift mode keywords for Font Lock.")
 
 
