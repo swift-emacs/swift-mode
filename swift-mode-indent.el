@@ -1812,7 +1812,7 @@ See `indent-new-comment-line' for SOFT."
      electric-indent-mode
      (= last-command-event ?\))
      (save-excursion (backward-char) (skip-syntax-backward " ") (bolp))
-     (= (swift-mode:chunk:start (swift-mode:chunk-after)) (1- (point))))
+     (eq (swift-mode:chunk:start (swift-mode:chunk-after)) (1- (point))))
     (indent-according-to-mode))
 
    ;; Indents electrically after newline inside strings and comments.
