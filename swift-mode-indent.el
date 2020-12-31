@@ -921,7 +921,7 @@ This function is also used for close-curly-brace."
       (save-excursion
         (goto-char (swift-mode:token:end
                     (swift-mode:backward-sexps-until
-                     swift-mode:statement-parent-tokens)))
+                     (append swift-mode:statement-parent-tokens '(\( \[)))))
         (setq next-token (swift-mode:forward-token-or-list))
         (while (<= (point) pos)
           (cond

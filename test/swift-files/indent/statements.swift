@@ -304,6 +304,24 @@ for
 }
 
 
+for
+  x in foo(
+    a: {
+        b()
+    }
+  )
+{
+}
+
+for
+  x in [
+    a {
+        b()
+    }
+  ]
+{
+}
+
 // While statements
 
 while foo
@@ -394,6 +412,30 @@ while let
     foo()
 }
 
+
+while
+  let foo = bar(
+    a: {
+        b()
+    }
+  )
+{
+}
+
+while
+  foo(
+    a: {
+        b()
+    }
+  ),
+  a == [
+    b {
+        c()
+    }
+  ]
+{
+}
+
 // Repeat-while statements
 
 repeat {
@@ -427,6 +469,20 @@ repeat {
   while foo
           .bar()
           .baz()
+
+repeat {
+} while foo(
+          a: {
+              b()
+          }
+        )
+
+repeat {
+} while a == [
+          b {
+              c()
+          }
+        ]
 
 // If statement
 
@@ -514,6 +570,33 @@ if foo.bar +++ {
     foo()
 }
 
+if
+  foo(
+    a: {
+        b()
+    }
+  ),
+  a == [
+    b {
+        c()
+    }
+  ]
+{
+}
+
+if
+  let foo = bar(
+    a: {
+        b()
+    }
+  ),
+  let foo = bar(
+    a: {
+        b()
+    }
+  )
+{
+}
 
 // Guard statement
 
@@ -596,6 +679,29 @@ guard
     ab else {
     foo()
     foo()
+}
+
+guard
+  let foo = bar(
+    a: {
+        b()
+    }
+  )
+else {
+}
+
+guard
+  foo(
+    a: {
+        b()
+    }
+  ),
+  a == [
+    b {
+        c()
+    }
+  ]
+else {
 }
 
 // Switch statement
@@ -939,7 +1045,23 @@ switch foo {
 
 // swift-mode:test:eval (setq-local swift-mode:switch-case-offset 0)
 
+switch
+  foo(
+    a: {
+        b()
+    }
+  )
+{
+}
 
+switch
+  [
+    a {
+        b()
+    }
+  ]
+{
+}
 
 // Labeled statements
 
