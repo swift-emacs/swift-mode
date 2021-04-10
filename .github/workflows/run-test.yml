@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    continue-on-error: ${{matrix.emacs_version == 'snapshot'}}
+    continue-on-error: ${{matrix.version == 'snapshot'}}
 
     strategy:
       matrix:
