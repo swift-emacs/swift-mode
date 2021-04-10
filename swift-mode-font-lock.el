@@ -56,7 +56,7 @@
 
 (defface swift-mode:constant-keyword-face
   '((t . (:inherit font-lock-constant-face)))
-  "Face for highlighting constant keywords
+  "Face for highlighting constant keywords.
 
 That is, true, false, and nil."
   :group 'swift-mode:faces)

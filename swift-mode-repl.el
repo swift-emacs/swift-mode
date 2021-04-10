@@ -214,7 +214,8 @@ START and END define region within current buffer"
 (define-derived-mode swift-repl-mode comint-mode "Swift REPL"
   "Major mode for interacting with Swift REPL.
 
-A REPL can be fired up with M-x swift-mode:run-repl or M-x run-swift.
+A REPL can be fired up with \\<swift-mode-map>\\[swift-mode:run-repl] or \
+\\<swift-mode-map>\\[run-swift].
 
 Customization: Entry to this mode runs the hooks on `comint-mode-hook' and
 `swift-repl-mode-hook' (in that order).
