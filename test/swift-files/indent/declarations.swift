@@ -573,7 +573,9 @@ struct Foo
 // Protocol declarations
 
 protocol Foo {
-    func foo(x, y) throws -> (A, B)
+    func foo(x: Int, y: Int) throws -> (A, B)
+    func bar(x: Int) throws
+    func baz(x: () throws -> Int) rethrows
     init<A, B>(x: Int) throws
       where
         A: C
