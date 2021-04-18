@@ -2,7 +2,7 @@
 
 # Run tests in Docker.  Used in Makefile.
 
-for version in 24.4 24.5 25.1 25.2 25.3 26.1 26.2 26.3 27.1
+for version in 24 25 26 27
 do
     docker \
         run \
