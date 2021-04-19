@@ -174,7 +174,7 @@ Both are syntactically correct code. We cannot handle this case properly. This i
 
 ## Hacking
 
-To build the package locally, run `make package`. You need [Cask](https://github.com/cask/cask).
+To build the package locally, run `make package`.
 
 To install the built package, run `make install`.
 
