@@ -192,6 +192,7 @@ Signal `scan-error' if it hits opening parentheses."
                "\\s *"))
   (setq-local fill-indent-according-to-mode t)
   (setq-local comment-multi-line t)
+  (setq-local comment-line-break-function #'swift-mode:indent-new-comment-line)
 
   (setq-local parse-sexp-lookup-properties t)
   (add-hook 'syntax-propertize-extend-region-functions
