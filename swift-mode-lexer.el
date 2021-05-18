@@ -243,7 +243,6 @@ Intended for `syntax-propertize-function'."
      ((swift-mode:chunk:comment-p chunk)
       (goto-char (swift-mode:chunk:start chunk))
       (forward-comment (point-max)))))
-
   (swift-mode:syntax-propertize:scan end 0))
 
 (defun swift-mode:syntax-propertize:scan (end nesting-level)
@@ -317,6 +316,7 @@ pound signs."
         (put-text-property (1- (point)) (point)
                            'syntax-table
                            (string-to-syntax "|")))
+
        ((and (equal "(" (match-string-no-properties 0))
              (swift-mode:escaped-p (match-beginning 0) pound-count))
         ;; Found an interpolated expression. Skips the expression.
@@ -352,6 +352,7 @@ pound signs."
                                (1- (point)))
             (swift-mode:syntax-propertize:end-of-string
              end quotation pound-count))))
+
        (t
         (swift-mode:syntax-propertize:end-of-string end quotation pound-count)))
     (goto-char end)))
@@ -700,7 +701,6 @@ Return nil otherwise."
       nil
     (save-excursion
       (setq swift-mode:in-recursive-call-of-case-colon-p t)
-
       (unwind-protect
           (member
            ;; FIXME:
@@ -1419,14 +1419,19 @@ If PARSER-STATE is given, it is used instead of (syntax-ppss)."
                           (looking-at "#*\"\"\""))
           (swift-mode:chunk 'multiline-string (nth 8 parser-state))
         (swift-mode:chunk 'single-line-string (nth 8 parser-state))))
+
      ((eq (nth 4 parser-state) t)
       (swift-mode:chunk 'single-line-comment (nth 8 parser-state)))
+
      ((nth 4 parser-state)
       (swift-mode:chunk 'multiline-comment (nth 8 parser-state)))
+
      ((and (eq (char-before) ?/) (eq (char-after) ?/))
       (swift-mode:chunk 'single-line-comment (1- (point))))
+
      ((and (eq (char-before) ?/) (eq (char-after) ?*))
       (swift-mode:chunk 'multiline-comment (1- (point))))
+
      (t
       nil))))
 

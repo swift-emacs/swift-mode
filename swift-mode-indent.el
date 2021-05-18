@@ -152,7 +152,6 @@ declaration and its offset is `swift-mode:basic-offset'."
 (defun swift-mode:calculate-indent ()
   "Return the indentation of the current line."
   (back-to-indentation)
-
   (let ((parser-state (syntax-ppss)))
     (cond
      ((nth 4 parser-state)
@@ -1616,7 +1615,6 @@ See `indent-new-comment-line' for SOFT."
          (comment-beginning-position (swift-mode:chunk:start chunk)))
     (if soft (insert-and-inherit ?\n) (newline 1))
     (delete-horizontal-space)
-
     ;; Inserts a prefix and indents the line.
     (cond
      ((not (swift-mode:chunk:comment-p chunk))
@@ -1646,7 +1644,6 @@ See `indent-new-comment-line' for SOFT."
 
      (t
       (swift-mode:format-multiline-comment-line-after-newline chunk soft)))
-
     ;; Cleans up the previous line.
     (save-excursion
       (forward-line 0)
@@ -1750,7 +1747,6 @@ See `indent-new-comment-line' for SOFT."
      (t
       ;; Uses the default indentation.
       (indent-according-to-mode)))
-
     ;; Closes incomplete multiline comment.
     (when (and swift-mode:auto-close-multiline-comment
                (swift-mode:incomplete-comment-p chunk))
@@ -1760,7 +1756,6 @@ See `indent-new-comment-line' for SOFT."
           (if soft (insert-and-inherit ?\n) (newline 1)))
         (insert-and-inherit "*/")
         (indent-according-to-mode)))
-
     ;; Make sure the closing delimiter is on its own line.
     (when swift-mode:break-line-before-comment-close
       (save-excursion
@@ -1839,12 +1834,9 @@ See `indent-new-comment-line' for SOFT."
    swift-mode:anchor-overlay
    (swift-mode:indentation:point indentation)
    (1+ (swift-mode:indentation:point indentation)))
-
   (overlay-put swift-mode:anchor-overlay 'face 'highlight)
-
   (when swift-mode:anchor-overlay-timer
     (cancel-timer swift-mode:anchor-overlay-timer))
-
   (let ((buffer (current-buffer)))
     (setq swift-mode:anchor-overlay-timer
           (run-at-time
