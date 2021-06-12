@@ -212,7 +212,7 @@ This function does not search beyond LIMIT."
   (skip-syntax-backward "w_")
   (and (< (point) limit)
        (looking-at
-        "\\<\\(func\\|enum\\|struct\\|class\\|protocol\\|extension\\)\\>")))
+        "\\<\\(func\\|enum\\|struct\\|class\\|protocol\\|extension\\|actor\\)\\>")))
 
 (defun swift-mode:property-access-pos-p (pos limit)
   "Return t if POS is just before the property name of a member expression.
@@ -540,7 +540,8 @@ Return nil otherwise."
 (defconst swift-mode:declaration-keywords
   '("associatedtype" "class" "deinit" "enum" "extension" "fileprivate" "func"
     "import" "init" "inout" "internal" "let" "open" "operator" "private"
-    "protocol" "public" "some" "static" "struct" "subscript" "typealias" "var")
+    "protocol" "public" "some" "static" "struct" "subscript" "typealias" "var"
+    "actor")
   "Keywords used in declarations.")
 
 (defconst swift-mode:statement-keywords
