@@ -570,6 +570,25 @@ struct Foo
   > {
 }
 
+// Actor declarations
+
+@A
+fileprivate
+  actor
+  Foo<A, B>
+  : Bar<A, B>,
+    Baz<A, B>,
+    AAA<A, B>
+  where
+    A:
+      C,
+    B =
+      D<E> {
+    func foo()
+    func foo()
+}
+
+
 // Protocol declarations
 
 protocol Foo {

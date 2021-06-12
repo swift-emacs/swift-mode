@@ -95,6 +95,9 @@ func foo() {
       struct: 1
     )
     foo(
+      actor: 1
+    )
+    foo(
       subscript: 1
     )
     foo(

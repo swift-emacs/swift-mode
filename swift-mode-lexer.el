@@ -480,7 +480,7 @@ Return nil otherwise."
 
      ;; Suppress implicit semicolon after declaration starters.
      ((member (swift-mode:token:text previous-token)
-              '("class" "struct" "protocol" "enum" "extension" "func"
+              '("class" "struct" "actor" "protocol" "enum" "extension" "func"
                 "typealias" "associatedtype" "precedencegroup" "operator"))
       nil)
 
@@ -556,7 +556,7 @@ Return nil otherwise."
      ;;
      ;; `protocol' is handled by the next rule
      ((member (swift-mode:token:text next-token)
-              '("class" "struct" "enum" "extension" "func" "typealias"
+              '("class" "struct" "actor" "enum" "extension" "func" "typealias"
                 "associatedtype" "precedencegroup"))
       t)
 
@@ -687,8 +687,8 @@ That is supertype declaration or type declaration of let or var."
        (member (swift-mode:token:text
                 (swift-mode:backquote-identifier-if-after-dot
                  (swift-mode:backward-token-simple)))
-               '("class" "extension" "enum" "struct" "protocol" "typealias"
-                 "associatedtype"))))))
+               '("class" "extension" "enum" "struct" "actor" "protocol"
+                 "typealias" "associatedtype"))))))
 
 (defvar swift-mode:in-recursive-call-of-case-colon-p nil
   "Non-nil if `case-colon-p' is being evaluated.")
@@ -740,7 +740,7 @@ Return nil otherwise."
     (or (member (swift-mode:token:text (swift-mode:backward-token-simple))
                 '("init" "subscript"))
         (member (swift-mode:token:text (swift-mode:backward-token-simple))
-                '("typealias" "func" "enum" "struct" "class" "init")))))
+                '("typealias" "func" "enum" "struct" "actor" "class" "init")))))
 
 (defun swift-mode:fix-operator-type (token)
   "Return new operator token with proper token type.

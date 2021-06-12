@@ -9,6 +9,8 @@ import let FooModule3.importedConstant
 import var FooModule3.importedVariable
 import func FooModule3.importedFunction
 
+// Note that `import actor` is invalid (at least with Swift 5.5).
+
 @AAA let globalConstant1 = 1,
          globalConstant2: Int = 2
 @AAA var globalVariable1 = 1,
@@ -90,6 +92,9 @@ enum FooEnum2: Int {
 }
 
 struct FooStruct: AAA {
+}
+
+actor FooActor: AAA {
 }
 
 protocol FooProtocol: AAA {

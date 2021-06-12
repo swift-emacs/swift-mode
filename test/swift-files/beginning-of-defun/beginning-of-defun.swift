@@ -197,6 +197,11 @@ foo() {
 /*{*/struct Foo {
 }/*}*/
 
+// /*[*/Actor declarations/*]*/
+
+/*{*/actor Foo {
+}/*}*/
+
 // /*[*/Class declarations/*]*/
 
 /*{*/class Foo {

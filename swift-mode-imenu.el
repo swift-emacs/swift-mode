@@ -159,7 +159,7 @@ Return found declarations in reverse order."
          ;; Ignores the token otherwise.
          ))
 
-       ((member next-text '("struct" "protocol" "extension" "enum"))
+       ((member next-text '("struct" "protocol" "extension" "enum" "actor"))
         (setq last-class-token nil)
         (let ((declaration
                (swift-mode:scan-declarations:handle-struct-like next-token)))

@@ -929,8 +929,8 @@ This function is also used for close-curly-brace."
              '("for" "while" "repeat" "switch" "if" "else" "guard"
                "defer" "do" "catch"
                "get" "set" "willSet" "didSet" "func" "init" "subscript"
-               "enum" "struct" "class" "extension" "prefix" "postfix" "infix"
-               "precedencegroup"))
+               "enum" "struct" "actor" "class" "extension"
+               "prefix" "postfix" "infix" "precedencegroup"))
             (setq is-declaration-or-control-statement-body t)
             (goto-char (1+ pos)))
 
@@ -1497,7 +1497,7 @@ It is a Generic parameter list if:
     \;
     { } \( \) \[ \]
     "true" "false"
-    "class" "struct" "enum" "extension" "func" "operator"
+    "class" "struct" "actor" "enum" "extension" "func" "operator"
     "try" "try?" "try!"
     "as" "as?" "as!"
     "is"
