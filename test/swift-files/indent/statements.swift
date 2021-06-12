@@ -322,6 +322,17 @@ for
 {
 }
 
+for
+  try
+    await
+    x
+  in
+  xs() {
+    foo()
+    foo()
+}
+
+
 // While statements
 
 while foo

@@ -44,7 +44,7 @@ import func FooModule3.importedFunction
 
     @AAA internal typealias TypeAlias<A: AA, B: BB, C: CC> = AAA
 
-    @AAA class final func function1<A: AA, B: BB, C: CC>(aaa bbb: Int, _ ccc: Int, ddd: Int = 1, eee: inout Int = 2) throws -> AAA {
+    @AAA class final func function1<A: AA, B: BB, C: CC>(aaa bbb: Int, _ ccc: Int, ddd: Int = 1, eee: inout Int = 2) async throws -> AAA {
         let a = 1
         var b = 2
 

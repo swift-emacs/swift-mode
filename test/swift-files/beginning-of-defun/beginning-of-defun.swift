@@ -141,6 +141,7 @@ foo() {
               ]/*]*/
           }
       )
+      async
       throws
       ->
       @Foo

@@ -12,7 +12,7 @@ foo(
   &x
 )
 
-// Try operators
+// Try and await operators
 
 let foo = try
   a() + try
@@ -37,6 +37,36 @@ let foo = a+try!
 let foo = a+try?
   a() + b+try?
   b()
+
+
+let foo = await
+  a() + await
+  b()
+
+let foo = a+await
+  a() +b+await
+  b()
+
+let foo = try await
+  a() + try await
+  b()
+
+let foo = a+try await
+  a() +b+try await
+  b()
+
+let foo = try
+  await
+  a() + try
+  await
+  b()
+
+let foo = a+try
+  await
+  a() +b+try
+  await
+  b()
+
 
 // Binary expressions
 // See also operators.swift
@@ -305,6 +335,7 @@ let x = { (
             x: Int,
             y: Int
           )
+            async
             throws
             ->
             Foo
@@ -325,6 +356,7 @@ let x = { [
             x: Int,
             y: Int
           )
+            async
             throws
             ->
             Foo
@@ -344,6 +376,7 @@ let x = {
       x: Int,
       y: Int
     )
+      async
       throws
       ->
       Foo

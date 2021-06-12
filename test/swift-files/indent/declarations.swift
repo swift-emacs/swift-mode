@@ -81,6 +81,7 @@ class Foo {
         Int,
         Int
       )
+      async
       throws
       ->
       [
@@ -314,6 +315,7 @@ private
       Int
       ...
   )
+  async
   throws
   ->
   [A]

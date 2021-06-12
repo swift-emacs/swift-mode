@@ -195,7 +195,13 @@ func foo() {
       throw: 1
     )
     foo(
+      async: 1
+    )
+    foo(
       try: 1
+    )
+    foo(
+      await: 1
     )
 
     // Keywords reserved in particular contexts

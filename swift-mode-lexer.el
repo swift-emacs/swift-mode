@@ -99,7 +99,7 @@ END is the point after the token."
 
 ;; Token types is one of the following symbols:
 ;;
-;; - prefix-operator (including try, try?, and try!)
+;; - prefix-operator (including try, try?, try!, and await)
 ;; - postfix-operator
 ;; - binary-operator (including as, as?, as!, is, =, ., and ->)
 ;; - attribute (e.g. @objc, @abc(def))
@@ -402,9 +402,9 @@ Return nil otherwise."
        (memq (swift-mode:token:type next-token)
              '(binary-operator \; \, :))
 
-       ;; Suppresses implicit semicolon after try, try?, and try!.
+       ;; Suppresses implicit semicolon after try, try?, try!, and await.
        (member (swift-mode:token:text previous-token)
-               '("try" "try?" "try!"))
+               '("try" "try?" "try!" "await"))
 
        ;; Suppress implicit semicolon after open brackets or before close
        ;; brackets.
@@ -433,7 +433,7 @@ Return nil otherwise."
        (member (swift-mode:token:text previous-token)
                '("some" "inout" "in" "where"))
        (member (swift-mode:token:text next-token)
-               '("some" "inout" "throws" "rethrows" "in" "where")))
+               '("some" "inout" "throws" "rethrows" "async" "in" "where")))
       nil)
 
      ;; Inserts semicolon before open curly bracket.
@@ -779,7 +779,7 @@ Other properties are the same as the TOKEN."
        (type
         (cond
          (is-declaration 'identifier)
-         ((member text '("try" "try?" "try!")) 'prefix-operator)
+         ((member text '("try" "try?" "try!" "await")) 'prefix-operator)
          ((equal text ".") 'binary-operator)
          ((and has-preceding-space has-following-space) 'binary-operator)
          (has-preceding-space 'prefix-operator)
@@ -925,7 +925,7 @@ This function does not return `implicit-;' or `type-:'."
     (forward-char)
     (swift-mode:token '> ">" (1- (point)) (point)))
 
-   ;; Operator (other than as, try, or is)
+   ;; Operator (other than as, try, is, or await)
    ;;
    ;; Operators starts with a dot can contains dots. Other operators cannot
    ;; contain dots.
@@ -1016,6 +1016,11 @@ This function does not return `implicit-;' or `type-:'."
                           (point)))
        ((equal text "is")
         (swift-mode:token 'binary-operator
+                          text
+                          (- (point) (length text))
+                          (point)))
+       ((equal text "await")
+        (swift-mode:token 'prefix-operator
                           text
                           (- (point) (length text))
                           (point)))
@@ -1173,7 +1178,7 @@ This function does not return `implicit-;' or `type-:'."
     (backward-char)
     (swift-mode:token '> ">" (point) (1+ (point))))
 
-   ;; Operator (other than as, try, or is)
+   ;; Operator (other than as, try, is, or await)
    ;;
    ;; Operators which starts with a dot can contain other dots. Other
    ;; operators cannot contain dots.
@@ -1254,7 +1259,7 @@ This function does not return `implicit-;' or `type-:'."
                           text
                           (point)
                           (+ (point) (length text))))
-       ((equal text "try")
+       ((member text '("try" "await"))
         (swift-mode:token 'prefix-operator
                           text
                           (point)

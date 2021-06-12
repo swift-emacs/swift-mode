@@ -258,6 +258,21 @@ let foo
   B
   = abc
 
+let foo:
+  (A, B)
+  async
+  throws
+  ->
+  (A)
+  async
+  rethrows
+  ->
+  (A)
+  async
+  ->
+  B
+  = abc
+
 
 // Optional types
 
