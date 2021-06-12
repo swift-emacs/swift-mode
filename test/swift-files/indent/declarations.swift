@@ -236,6 +236,35 @@ class Foo {
             foo()
         }
     }
+
+    var x {
+        get
+          async
+          throws {
+            1
+        }
+    }
+
+    var x {
+        get
+          async
+          throws
+        {
+            1
+        }
+    }
+
+    internal var x: Int {
+        @A
+        mutating
+          get
+          async
+          throws
+
+        @A
+        mutating
+          set
+    }
 }
 
 // Type alias declaration
@@ -602,11 +631,19 @@ protocol Foo {
         A: C
     subscript(x: Int) -> Int {
         get
+          async
+          throws
         set
     }
     associatedtype AAA = BBB
     convenience
       init(x: Int, y, Int)
+    var foo: Int {
+        get
+          async
+          throws
+        set
+    }
 }
 
 // Operator declarations
