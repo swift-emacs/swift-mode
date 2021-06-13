@@ -1,6 +1,6 @@
 ;;; swift-mode-imenu.el --- Major-mode for Apple's Swift programming language, , Imenu -*- lexical-binding: t -*-
 
-;; Copyright (C) 2019 taku0
+;; Copyright (C) 2019-2021 taku0
 
 ;; Authors: taku0 (http://github.com/taku0)
 
