@@ -39,11 +39,13 @@
 ;;;###autoload
 (defgroup swift-mode:repl nil
   "REPL."
+  :tag "Swift Mode REPL"
   :group 'swift)
 
 (defcustom swift-mode:repl-executable
   (concat (when (executable-find "xcrun") "xcrun ") "swift")
   "Path to the Swift CLI.  The string is split by spaces, then unquoted."
+  :tag "Swift Mode REPL Executable"
   :type '(choice string (list string))
   :group 'swift-mode:repl
   :safe 'stringp)
@@ -76,6 +78,7 @@ The string is split by spaces, then unquoted."
   "ios-deploy"
   "Path to ios-deploy command.
 The string is split by spaces, then unquoted."
+  :tag "Swift Mode iOS Deploy Executable"
   :type '(choice string (list string))
   :group 'swift-mode:repl
   :safe 'stringp)
