@@ -338,6 +338,9 @@ private
       B>
   (
     x:
+      @A
+      isolated
+      inout
       Int,
     y:
       Int
@@ -620,7 +623,8 @@ fileprivate
     B =
       D<E> {
     func foo()
-    func foo()
+    nonisolated
+      func foo()
 }
 
 

@@ -431,9 +431,10 @@ Return nil otherwise."
        ;; Suppress implicit semicolon around keywords that cannot start or end
        ;; statements.
        (member (swift-mode:token:text previous-token)
-               '("some" "inout" "in" "where"))
+               '("some" "inout" "in" "where" "isolated"))
        (member (swift-mode:token:text next-token)
-               '("some" "inout" "throws" "rethrows" "async" "in" "where")))
+               '("some" "inout" "throws" "rethrows" "in" "where"
+                 "isolated")))
       nil)
 
      ;; Inserts semicolon before open curly bracket.
@@ -458,7 +459,7 @@ Return nil otherwise."
               '("indirect" "convenience" "dynamic" "final" "infix" "lazy"
                 "mutating" "nonmutating" "optional" "override" "postfix"
                 "prefix" "required" "static" "unowned" "weak" "internal"
-                "private" "public" "open" "fileprivate"))
+                "private" "public" "open" "fileprivate" "nonisolated"))
       nil)
 
      ;; internal(set) private(set) public(set) open(set) fileprivate(set)
@@ -491,7 +492,7 @@ Return nil otherwise."
               '("indirect" "convenience" "dynamic" "final" "infix" "lazy"
                 "mutating" "nonmutating" "optional" "override" "postfix"
                 "prefix" "required" "static" "unowned" "weak" "internal"
-                "private" "public" "open" "fileprivate"))
+                "private" "public" "open" "fileprivate" "nonisolated"))
       t)
 
      ;; Inserts implicit semicolon around keywords that forms single keyword

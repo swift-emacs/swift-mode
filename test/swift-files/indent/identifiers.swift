@@ -109,6 +109,12 @@ func foo() {
     foo(
       some: 1
     )
+    foo(
+      nonisolated: 1
+    )
+    foo(
+      isolated: 1
+    )
 
     // Keywords used in statements
     foo(
