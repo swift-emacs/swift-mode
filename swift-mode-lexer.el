@@ -437,6 +437,31 @@ Return nil otherwise."
                  "isolated")))
       nil)
 
+     ;; Before async
+     ;;
+     ;; Examples:
+     ;;
+     ;; func foo() async throws -> Void
+     ;; foo { () async throws -> void in }
+     ;; let f: () async throws -> Void = g
+     ;; get async throws {}
+     ;; async let x = foo()
+     ;;
+     ;; Suppresses implicit semicolon if and only if before let.
+     ;;
+     ;; Example:
+     ;;
+     ;; let a = f as (Int, Int)
+     ;;   async -> Int
+     ;; let b = t as (Int, Int)
+     ;; async
+     ;; let c = 1
+     ((equal (swift-mode:token:text next-token) "async")
+      (equal (swift-mode:token:text (save-excursion
+                                      (swift-mode:forward-token-simple)
+                                      (swift-mode:forward-token-simple)))
+             "let"))
+
      ;; Inserts semicolon before open curly bracket.
      ;;
      ;; Open curly bracket may continue the previous line, but we do not indent
