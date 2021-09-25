@@ -150,7 +150,9 @@ class Foo {
       : (Int, Int) {
         @A
         mutating
-          get {
+          get
+          async
+          throws {
             foo()
 
             return foo()
@@ -170,6 +172,8 @@ class Foo {
         @A
         mutating
           get
+          async
+          throws
 
         @A
         mutating
