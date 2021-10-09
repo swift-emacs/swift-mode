@@ -109,9 +109,13 @@ Return found declarations in reverse order."
     (while (not done)
       (setq next-token
             (swift-mode:forward-token-or-list-except-curly-bracket))
+      (when (and (eq (swift-mode:token:type next-token) 'implicit-\;)
+                 (save-excursion
+                   (swift-mode:skip-whitespaces)
+                   (eq (char-after) ?\{)))
+        (setq next-token (swift-mode:forward-token)))
       (setq next-type (swift-mode:token:type next-token))
       (setq next-text (swift-mode:token:text next-token))
-
       (cond
        ((equal next-text "import")
         ;; Skips an import kind, for example, "class" token below:
@@ -147,7 +151,7 @@ Return found declarations in reverse order."
              (swift-mode:declaration
               'class
               name-token
-              (when (eq (swift-mode:token:type next-token) '{)
+              (when (eq next-type '{)
                 (nreverse (swift-mode:scan-declarations))))
              declarations)))
 
@@ -267,6 +271,11 @@ KEYWORD-TOKEN is the keyword beginning the declaration like \"struct\" or
                      (swift-mode:forward-token-or-list-except-curly-bracket))
                (not (memq (swift-mode:token:type next-token)
                           '(\; implicit-\; { } outside-of-buffer)))))
+      (when (and (eq (swift-mode:token:type next-token) 'implicit-\;)
+                 (save-excursion
+                   (swift-mode:skip-whitespaces)
+                   (eq (char-after) ?\{)))
+        (setq next-token (swift-mode:forward-token)))
       (swift-mode:declaration
        (intern (swift-mode:token:text keyword-token))
        name-token
