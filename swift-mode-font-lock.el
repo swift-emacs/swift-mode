@@ -210,9 +210,10 @@ This function does not search beyond LIMIT."
   (goto-char pos)
   (forward-comment (- (point)))
   (skip-syntax-backward "w_")
-  (and (< (point) limit)
-       (looking-at
-        "\\<\\(func\\|enum\\|struct\\|class\\|protocol\\|extension\\|actor\\)\\>")))
+  (and
+   (< (point) limit)
+   (looking-at
+    "\\<\\(func\\|enum\\|struct\\|class\\|protocol\\|extension\\|actor\\)\\>")))
 
 (defun swift-mode:property-access-pos-p (pos limit)
   "Return t if POS is just before the property name of a member expression.
