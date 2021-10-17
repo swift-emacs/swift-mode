@@ -55,3 +55,7 @@ foo +!+!+!+!+ bbb // "foo +!+!+!+!+ bbb"
 //
 
 enum Foo: Error { .foo } // #("enum Foo: Error { .foo }" 0 4 (face swift-mode:keyword-face) 5 8 (face swift-mode:function-name-face) 10 15 (face swift-mode:builtin-type-face) 19 22 (face swift-mode:property-access-face))
+
+func foo() { // #("func foo() {" 0 4 (face swift-mode:keyword-face) 5 8 (face swift-mode:function-name-face))
+    foo() // #("    foo()" 4 7 (face swift-mode:function-call-face))
+}

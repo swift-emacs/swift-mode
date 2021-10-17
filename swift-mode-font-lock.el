@@ -653,15 +653,15 @@ Excludes true, false, and keywords begin with a number sign.")
      .
      'swift-mode:builtin-precedence-group-face)
 
-    ;; Method/function calls
-    ("\\<\\(\\(\\sw\\|\\s_\\)+\\)\\>\\??\\s-*("
-     1
-     'swift-mode:function-call-face)
-
     ;; Function and type declarations
     (swift-mode:font-lock-match-declared-function-names
      .
      'swift-mode:function-name-face)
+
+    ;; Method/function calls
+    ("\\<\\(\\(\\sw\\|\\s_\\)+\\)\\>\\??\\s-*("
+     1
+     'swift-mode:function-call-face)
 
     ;; Property accesses
     (swift-mode:font-lock-match-property-access
