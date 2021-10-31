@@ -3,7 +3,7 @@
 ;; Copyright (C) 2014-2021 taku0, Chris Barrett, Bozhidar Batsov,
 ;;                         Arthur Evstifeev, Michael Sanders
 
-;; Authors: taku0 (http://github.com/taku0)
+;; Author: taku0 (http://github.com/taku0)
 ;;       Chris Barrett <chris.d.barrett@me.com>
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Arthur Evstifeev <lod@pisem.net>

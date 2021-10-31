@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2018-2020 taku0
 
-;; Authors: taku0 (http://github.com/taku0)
+;; Author: taku0 (http://github.com/taku0)
 
 ;; This file is not part of GNU Emacs.
 

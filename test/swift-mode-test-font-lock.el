@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2020 Daniel Martín
 
-;; Authors: Daniel Martín (http://github.com/taku0)
+;; Author: Daniel Martín (http://github.com/taku0)
 
 ;; This file is not part of GNU Emacs.
 
