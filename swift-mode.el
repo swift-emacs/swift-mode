@@ -36,6 +36,7 @@
 
 (require 'swift-mode-lexer)
 (require 'swift-mode-indent)
+(require 'swift-mode-fill)
 (require 'swift-mode-font-lock)
 (require 'swift-mode-beginning-of-defun)
 (require 'swift-mode-repl)
@@ -147,7 +148,7 @@ Signal `scan-error' if it hits opening parentheses."
 
 ;;;###autoload
 (defsubst swift-mode:add-supported-extension-for-speedbar ()
-  "Register .swfit to speedbar."
+  "Register .swift to speedbar."
   (if (fboundp 'speedbar-add-supported-extension)
       (speedbar-add-supported-extension ".swift")
     (add-hook 'speedbar-load-hook
@@ -193,6 +194,7 @@ Signal `scan-error' if it hits opening parentheses."
   (setq-local fill-indent-according-to-mode t)
   (setq-local comment-multi-line t)
   (setq-local comment-line-break-function #'swift-mode:indent-new-comment-line)
+  (setq-local fill-paragraph-function #'swift-mode:comment-fill-function)
 
   (setq-local parse-sexp-lookup-properties t)
   (add-hook 'syntax-propertize-extend-region-functions

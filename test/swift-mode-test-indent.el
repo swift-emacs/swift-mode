@@ -104,7 +104,7 @@ ERROR-BUFFER is the buffer to output errors."
        error-buffer swift-file current-line
        (if known-bug "warning" "error")
        (concat
-        (if known-bug "(knwon bug) " "")
+        (if known-bug "(known bug) " "")
         "indent: expected "
         (prin1-to-string original-indent)
         " but "
