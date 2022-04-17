@@ -2,8 +2,9 @@
 
 # Run tests in Docker.  Used in Makefile.
 
-for version in 24 25 26 27
+for version in 28 27 26 25 24
 do
+    rm -f *.elc
     docker \
         run \
         --rm \
