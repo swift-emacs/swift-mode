@@ -1398,6 +1398,15 @@ If this line ends with a single-line comment, goto just before the comment."
   "Return the start position of the CHUNK."
   (nth 1 chunk))
 
+(defun swift-mode:chunk:end (chunk)
+  "Return the end position of the CHUNK."
+  (save-excursion
+    (goto-char (nth 1 chunk))
+    (if (swift-mode:chunk:comment-p chunk)
+        (forward-comment 1)
+      (swift-mode:forward-token))
+    (point)))
+
 (defun swift-mode:chunk:comment-p (chunk)
   "Return non-nil if the CHUNK is a comment."
   (memq (swift-mode:chunk:type chunk) '(single-line-comment multiline-comment)))
@@ -1465,6 +1474,17 @@ If PARSER-STATE is given, it is used instead of (syntax-ppss)."
 
      (t
       nil))))
+
+(defun swift-mode:same-line-p (point1 point2)
+  "Return non-nil if POINT1 and POINT2 is on the same line.
+
+Return nil otherwise."
+  (= (save-excursion
+       (goto-char point1)
+       (line-beginning-position))
+     (save-excursion
+       (goto-char point2)
+       (line-beginning-position))))
 
 (provide 'swift-mode-lexer)
 

@@ -1,5 +1,4 @@
 ;;; swift-mode-test-fill.el --- Test for swift-mode: filling -*- lexical-binding: t -*-
-
 ;; Copyright (C) 2016, 2022 taku0, Josh Caswell
 
 ;; Authors: taku0 (https://github.com/taku0)
@@ -29,6 +28,7 @@
 
 (require 'swift-mode)
 (require 'swift-mode-fill)
+(require 'diff)
 
 (defun swift-mode:run-test:fill
     (&optional error-buffer error-counts progress-reporter)
@@ -41,105 +41,459 @@ interactively."
   (interactive)
   (if (not swift-mode:test:running)
       (swift-mode:run-test '(swift-mode:run-test:fill))
-    (let ((current-line 0))
+    (swift-mode:test-fill-region-as-paragraph error-buffer error-counts)
+    (let (lines)
       (setq default-directory
             (concat (file-name-as-directory swift-mode:test:basedir)
                     (file-name-as-directory "swift-files")
                     "fill"))
-
       (dolist (swift-file (file-expand-wildcards "*.swift"))
         (redisplay)
         (with-temp-buffer
           (switch-to-buffer (current-buffer))
           (insert-file-contents-literally swift-file)
+          (let ((coding-system-for-read 'utf-8))
+            (decode-coding-inserted-region (point-min) (point-max) swift-file))
           (swift-mode)
-          (setq current-line 0)
-          (while (not (eobp))
-            (when (not noninteractive)
-              (progress-reporter-update progress-reporter))
-            (setq current-line (1+ current-line))
-            (cond
-             ((= (line-beginning-position) (line-end-position))
-              ;; Empty line
-              nil)
+          (syntax-propertize (point-max))
+          (setq lines (swift-mode:test-fill:parse-fill-test)))
+        (dolist (mode '(break join))
+          (swift-mode:test-fill:test-fill-region
+           swift-file
+           lines
+           mode
+           error-buffer
+           error-counts)
+          (swift-mode:test-fill:test-fill-paragraph
+           swift-file
+           lines
+           mode
+           error-buffer
+           error-counts
+           progress-reporter))))))
 
-             ((looking-at ".*//.*swift-mode:test:eval\\(.*\\)")
-              (eval-region (match-beginning 1) (match-end 1)))
+(defun swift-mode:test-fill-region-as-paragraph (error-buffer error-counts)
+  "Run tests for `fill-region-as-paragraph'.
 
-             ((looking-at ".*//.*swift-mode:test:case-begin")
-              (progn
-                ;; Marker comments must have a blank line separating them from
-                ;; the test input or they will interfere with filling.
-                (forward-line 2)
-                (let*
-                    ((status (swift-mode:test-current-case-fill
-                              swift-file current-line error-buffer))
-                     (count-assoc (assq status error-counts)))
-                  (setcdr count-assoc (1+ (cdr count-assoc))))))
+See `swift-mode:run-test:fill' for ERROR-BUFFER and ERROR-COUNTS."
+  ;; Sinle-line comments, insert breaks:
+  (swift-mode:do-test-fill-region-as-paragraph
+   "// abc def ghi\n"
+   "// abc def\n// ghi\n"
+   8
+   12
+   error-buffer
+   error-counts)
 
-             (t (swift-mode:show-error
-                 error-buffer swift-file current-line
-                 "warning" "Unexpected test case input")))
-            (forward-line)))))))
+  ;; Sinle-line comments, delete breaks:
+  (swift-mode:do-test-fill-region-as-paragraph
+   "// abc\n// def\n// ghi\n"
+   "// abc def\n// ghi\n"
+   8
+   12
+   error-buffer
+   error-counts)
 
-(defun swift-mode:test-current-case-fill (swift-file current-line error-buffer)
-  "Run the current fill test case.
+  ;; Multiline comments, insert breaks:
+  (swift-mode:do-test-fill-region-as-paragraph
+   "/* abc def ghi jkl */\n"
+   "/*\n abc def ghi\n jkl\n */\n"
+   8
+   12
+   error-buffer
+   error-counts)
 
-This applies `fill-paragraph' to the input string and compares the result
-to the expected value.
+  ;; Multiline comments, delete breaks:
+  (swift-mode:do-test-fill-region-as-paragraph
+   "/*\n abc\n def\n ghi\n */\n"
+   "/*\n abc def ghi\n */\n"
+   8
+   12
+   error-buffer
+   error-counts)
 
-SWIFT-FILE is the filename of the current test case.
-CURRENT-LINE is the current line number.
-ERROR-BUFFER is the buffer to output errors."
-  (let (expected
-        computed
-        (status 'ok))
-    (setq expected (swift-mode:test-fill:capture-expected))
-    ;; Marker comments must have a blank line separating them from
-    ;; the test input or they will interfere with filling.
-    (forward-line 2)
-    (setq computed (swift-mode:test-fill:perform-fill))
-    (forward-line)
+  ;; Multiline comments, to one-line:
+  (swift-mode:do-test-fill-region-as-paragraph
+   "/*\n abc\n def\n ghi\n */\n"
+   "/* abc def ghi */\n"
+   8
+   80
+   error-buffer
+   error-counts)
 
-    (when (not (string= expected computed))
-      (setq status 'error)
+  ;; Multiline comments, keep line break after open delimiter:
+  (swift-mode:do-test-fill-region-as-paragraph
+   "/*\n abc\n def\n ghi */\n"
+   "/*\n abc def ghi */\n"
+   8
+   12
+   error-buffer
+   error-counts)
 
-      (swift-mode:show-error
-       error-buffer swift-file current-line
-       "error"
-       (concat "Fill region failure\n"
-               "Expected: ```\n" expected "```\n\n"
-               "Actual: ```\n" computed "```")))
-    status))
+  ;; Multiline comments, keep line break before close delimiter:
+  (swift-mode:do-test-fill-region-as-paragraph
+   "/* abc\n def\n ghi\n */\n"
+   "/* abc def\n   ghi\n */\n"
+   8
+   12
+   error-buffer
+   error-counts))
 
-(defsubst swift-mode:test-fill:capture-expected ()
-  "Collect the expected result for this test case into a string."
-  (let ((start (point))
-        (end (point)))
-    (while (not (looking-at ".*//.*swift-mode:test:case-input-begin"))
-      (setq end (point))
-      (forward-line))
-    (buffer-substring start end)))
+(defun swift-mode:do-test-fill-region-as-paragraph
+    (input
+     expected
+     fill-column
+     comment-fill-column
+     error-buffer
+     error-counts)
+  "Run a test for `fill-region-as-paragraph'.
 
-(defsubst swift-mode:test-fill:perform-fill ()
-  "Run `fill-paragraph' on the case's input, returning the resulting string."
-  (let ((start (point))
-        end)
-    (while (not (looking-at ".*//.*swift-mode:test:case-end"))
-      (setq end (point))
-      (forward-line))
+INPUT is a text before filling.
 
-    ;; Filling should work correctly from any place inside the contents
-    (goto-char start)
-    (forward-char (random (- (1- end) start)))
-    (fill-paragraph)
+EXPECTED is the expected result.
 
-    ;; Newline characters may have been added; find new end
-    (beginning-of-line)
-    (while (not (looking-at ".*//.*swift-mode:test:case-end"))
-      (setq end (point))
-      (forward-line))
-    (buffer-substring start end)))
+FILL-COLUMN and COMMENT-FILL-COLUMN is used for respective dynamic variables.
+
+See `swift-mode:run-test:fill' for ERROR-BUFFER and ERROR-COUNTS."
+  (with-temp-buffer
+    (switch-to-buffer (current-buffer))
+    (insert input)
+    (swift-mode)
+    (syntax-propertize (point-max))
+    (let ((fill-column fill-column)
+          (comment-fill-column comment-fill-column))
+      (fill-region-as-paragraph (point-min) (point-max)))
+    (let* ((status (if (equal (buffer-string) expected)
+                       'ok
+                     (swift-mode:show-error
+                      error-buffer "swift-mode-test-fill.el" 0
+                      "error"
+                      (concat "`fill-region-as-paragraph' failed\n"
+                              "Expected:\n```\n" expected "```\n\n"
+                              "Actual:\n```\n" (buffer-string) "```"))
+                     'error))
+           (count-assoc (assq status error-counts)))
+      (setcdr count-assoc (1+ (cdr count-assoc))))))
+
+(defun swift-mode:test-fill:parse-fill-test ()
+  "Parse the current buffer as a test file and return its structure.
+
+The result is list of elements, which is one of:
+
+- non-paragraph line, (list 'literal STRING), where STRING is the line
+  excluding a line break,
+
+- paragraph, (list 'paragraph PREFIX BLOCK-BOUNDARY-TYPE), where PREFIX is the
+  fill prefix and BLOCK-BOUNDARY-TYPE is either nil, `start', or `end', or
+
+- list item, (list 'list-item PREFIX).
+
+- heading, (list 'heading PREFIX)."
+  (save-excursion
+    (goto-char (point-min))
+    (let ((result ()))
+      (while (not (eobp))
+        (push
+         (cond
+          ((looking-at "\\(.*\\)swift-mode:test:paragraph")
+           (list 'paragraph
+                 (match-string-no-properties 1)
+                 (cond
+                  ((looking-at ".*swift-mode:test:start-block")
+                   'start)
+                  ((looking-at ".*swift-mode:test:end-block")
+                   'end)
+                  (t
+                   nil))))
+          ((looking-at "\\(.*\\)swift-mode:test:list-item")
+           (list 'list-item (match-string-no-properties 1)))
+          ((looking-at "\\(.*\\)swift-mode:test:heading")
+           (list 'heading (match-string-no-properties 1)))
+          (t
+           (list 'literal
+                 (buffer-substring-no-properties
+                  (line-beginning-position)
+                  (line-end-position)))))
+         result)
+        (forward-line))
+      (reverse result))))
+
+(defun swift-mode:test-fill:test-fill-region
+    (filename lines mode error-buffer error-counts)
+  "Run tests for `fill-region'.
+
+FILENAME is the name of test file.
+
+LINES is the parsed lines of the test file.
+See `swift-mode:test-fill:parse-fill-test' for details.
+
+MODE is either `break' or `join'.  If it is `break', test breaking long lines.
+If it is `join' test joining short lines.
+
+See `swift-mode:run-test:fill' for ERROR-BUFFER and ERROR-COUNTS."
+  (let (regions
+        expected
+        actual
+        start)
+    (with-temp-buffer
+      (switch-to-buffer (current-buffer))
+      (swift-mode)
+      (setq regions (nth 0 (swift-mode:test-fill:insert-test lines mode)))
+      (syntax-propertize (point-max))
+      (dolist (region (reverse regions))
+        (fill-region-as-paragraph (nth 0 region) (nth 1 region)))
+      (setq expected (buffer-substring-no-properties (point-min) (point-max))))
+    (with-temp-buffer
+      (switch-to-buffer (current-buffer))
+      (swift-mode)
+      (swift-mode:test-fill:insert-test lines mode)
+      (syntax-propertize (point-max))
+      (fill-region (point-min) (point-max))
+      (setq actual (buffer-substring-no-properties (point-min) (point-max))))
+    (let* ((status (if (equal actual expected)
+                       'ok
+                     (swift-mode:show-error
+                      error-buffer filename 0
+                      "error"
+                      (concat "`fill-region' failed\n"
+                              (swift-mode:test-fill:diff-strings
+                               expected
+                               actual)))
+                     'error))
+           (count-assoc (assq status error-counts)))
+      (setcdr count-assoc (1+ (cdr count-assoc))))))
+
+(defun swift-mode:test-fill:test-fill-paragraph
+    (filename
+     lines
+     mode
+     error-buffer
+     error-counts
+     progress-reporter)
+  "Run tests for `fill-paragraph'.
+
+FILENAME is the name of test file.
+
+LINES is the parsed lines of the test file.
+See `swift-mode:test-fill:parse-fill-test' for details.
+
+MODE is either `break' or `join'.  If it is `break', test breaking long lines.
+If it is `join' test joining short lines.
+
+See `swift-mode:run-test:fill' for ERROR-BUFFER, ERROR-COUNTS, and
+PROGRESS-REPORTER."
+  (let (regions-and-blocks
+        regions
+        blocks
+        original
+        expected
+        (point-placements '(beginning-of-line
+                            after-indent
+                            after-first-slash
+                            after-slashes
+                            end-of-line)))
+    (with-temp-buffer
+      (switch-to-buffer (current-buffer))
+      (swift-mode)
+      (setq regions-and-blocks (swift-mode:test-fill:insert-test lines mode))
+      (setq regions (nth 0 regions-and-blocks))
+      (setq blocks (nth 1 regions-and-blocks))
+      (setq original (buffer-string))
+      (dolist (region regions)
+        (delete-region (point-min) (point-max))
+        (insert original)
+        (syntax-propertize (point-max))
+        (fill-region-as-paragraph (nth 0 region) (nth 1 region))
+        (setq expected (buffer-substring-no-properties (point-min) (point-max)))
+        (dolist (point-placement point-placements)
+          (when (not noninteractive)
+            (progress-reporter-update progress-reporter))
+          (swift-mode:test-fill:do-test-fill-paragraph
+           filename
+           original
+           expected
+           region
+           point-placement
+           mode
+           nil
+           error-buffer
+           error-counts)))
+      (dolist (block blocks)
+        (delete-region (point-min) (point-max))
+        (insert original)
+        (syntax-propertize (point-max))
+        (fill-region (nth 0 block) (nth 1 block))
+        (setq expected (buffer-substring-no-properties (point-min) (point-max)))
+        (dolist (point-placement point-placements)
+          (when (not noninteractive)
+            (progress-reporter-update progress-reporter))
+          (swift-mode:test-fill:do-test-fill-paragraph
+           filename
+           original
+           expected
+           block
+           point-placement
+           mode
+           t
+           error-buffer
+           error-counts))))))
+
+(defun swift-mode:test-fill:do-test-fill-paragraph (filename
+                                                    original
+                                                    expected
+                                                    region
+                                                    point-placement
+                                                    mode
+                                                    entire-comment
+                                                    error-buffer
+                                                    error-counts)
+  "Run single test for `fill-paragraph'.
+
+FILENAME is the name of test file.
+
+ORIGINAL is a text before filling.
+
+EXPECTED is the expected result.
+
+REGION is the region to fill.
+
+POINT-PLACEMENT designates where to put the point before filling.  It must be
+one of the following:
+- `beginning-of-line'
+- `after-indent'
+- `after-first-slash'
+- `after-slashes'
+- `end-of-line'
+- `end-of-region'
+
+MODE is either `break' or `join'.  If it is `break', test breaking long lines.
+If it is `join' test joining short lines.
+
+ENTIRE-COMMENT is used for `swift-mode:fill-paragraph-entire-comment-or-string'.
+
+See `swift-mode:run-test:fill' for ERROR-BUFFER, ERROR-COUNTS."
+  (let (actual)
+    (delete-region (point-min) (point-max))
+    (insert original)
+    (syntax-propertize (point-max))
+    (cond
+     ((eq point-placement 'beginning-of-line)
+      (goto-char (nth 0 region)))
+     ((eq point-placement 'after-indent)
+      (goto-char (nth 0 region))
+      (back-to-indentation))
+     ((eq point-placement 'after-first-slash)
+      (goto-char (nth 0 region))
+      (back-to-indentation)
+      (when (eq (char-after) ?/)
+        (forward-char)))
+     ((eq point-placement 'after-slashes)
+      (goto-char (nth 0 region))
+      (back-to-indentation)
+      (skip-chars-forward "/"))
+     ((eq point-placement 'end-of-line)
+      (goto-char (nth 0 region))
+      (end-of-line))
+     ((eq point-placement 'end-of-region)
+      (goto-char (1- (nth 1 region)))))
+    (let ((swift-mode:fill-paragraph-entire-comment-or-string entire-comment))
+      (fill-paragraph))
+    (setq actual (buffer-substring-no-properties (point-min) (point-max)))
+    (let* ((status
+            (if (equal actual expected)
+                'ok
+              (swift-mode:show-error
+               error-buffer filename (nth 2 region)
+               "error"
+               (concat "`fill-paragraph' failed\n"
+                       "point-placement: " (symbol-name point-placement) "\n"
+                       "mode: " (prin1-to-string mode) "\n"
+                       "entire-comment: " (prin1-to-string entire-comment) "\n"
+                       (swift-mode:test-fill:diff-strings
+                        expected
+                        actual)))
+              'error))
+           (count-assoc (assq status error-counts)))
+      (setcdr count-assoc (1+ (cdr count-assoc))))))
+
+(defun swift-mode:test-fill:insert-test (lines mode)
+  "Insert parsed lines at point.
+
+LINES is the parsed lines of the test file.
+See `swift-mode:test-fill:parse-fill-test' for details.
+
+MODE is either `break' or `join'.  If it is `break', test breaking long lines.
+If it is `join' test joining short lines."
+  (let (regions
+        blocks
+        start
+        block-start
+        (line-number 0))
+    (dolist (line lines)
+      (setq line-number (1+ line-number))
+      (cond
+       ((eq (car line) 'literal)
+        (insert (nth 1 line) "\n"))
+       ((eq (car line) 'paragraph)
+        (setq start (point))
+        (when (eq (nth 2 line) 'start)
+          (setq block-start (point)))
+        (swift-mode:test-fill:insert-paragraph
+         (nth 1 line)
+         (nth 1 line)
+         mode)
+        (push (list start (point) line-number) regions)
+        (when (eq (nth 2 line) 'end)
+          (push (list block-start (point) line-number) blocks)))
+       ((eq (car line) 'list-item)
+        (setq start (point))
+        (swift-mode:test-fill:insert-paragraph
+         (concat (nth 1 line) "- ")
+         (nth 1 line)
+         mode)
+        (push (list start (point) line-number) regions))
+       ((eq (car line) 'heading)
+        (setq start (point))
+        (swift-mode:test-fill:insert-paragraph
+         (concat (nth 1 line) "## ")
+         (nth 1 line)
+         mode)
+        (push (list start (point) line-number) regions))))
+    (list (reverse regions) (reverse blocks))))
+
+(defun swift-mode:test-fill:insert-paragraph (first-line-prefix prefix mode)
+  "Insert a test paragraph at point.
+
+FIRST-LINE-PREFIX is inserted before the first line, while PREFIX is inserted
+before other lines.
+
+If MODE is `join', insert short multiple lines.  If MODE is `break', insert a
+long line."
+  (cond
+   ((eq mode 'join)
+    (insert first-line-prefix "aaa\n")
+    (dotimes (_ 100)
+      (insert prefix "aaa\n")))
+   ((eq mode 'break)
+    (insert first-line-prefix)
+    (dotimes (_ 100)
+      (insert "aaa "))
+    (insert "\n"))))
+
+(defun swift-mode:test-fill:diff-strings (expected actual)
+  "Return difference of EXPECTED and ACTUAL."
+  (let (expected-buffer actual-buffer)
+    (with-temp-buffer
+      (rename-buffer "expected" t)
+      (setq expected-buffer (current-buffer))
+      (insert expected)
+      (with-temp-buffer
+        (rename-buffer "actual" t)
+        (setq actual-buffer (current-buffer))
+        (insert actual)
+        (with-temp-buffer
+          (diff-no-select expected-buffer actual-buffer nil t (current-buffer))
+          (buffer-string))))))
 
 (provide 'swift-mode-test-fill)
 

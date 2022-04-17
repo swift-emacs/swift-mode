@@ -15,7 +15,7 @@
   (custom-add-load 'languages 'swift-mode))
 
 (defsubst swift-mode:add-supported-extension-for-speedbar nil "\
-Register .swfit to speedbar." (if (fboundp (quote speedbar-add-supported-extension)) (speedbar-add-supported-extension ".swift") (add-hook (quote speedbar-load-hook) (lambda nil (speedbar-add-supported-extension ".swift")))))
+Register .swift to speedbar." (if (fboundp (quote speedbar-add-supported-extension)) (speedbar-add-supported-extension ".swift") (add-hook (quote speedbar-load-hook) (lambda nil (speedbar-add-supported-extension ".swift")))))
 
 (autoload 'swift-mode "swift-mode" "\
 Major mode for editing Swift code.
@@ -35,6 +35,14 @@ Major mode for editing Swift code.
 ;;; Generated autoloads from swift-mode-beginning-of-defun.el
 
 (if (fboundp 'register-definition-prefixes) (register-definition-prefixes "swift-mode-beginning-of-defun" '("swift-mode:")))
+
+;;;***
+
+;;;### (autoloads nil "swift-mode-fill" "swift-mode-fill.el" (0 0
+;;;;;;  0 0))
+;;; Generated autoloads from swift-mode-fill.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "swift-mode-fill" '("swift-mode:")))
 
 ;;;***
 
