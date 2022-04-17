@@ -117,7 +117,7 @@ The string is split by spaces, then unquoted."
   "Stores the name of the current swift REPL buffer, or nil.")
 
 (defvar swift-mode:repl-command-queue nil
-  "List of strings to be executed on REPL prompts.
+  "List of strings to be executed on REPL.
 
 Use `swift-mode:enqueue-repl-commands' to enqueue commands.
 If an element is a cons cell, its car is used as a regexp for prompt and
@@ -665,7 +665,7 @@ STRING is passed to the command."
                      'swift-mode:wait-for-prompt-then-execute-commands t)))))
 
 (defun swift-mode:enqueue-repl-commands (&rest commands)
-  "Enqueue COMMANDS to be executed on REPL prompts."
+  "Enqueue COMMANDS to be executed on REPL."
   (with-current-buffer swift-mode:repl-buffer
     (setq-local swift-mode:repl-command-queue
                 (append swift-mode:repl-command-queue commands))

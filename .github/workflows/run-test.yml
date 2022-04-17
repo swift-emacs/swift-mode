@@ -16,7 +16,7 @@ jobs:
         # '25.1' fails for some reason even though `make lint_in_docker` succeeds.
         # swift-mode-beginning-of-defun.el:1081: All variables and subroutines might as well have a documentation string
         # swift-mode-beginning-of-defun.el:1135: All variables and subroutines might as well have a documentation string
-        version: ['24.4', '24.5', '25.2', '25.3', '26.1', '26.2', '26.3', '27.1', '27.2', 'snapshot']
+        version: ['24.4', '24.5', '25.2', '25.3', '26.1', '26.2', '26.3', '27.1', '27.2', '28.1', 'snapshot']
 
     env:
       ELDEV_DIR: .eldev
