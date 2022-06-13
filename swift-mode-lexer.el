@@ -484,7 +484,8 @@ Return nil otherwise."
               '("indirect" "convenience" "dynamic" "final" "infix" "lazy"
                 "mutating" "nonmutating" "optional" "override" "postfix"
                 "prefix" "required" "static" "unowned" "weak" "internal"
-                "private" "public" "open" "fileprivate" "nonisolated"))
+                "private" "public" "open" "fileprivate" "nonisolated"
+                "distributed"))
       nil)
 
      ;; internal(set) private(set) public(set) open(set) fileprivate(set)
@@ -517,7 +518,8 @@ Return nil otherwise."
               '("indirect" "convenience" "dynamic" "final" "infix" "lazy"
                 "mutating" "nonmutating" "optional" "override" "postfix"
                 "prefix" "required" "static" "unowned" "weak" "internal"
-                "private" "public" "open" "fileprivate" "nonisolated"))
+                "private" "public" "open" "fileprivate" "nonisolated"
+                "distributed"))
       t)
 
      ;; Inserts implicit semicolon around keywords that forms single keyword

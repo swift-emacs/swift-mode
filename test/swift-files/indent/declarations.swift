@@ -627,6 +627,28 @@ fileprivate
       func foo()
 }
 
+@A
+distributed
+  actor
+  Foo {
+    distributed
+      func
+      foo() {
+    }
+
+    distributed
+      func
+      foo() {
+    }
+
+    distributed
+      var
+      foo
+      :
+      Int {
+    }
+}
+
 
 // Protocol declarations
 

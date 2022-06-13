@@ -543,7 +543,7 @@ Return nil otherwise."
   '("associatedtype" "class" "deinit" "enum" "extension" "fileprivate" "func"
     "import" "init" "inout" "internal" "let" "open" "operator" "private"
     "protocol" "public" "any" "some" "static" "struct" "subscript" "typealias"
-    "var" "actor" "nonisolated" "isolated")
+    "var" "actor" "nonisolated" "isolated" "distributed")
   "Keywords used in declarations.")
 
 (defconst swift-mode:statement-keywords
