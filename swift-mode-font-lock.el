@@ -570,7 +570,7 @@ Excludes true, false, and keywords begin with a number sign.")
   '("os" "arch" "swift" "compiler" "canImport" "targetEnvironment"
     "OSX" "macOS" "iOS" "watchOS" "tvOS" "i386" "x86_64" "arm" "arm64"
     "iOSApplicationExtension" "OSXApplicationExtension"
-    "macOSApplicationExtension" "simulator" "unavailable")
+    "macOSApplicationExtension" "simulator" "unavailable" "noasync")
   "Keywords for build configuration statements.")
 
 (defconst swift-mode:standard-precedence-groups
