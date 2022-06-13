@@ -455,7 +455,7 @@ Return nil otherwise."
      ;;   async -> Int
      ;; let b = t as (Int, Int)
      ;; async
-     ;; let c = 1
+     ;;   let c = 1
      ((equal (swift-mode:token:text next-token) "async")
       (equal (swift-mode:token:text (save-excursion
                                       (swift-mode:forward-token-simple)
@@ -532,7 +532,7 @@ Return nil otherwise."
      ;; Suppress implicit semicolon after keywords that cannot end statements.
      ((member (swift-mode:token:text previous-token)
               '("while" "for" "switch" "case" "default" "catch" "if" "guard"
-                "let" "var" "throw" "import"))
+                "let" "var" "throw" "import" "async"))
       nil)
 
      ;; Inserts implicit semicolon before keywords that starts a new

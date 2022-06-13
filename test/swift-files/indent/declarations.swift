@@ -742,8 +742,10 @@ class Foo {
 
 func foo(f: @escaping (Int, Int) async -> Int, t: (Int, Int)) async {
     let a = f as (Int, Int)
-      async -> Int
+      async
+      ->
+      Int
     let b = t as (Int, Int)
     async
-    let c = 1
+      let c = 1
 }
