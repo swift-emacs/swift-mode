@@ -766,3 +766,20 @@ let values: [
   any
     Any
 ] = []
+
+// some
+
+var
+  foo
+  :
+  some
+  Foo {
+    return Bar()
+}
+
+func foo()
+  ->
+  some
+  Foo {
+    return Bar()
+}
