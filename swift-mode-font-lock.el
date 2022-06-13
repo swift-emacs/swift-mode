@@ -535,7 +535,8 @@ Return nil otherwise."
 (defconst swift-mode:preprocessor-keywords
   '("#available" "#colorLiteral" "#column" "#dsohandle" "#else" "#elseif"
     "#endif" "#error" "#file" "#filePath" "#fileLiteral" "#function" "#if"
-    "#imageLiteral" "#keyPath" "#line" "#selector" "#sourceLocation" "#warning")
+    "#imageLiteral" "#keyPath" "#line" "#selector" "#sourceLocation"
+    "#unavailable" "#warning")
   "Keywords that begin with a number sign (#).")
 
 (defconst swift-mode:declaration-keywords
