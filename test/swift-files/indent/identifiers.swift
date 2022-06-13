@@ -107,6 +107,9 @@ func foo() {
       var: 1
     )
     foo(
+      any: 1
+    )
+    foo(
       some: 1
     )
     foo(

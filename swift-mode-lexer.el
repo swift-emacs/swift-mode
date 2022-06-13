@@ -431,9 +431,9 @@ Return nil otherwise."
        ;; Suppress implicit semicolon around keywords that cannot start or end
        ;; statements.
        (member (swift-mode:token:text previous-token)
-               '("some" "inout" "in" "where" "isolated"))
+               '("any" "some" "inout" "in" "where" "isolated"))
        (member (swift-mode:token:text next-token)
-               '("some" "inout" "throws" "rethrows" "in" "where"
+               '("any" "some" "inout" "throws" "rethrows" "in" "where"
                  "isolated")))
       nil)
 

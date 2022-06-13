@@ -749,3 +749,20 @@ func foo(f: @escaping (Int, Int) async -> Int, t: (Int, Int)) async {
     async
       let c = 1
 }
+
+// any
+
+let
+  pq
+  :
+  any
+  P
+  &
+  Q
+  =
+  S()
+
+let values: [
+  any
+    Any
+] = []

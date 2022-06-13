@@ -59,3 +59,5 @@ enum Foo: Error { .foo } // #("enum Foo: Error { .foo }" 0 4 (face swift-mode:ke
 func foo() { // #("func foo() {" 0 4 (face swift-mode:keyword-face) 5 8 (face swift-mode:function-name-face))
     foo() // #("    foo()" 4 7 (face swift-mode:function-call-face))
 }
+
+let pq: any P & Q = S() // #("let pq: any P & Q = S()" 0 3 (face swift-mode:keyword-face) 8 11 (face swift-mode:keyword-face) 20 21 (face swift-mode:function-call-face))
