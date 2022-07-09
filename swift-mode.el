@@ -8,7 +8,7 @@
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Arthur Evstifeev <lod@pisem.net>
 ;;
-;; Version: 8.5.0
+;; Version: 8.6.0
 ;; Package-Requires: ((emacs "24.4") (seq "2.3"))
 ;; Keywords: languages swift
 ;; URL: https://github.com/swift-emacs/swift-mode
