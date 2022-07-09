@@ -225,11 +225,15 @@ declaration and its offset is `swift-mode:basic-offset'."
       (swift-mode:indentation (point) 0)))))
 
 (defun swift-mode:calculate-indent-of-multiline-string ()
-  "Return the indentation of the current line inside a multiline string."
+  "Return the indentation of the current line inside a multiline string.
+
+Also used for regexes."
   (back-to-indentation)
   (let ((string-beginning-position
          (save-excursion (swift-mode:beginning-of-string))))
-    (if (looking-at "\"\"\"")
+    (if (and (looking-at "\\(\"\"\"\\|/\\)#*")
+             (equal (get-text-property (1- (match-end 0)) 'syntax-table)
+                    (string-to-syntax "|")))
         ;; The last line.
         (progn
           (goto-char string-beginning-position)
@@ -240,13 +244,13 @@ declaration and its offset is `swift-mode:basic-offset'."
       (swift-mode:goto-non-interpolated-expression-bol)
       (back-to-indentation)
       (if (<= (point) string-beginning-position)
-          ;; The cursor was on the 2nd line of the comment, so aligns with
+          ;; The cursor was on the 2nd line of the string, so aligns with
           ;; that line with offset.
           (progn
             (goto-char string-beginning-position)
             (swift-mode:calculate-indent-of-expression
              swift-mode:multiline-statement-offset))
-        ;; The cursor was on the 3rd or following lines of the comment, so
+        ;; The cursor was on the 3rd or following lines of the string, so
         ;; aligns with a non-empty preceding line.
         (if (and (bolp) (eolp))
             ;; The cursor is on an empty line, so seeks a non-empty-line.

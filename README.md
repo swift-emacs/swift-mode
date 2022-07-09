@@ -172,6 +172,15 @@ var x = foo
 
 Both are syntactically correct code. We cannot handle this case properly. This is also a future work.
 
+Other example is regex literals and custom operators.  The following example is valid Swift code with regex literals and custom operators.
+
+```swift
+let x = /^/ /^/ /^/
+```
+
+We parse them as regex literals rather than custom operators for now.
+
+
 ## Hacking
 
 To build the package locally, run `make package`.
