@@ -294,8 +294,8 @@ Fix up multiline comments.
                         (or (swift-mode:chunk-after)
                             (and (looking-at "\\s *\\(/[/*]\\|#*\"\"\"\\)")
                                  (swift-mode:chunk-after (match-end 0)))))))
-             comment-start
-             comment-end
+             comment-start-pos
+             comment-end-pos
              one-line
              have-break-after-open-delimiter
              have-break-before-close-delimiter
@@ -304,16 +304,16 @@ Fix up multiline comments.
              result)
         (if (swift-mode:chunk:multiline-comment-p chunk)
             (progn
-              (setq comment-start (swift-mode:chunk:start chunk))
-              (setq comment-end (swift-mode:chunk:end chunk))
+              (setq comment-start-pos (swift-mode:chunk:start chunk))
+              (setq comment-end-pos (swift-mode:chunk:end chunk))
               ;; Is filling the entire comment?
               (if (and (member (save-excursion
                                  (goto-char from)
                                  (skip-syntax-forward " >")
                                  (point))
-                               (list comment-start
+                               (list comment-start-pos
                                      (save-excursion
-                                       (goto-char comment-start)
+                                       (goto-char comment-start-pos)
                                        (forward-char)
                                        (skip-chars-forward "*")
                                        (skip-syntax-forward " >")
@@ -322,39 +322,42 @@ Fix up multiline comments.
                                  (goto-char to)
                                  (skip-syntax-backward " >")
                                  (point))
-                               (list comment-end
+                               (list comment-end-pos
                                      (save-excursion
-                                       (goto-char comment-end)
+                                       (goto-char comment-end-pos)
                                        (backward-char)
                                        (skip-chars-backward "*")
                                        (skip-syntax-backward " >")
                                        (point)))))
                   (progn
-                    (setq one-line
-                          (swift-mode:same-line-p comment-start comment-end))
+                    (setq one-line (swift-mode:same-line-p
+                                    comment-start-pos
+                                    comment-end-pos))
                     (setq have-break-after-open-delimiter
                           (save-excursion
-                            (goto-char comment-start)
+                            (goto-char comment-start-pos)
                             (forward-char)
                             (skip-chars-forward "*")
                             (skip-syntax-forward " ")
                             (eolp)))
                     (setq have-break-before-close-delimiter
                           (save-excursion
-                            (goto-char comment-end)
+                            (goto-char comment-end-pos)
                             (backward-char)
                             (skip-chars-backward "*")
                             (skip-syntax-backward " ")
                             (bolp)))
-                    (setq comment-start (copy-marker comment-start))
-                    (setq comment-end (copy-marker comment-end))
+                    (setq comment-start-pos (copy-marker comment-start-pos))
+                    (setq comment-end-pos (copy-marker comment-end-pos))
                     (setq result (apply fill-region-as-paragraph from to args))
                     ;; If the entire comment fits in one line, do nothing.
                     ;; Otherwise, insert line breaks before/after the contents
                     ;; if necessary.  See the documentation comment for details.
-                    (unless (swift-mode:same-line-p comment-start comment-end)
+                    (unless (swift-mode:same-line-p
+                             comment-start-pos
+                             comment-end-pos)
                       (save-excursion
-                        (goto-char comment-start)
+                        (goto-char comment-start-pos)
                         (forward-char)
                         (skip-chars-forward "*")
                         (skip-syntax-forward " ")
@@ -366,7 +369,7 @@ Fix up multiline comments.
                           (indent-according-to-mode))
                         (setq contents-start (point)))
                       (save-excursion
-                        (goto-char comment-end)
+                        (goto-char comment-end-pos)
                         (backward-char)
                         (skip-chars-backward "*")
                         (skip-syntax-backward " ")
@@ -381,8 +384,8 @@ Fix up multiline comments.
                                           contents-start
                                           contents-end
                                           args)))
-                    (set-marker comment-start nil)
-                    (set-marker comment-end nil)
+                    (set-marker comment-start-pos nil)
+                    (set-marker comment-end-pos nil)
                     result)
                 (apply fill-region-as-paragraph from to args)))
           (apply fill-region-as-paragraph from to args)))
@@ -672,18 +675,18 @@ Example:
         ;; Do nothing.
         nil
       (when (swift-mode:chunk:multiline-comment-p chunk)
-        (let ((comment-start (swift-mode:chunk:start chunk))
-              (comment-end (swift-mode:chunk:end chunk)))
-          (when (swift-mode:same-line-p comment-start comment-end)
+        (let ((comment-start-pos (swift-mode:chunk:start chunk))
+              (comment-end-pos (swift-mode:chunk:end chunk)))
+          (when (swift-mode:same-line-p comment-start-pos comment-end-pos)
             (save-excursion
-              (goto-char comment-start)
+              (goto-char comment-start-pos)
               (forward-char)
               (skip-chars-forward "*")
               (delete-horizontal-space)
               (insert-and-inherit "\n")
               (indent-according-to-mode))
             (save-excursion
-              (goto-char comment-end)
+              (goto-char comment-end-pos)
               (backward-char)
               (skip-chars-backward "*")
               (skip-syntax-backward " ")
