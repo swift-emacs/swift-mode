@@ -11,5 +11,6 @@
 ./scripts/invoke_eldev.sh emacs --batch -q \
   --eval "(add-to-list 'load-path \"$(readlink -f .)\")" \
   --eval "(add-to-list 'load-path \"$(readlink -f .)/test\")" \
+  --eval "(setq debug-on-error t)" \
   -l test/swift-mode-test.el \
   -f swift-mode:run-test

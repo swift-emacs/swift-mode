@@ -9,10 +9,12 @@ do
         run \
         --rm \
         --volume="$(pwd)":/src \
-        --user "$(id -u):$(id -g)" \
+        --user="$(id -u):$(id -g)" \
+        --workdir="/src" \
+        --env=ELDEV_DIR=/src/.eldev \
+        --env=HOME=/tmp \
         silex/emacs:${version} \
-        bash -c \
-        "cd /src && ELDEV_DIR=/src/.eldev HOME=/tmp ./scripts/run_linter.sh" \
+        bash -c "/src/scripts/run_linter.sh" \
         || exit 1
 done
 

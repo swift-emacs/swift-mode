@@ -5,14 +5,17 @@
 for version in 28 27 26 25 24
 do
     rm -f *.elc
+    rm -f *-autoloads.el
     docker \
         run \
         --rm \
         --volume="$(pwd)":/src \
-        --user "$(id -u):$(id -g)" \
+        --user="$(id -u):$(id -g)" \
+        --workdir="/src" \
+        --env=ELDEV_DIR=/src/.eldev \
+        --env=HOME=/tmp \
         silex/emacs:${version} \
-        bash -c \
-        "cd /src && ELDEV_DIR=/src/.eldev HOME=/tmp ./scripts/run_test.sh" \
+        bash -c "/src/scripts/run_test.sh" \
         || exit 1
 done
 
