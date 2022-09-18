@@ -44,104 +44,85 @@
   t
   "Highlight symbols in the standard library."
   :type 'boolean
-  :group 'swift-mode:faces
-  :safe 'booleanp)
+  :safe #'booleanp)
 
 (defcustom swift-mode:highlight-symbols-in-foundation-framework
   t
   "Highlight symbols in the Foundation framework."
   :type 'boolean
-  :group 'swift-mode:faces
-  :safe 'booleanp)
+  :safe #'booleanp)
 
 (defface swift-mode:constant-keyword-face
   '((t . (:inherit font-lock-constant-face)))
   "Face for highlighting constant keywords.
 
-That is, true, false, and nil."
-  :group 'swift-mode:faces)
+That is, true, false, and nil.")
 
 (defface swift-mode:preprocessor-keyword-face
   '((t . (:inherit font-lock-preprocessor-face)))
   "Face for highlighting preprocessor keywords.
 
-Example: #if, #endif, and #selector."
-  :group 'swift-mode:faces)
+Example: #if, #endif, and #selector.")
 
 (defface swift-mode:keyword-face
   '((t . (:inherit font-lock-keyword-face)))
-  "Face for highlighting keywords."
-  :group 'swift-mode:faces)
+  "Face for highlighting keywords.")
 
 (defface swift-mode:builtin-method-trailing-closure-face
   '((t . (:inherit font-lock-builtin-face)))
-  "Face for highlighting builtin methods with trailing closure."
-  :group 'swift-mode:faces)
+  "Face for highlighting builtin methods with trailing closure.")
 
 (defface swift-mode:builtin-method-face
   '((t . (:inherit font-lock-builtin-face)))
-  "Face for highlighting builtin methods."
-  :group 'swift-mode:faces)
+  "Face for highlighting builtin methods.")
 
 (defface swift-mode:builtin-function-trailing-closure-face
   '((t . (:inherit font-lock-builtin-face)))
-  "Face for highlighting builtin functions with trailing closure."
-  :group 'swift-mode:faces)
+  "Face for highlighting builtin functions with trailing closure.")
 
 (defface swift-mode:builtin-function-face
   '((t . (:inherit font-lock-builtin-face)))
-  "Face for highlighting builtin functions."
-  :group 'swift-mode:faces)
+  "Face for highlighting builtin functions.")
 
 (defface swift-mode:builtin-property-face
   '((t . (:inherit font-lock-builtin-face)))
-  "Face for highlighting builtin properties."
-  :group 'swift-mode:faces)
+  "Face for highlighting builtin properties.")
 
 (defface swift-mode:builtin-constant-face
   '((t . (:inherit font-lock-builtin-face)))
-  "Face for highlighting builtin constants."
-  :group 'swift-mode:faces)
+  "Face for highlighting builtin constants.")
 
 (defface swift-mode:builtin-enum-case-face
   '((t . (:inherit font-lock-builtin-face)))
-  "Face for highlighting builtin enum cases."
-  :group 'swift-mode:faces)
+  "Face for highlighting builtin enum cases.")
 
 (defface swift-mode:build-config-keyword-face
   '((t . (:inherit font-lock-builtin-face)))
-  "Face for highlighting build configuration keywords."
-  :group 'swift-mode:faces)
+  "Face for highlighting build configuration keywords.")
 
 (defface swift-mode:builtin-type-face
   '((t . (:inherit font-lock-builtin-face)))
-  "Face for highlighting builtin types."
-  :group 'swift-mode:faces)
+  "Face for highlighting builtin types.")
 
 (defface swift-mode:builtin-precedence-group-face
   '((t . (:inherit font-lock-builtin-face)))
-  "Face for highlighting builtin precedence groups."
-  :group 'swift-mode:faces)
+  "Face for highlighting builtin precedence groups.")
 
 (defface swift-mode:function-call-face
   '((t . (:inherit font-lock-function-name-face)))
-  "Face for highlighting function calls."
-  :group 'swift-mode:faces)
+  "Face for highlighting function calls.")
 
 (defface swift-mode:function-name-face
   '((t . (:inherit font-lock-function-name-face)))
-  "Face for highlighting function names."
-  :group 'swift-mode:faces)
+  "Face for highlighting function names.")
 
 (defface swift-mode:property-access-face
   '((t . (:inherit font-lock-variable-name-face)))
-  "Face for highlighting property accesses."
-  :group 'swift-mode:faces)
+  "Face for highlighting property accesses.")
 
 (defface swift-mode:negation-char-face
   '((t . (:inherit font-lock-negation-char-face)))
-  "Face for highlighting the negation char."
-  :group 'swift-mode:faces)
+  "Face for highlighting the negation char.")
 
 (defun swift-mode:make-set (list)
   "Return a hash where its keys are elements of the LIST.

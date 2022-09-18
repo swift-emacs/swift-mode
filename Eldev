@@ -2,6 +2,9 @@
 
 (eldev-use-package-archive 'gnu)
 (eldev-use-package-archive 'melpa)
+
+(eldev-add-loading-roots 'test "test")
+
 (setq elisp-lint-indent-specs
       '((swift-mode:with-temp-comment-buffer . 0)))
 

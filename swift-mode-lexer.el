@@ -925,7 +925,7 @@ Return nil otherwise."
         (setq swift-mode:in-recursive-call-of-case-colon-p nil)))))
 
 (defun swift-mode:anonymous-parameter-in-p ()
-  "Return t if a 'in' token at the cursor is for anonymous function parameters."
+  "Return t if a `in' token at the cursor is for anonymous function parameters."
   (save-excursion
     (eq
      ;; FIXME: mutual dependency

@@ -34,7 +34,7 @@
   "When non-nil, `fill-paragraph' fills entire comment block or string."
   :type 'boolean
   :group 'swift
-  :safe 'booleanp)
+  :safe #'booleanp)
 
 (defconst swift-mode:doc-comment-paragraph-start
   (let* ((list-marker '(or (any ?- ?+ ?*) (seq (* (any "0-9")) (any ".)"))))

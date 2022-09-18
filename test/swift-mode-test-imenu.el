@@ -27,6 +27,7 @@
 ;;; Code:
 
 (require 'swift-mode)
+(require 'swift-mode-test)
 (require 'swift-mode-imenu)
 
 (defun swift-mode:run-test:imenu
@@ -53,7 +54,7 @@ PROGRESS-REPORTER is the progress-reporter."
         (let* ((actual (swift-mode:scan-declarations))
                (expected-file-name (concat
                                     (file-name-sans-extension swift-file)
-                                    "-expected.el"))
+                                    "-expected.eld"))
                (expected
                 (with-temp-buffer
                   (insert-file-contents-literally expected-file-name)

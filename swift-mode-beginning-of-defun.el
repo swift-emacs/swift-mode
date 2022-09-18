@@ -63,7 +63,7 @@ marks the `outer' function.  Likewise, it marks `inner1' if the preference is
                  (const :tag "Preceding" preceding)
                  (const :tag "Following" following))
   :group 'swift
-  :safe 'symbolp)
+  :safe #'symbolp)
 
 (defvar swift-mode:last-mark-direction 'containing
   "Last direction of `swift-mode:mark-generic-block'.")

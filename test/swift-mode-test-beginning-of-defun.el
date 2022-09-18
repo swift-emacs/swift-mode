@@ -28,6 +28,7 @@
 ;;; Code:
 
 (require 'swift-mode)
+(require 'swift-mode-test)
 (require 'swift-mode-beginning-of-defun)
 (require 'seq)
 
@@ -159,45 +160,45 @@ respectively, in the test file, and removed from the buffer.
         (setq match-end (match-end 0))
         (cond
          ((equal match-string "/*{*/")
-          (add-to-list 'expected-positions
-                       (list 'beginning-of-defun
-                             match-beginning match-beginning
-                             depth depth))
+          (push (list 'beginning-of-defun
+                      match-beginning match-beginning
+                      depth depth)
+                expected-positions)
           (replace-match ""))
          ((equal match-string "/*}*/")
-          (add-to-list 'expected-positions
-                       (list 'end-of-defun
-                             match-beginning match-beginning
-                             depth depth))
+          (push (list 'end-of-defun
+                      match-beginning match-beginning
+                      depth depth)
+                expected-positions)
           (replace-match ""))
          ((equal match-string "/*[*/")
-          (add-to-list 'expected-positions
-                       (list 'beginning-of-sentence
-                             match-beginning match-beginning
-                             depth depth))
+          (push (list 'beginning-of-sentence
+                      match-beginning match-beginning
+                      depth depth)
+                expected-positions)
           (replace-match ""))
          ((equal match-string "/*]*/")
-          (add-to-list 'expected-positions
-                       (list 'end-of-sentence
-                             match-beginning match-beginning
-                             depth depth))
+          (push (list 'end-of-sentence
+                      match-beginning match-beginning
+                      depth depth)
+                expected-positions)
           (replace-match ""))
          ((and (member match-string '("{" "[" "(" "/*"))
                (not (swift-mode:chunk-after match-beginning)))
           (setq depth (1+ depth))
-          (add-to-list 'expected-positions
-                       (list '{ match-beginning match-end (1- depth) depth)))
+          (push (list '{ match-beginning match-end (1- depth) depth)
+                expected-positions))
          ((and (member match-string '("}" "]" ")" "*/"))
                (not (swift-mode:chunk-after match-end)))
           (setq depth (1- depth))
-          (add-to-list 'expected-positions
-                       (list '} match-beginning match-end (1+ depth) depth)))
+          (push (list '} match-beginning match-end (1+ depth) depth)
+                expected-positions))
 
          ((and (equal match-string "//")
                (not (swift-mode:chunk-after match-beginning)))
           (setq depth (1+ depth))
-          (add-to-list 'expected-positions
-                       (list '{ match-beginning match-end (1- depth) depth)))
+          (push (list '{ match-beginning match-end (1- depth) depth)
+                expected-positions))
          ((and (equal match-string "\n")
                (eq (swift-mode:chunk:type
                     (swift-mode:chunk-after match-beginning))
@@ -206,8 +207,8 @@ respectively, in the test file, and removed from the buffer.
               ;; Fuses with next line.
               (goto-char (match-end 0))
             (setq depth (1- depth))
-            (add-to-list 'expected-positions
-                         (list '} match-beginning match-end (1+ depth) depth))))
+            (push (list '} match-beginning match-end (1+ depth) depth)
+                  expected-positions)))
          ((and (equal match-string "\"\"\"")
                (not (eq (char-before match-beginning) ?\\))
                (not (swift-mode:chunk:comment-p
@@ -215,13 +216,11 @@ respectively, in the test file, and removed from the buffer.
           (if (swift-mode:chunk:multiline-string-p
                (swift-mode:chunk-after match-end))
               (progn (setq depth (1+ depth))
-                     (add-to-list
-                      'expected-positions
-                      (list '{ match-beginning match-end (1- depth) depth)))
+                     (push (list '{ match-beginning match-end (1- depth) depth)
+                           expected-positions))
             (setq depth (1- depth))
-            (add-to-list
-             'expected-positions
-             (list '} match-beginning match-end (1+ depth) depth))))
+            (push (list '} match-beginning match-end (1+ depth) depth)
+                  expected-positions)))
          ((and (equal match-string "\"")
                (not (eq (char-before match-beginning) ?\\))
                (not (swift-mode:chunk:comment-p
@@ -231,16 +230,14 @@ respectively, in the test file, and removed from the buffer.
           (if (swift-mode:chunk:single-line-string-p
                (swift-mode:chunk-after match-end))
               (progn (setq depth (1+ depth))
-                     (add-to-list
-                      'expected-positions
-                      (list '{ match-beginning match-end (1- depth) depth)))
+                     (push (list '{ match-beginning match-end (1- depth) depth)
+                           expected-positions))
             (setq depth (1- depth))
-            (add-to-list
-             'expected-positions
-             (list '} match-beginning match-end (1+ depth) depth))))))
+            (push (list '} match-beginning match-end (1+ depth) depth)
+                  expected-positions)))))
       (goto-char (point-max))
-      (add-to-list 'expected-positions
-                   (list 'end-of-defun (point) (point) depth depth))
+      (push (list 'end-of-defun (point) (point) depth depth)
+            expected-positions)
       expected-positions)))
 
 (defun swift-mode:test-current-line-beginning-of-defun

@@ -27,6 +27,7 @@
 ;;; Code:
 
 (require 'swift-mode)
+(require 'swift-mode-test)
 (require 'swift-mode-fill)
 (require 'diff)
 
@@ -142,8 +143,8 @@ See `swift-mode:run-test:fill' for ERROR-BUFFER and ERROR-COUNTS."
 (defun swift-mode:do-test-fill-region-as-paragraph
     (input
      expected
-     fill-column
-     comment-fill-column
+     fill-column-for-test
+     comment-fill-column-for-test
      error-buffer
      error-counts)
   "Run a test for `fill-region-as-paragraph'.
@@ -152,7 +153,8 @@ INPUT is a text before filling.
 
 EXPECTED is the expected result.
 
-FILL-COLUMN and COMMENT-FILL-COLUMN is used for respective dynamic variables.
+FILL-COLUMN-FOR-TEST and COMMENT-FILL-COLUMN-FOR-TEST is used for `fill-column'
+and `comment-fill-column' respectively.
 
 See `swift-mode:run-test:fill' for ERROR-BUFFER and ERROR-COUNTS."
   (with-temp-buffer
@@ -160,8 +162,8 @@ See `swift-mode:run-test:fill' for ERROR-BUFFER and ERROR-COUNTS."
     (insert input)
     (swift-mode)
     (syntax-propertize (point-max))
-    (let ((fill-column fill-column)
-          (comment-fill-column comment-fill-column))
+    (let ((fill-column fill-column-for-test)
+          (comment-fill-column comment-fill-column-for-test))
       (fill-region-as-paragraph (point-min) (point-max)))
     (let* ((status (if (equal (buffer-string) expected)
                        'ok
@@ -180,15 +182,15 @@ See `swift-mode:run-test:fill' for ERROR-BUFFER and ERROR-COUNTS."
 
 The result is list of elements, which is one of:
 
-- non-paragraph line, (list 'literal STRING), where STRING is the line
+- non-paragraph line, (literal STRING), where STRING is the line
   excluding a line break,
 
-- paragraph, (list 'paragraph PREFIX BLOCK-BOUNDARY-TYPE), where PREFIX is the
+- paragraph, (paragraph PREFIX BLOCK-BOUNDARY-TYPE), where PREFIX is the
   fill prefix and BLOCK-BOUNDARY-TYPE is either nil, `start', or `end', or
 
-- list item, (list 'list-item PREFIX).
+- list item, (list-item PREFIX).
 
-- heading, (list 'heading PREFIX)."
+- heading, (heading PREFIX)."
   (save-excursion
     (goto-char (point-min))
     (let ((result ()))
@@ -233,8 +235,7 @@ If it is `join' test joining short lines.
 See `swift-mode:run-test:fill' for ERROR-BUFFER and ERROR-COUNTS."
   (let (regions
         expected
-        actual
-        start)
+        actual)
     (with-temp-buffer
       (switch-to-buffer (current-buffer))
       (swift-mode)

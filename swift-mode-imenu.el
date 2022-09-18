@@ -26,6 +26,7 @@
 ;;; Code:
 
 (require 'swift-mode-lexer)
+(require 'swift-mode-indent)
 (require 'seq)
 
 ;;;###autoload
@@ -43,8 +44,7 @@ Values:
 - `flat': Organized into a flat list of fully qualified names."
   :type '(choice (const :tag "Nested" nested)
                  (const :tag "Flat" flat))
-  :group 'swift-mode:imenu
-  :safe 'symbolp)
+  :safe #'symbolp)
 
 (defun swift-mode:declaration (type name-token children)
   "Construct and return a declaration.

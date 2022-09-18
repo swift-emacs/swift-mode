@@ -27,6 +27,7 @@
 ;;; Code:
 
 (require 'swift-mode)
+(require 'swift-mode-test)
 (require 'swift-mode-font-lock)
 
 (defun swift-mode:run-test:font-lock
@@ -52,7 +53,9 @@ PROGRESS-REPORTER is the progress-reporter."
           (switch-to-buffer (current-buffer))
           (insert-file-contents-literally swift-file)
           (swift-mode)
-          (font-lock-fontify-buffer)
+          (funcall (if (fboundp 'font-lock-ensure)
+                       #'font-lock-ensure
+                     #'font-lock-fontify-buffer))
           (setq current-line 0)
           (while (not (eobp))
             (when (not noninteractive)

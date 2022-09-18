@@ -4,7 +4,7 @@
 
 for version in 28 27 26 25 24
 do
-    rm -f *.elc
+    rm -f *.elc test/*.elc
     rm -f *-autoloads.el
     docker \
         run \

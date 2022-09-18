@@ -3,10 +3,11 @@
 ;; Copyright (C) 2014-2021 taku0, Chris Barrett, Bozhidar Batsov,
 ;;                         Arthur Evstifeev
 
-;; Author: taku0 (http://github.com/taku0)
+;; Author: taku0 <mxxouy6x3m_github@tatapa.org>
 ;;       Chris Barrett <chris.d.barrett@me.com>
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Arthur Evstifeev <lod@pisem.net>
+;; Maintainer: taku0 <mxxouy6x3m_github@tatapa.org>
 ;;
 ;; Version: 8.6.0
 ;; Package-Requires: ((emacs "24.4") (seq "2.3"))
@@ -48,7 +49,9 @@
   :group 'languages
   :prefix "swift-mode:")
 
-;;;`update-directory-autoloads' does not handle `:group'.
+;; FIXME: Could you report the need for these `custom-add-load' as a bug (or
+;; a feature request, but both go through `report-emacs-bug' anyway).
+;;`update-directory-autoloads' does not handle `:group'.
 ;;;###autoload (custom-add-load 'languages 'swift-mode)
 
 ;; WORKAROUND: `cus-load' overrides `custom-loads'
