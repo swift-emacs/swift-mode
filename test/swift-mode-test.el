@@ -26,14 +26,9 @@
 
 ;;; Code:
 
-(require 'swift-mode-test-indent)
-(require 'swift-mode-test-beginning-of-defun)
-(require 'swift-mode-test-imenu)
-(require 'swift-mode-test-font-lock)
-(require 'swift-mode-test-fill)
-
 (defvar swift-mode:test:basedir
-  (file-name-directory (or load-file-name buffer-file-name)))
+  (file-name-directory (if (fboundp 'macroexp-file-name) (macroexp-file-name)
+                         (or load-file-name buffer-file-name))))
 
 (defvar swift-mode:test:running nil)
 
@@ -47,18 +42,19 @@ Return the error-buffer"
   (erase-buffer)
   (current-buffer))
 
-(defvar swift-mode:tests
-  '(swift-mode:run-test:indent
-    swift-mode:run-test:beginning-of-defun
-    swift-mode:run-test:imenu
-    swift-mode:run-test:font-lock
-    swift-mode:run-test:fill))
-
 (defun swift-mode:run-test (&optional tests)
   "Run TESTS for `swift-mode'."
   (interactive)
 
-  (setq tests (or tests swift-mode:tests))
+  (unless tests
+    (dolist (test-source (directory-files swift-mode:test:basedir
+                                          t "swift-mode-test-.*.el"))
+      (load (file-name-sans-extension test-source) nil 'nomsg))
+    (mapatoms (lambda (sym)
+                (and (fboundp sym)
+                     (string-match "\\`swift-mode:run-test:"
+                                   (symbol-name sym))
+                     (push sym tests)))))
 
   (let ((error-buffer
          (if noninteractive nil (swift-mode:setup-error-buffer)))

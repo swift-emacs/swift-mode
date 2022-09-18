@@ -37,55 +37,55 @@
   "Amount of indentation for block contents."
   :type 'integer
   :group 'swift
-  :safe 'integerp)
+  :safe #'integerp)
 
 (defcustom swift-mode:parenthesized-expression-offset 2
   "Amount of indentation inside parentheses and square brackets."
   :type 'integer
   :group 'swift
-  :safe 'integerp)
+  :safe #'integerp)
 
 (defcustom swift-mode:multiline-statement-offset 2
   "Amount of indentation for continuations of expressions."
   :type 'integer
   :group 'swift
-  :safe 'integerp)
+  :safe #'integerp)
 
 (defcustom swift-mode:switch-case-offset 0
   "Amount of indentation for case labels in switch statements."
   :type 'integer
   :group 'swift
-  :safe 'integerp)
+  :safe #'integerp)
 
 (defcustom swift-mode:prepend-asterisk-to-comment-line nil
   "Automatically insert a asterisk to each comment line if non-nil."
   :type 'boolean
   :group 'swift
-  :safe 'booleanp)
+  :safe #'booleanp)
 
 (defcustom swift-mode:insert-space-after-asterisk-in-comment t
   "Automatically insert a space after asterisk in comment if non-nil."
   :type 'boolean
   :group 'swift
-  :safe 'booleanp)
+  :safe #'booleanp)
 
 (defcustom swift-mode:auto-close-multiline-comment t
   "If non-nil, `indent-new-comment-line' automatically close multiline comment."
   :type 'boolean
   :group 'swift
-  :safe 'booleanp)
+  :safe #'booleanp)
 
 (defcustom swift-mode:fix-comment-close t
   "Fix \"* /\" in incomplete multiline comment to \"*/\" if non-nil."
   :type 'boolean
   :group 'swift
-  :safe 'booleanp)
+  :safe #'booleanp)
 
 (defcustom swift-mode:break-line-before-comment-close t
   "If non-nil, break line before the closing delimiter of multiline comments."
   :type 'boolean
   :group 'swift
-  :safe 'booleanp)
+  :safe #'booleanp)
 
 (defcustom swift-mode:highlight-anchor nil
   "Highlight anchor point for indentation if non-nil.
@@ -93,7 +93,7 @@
 Intended for debugging."
   :type 'boolean
   :group 'swift
-  :safe 'booleanp)
+  :safe #'booleanp)
 
 ;;; Constants and variables
 
@@ -1300,7 +1300,7 @@ all tokens.
 STOP-AT-BOL-TOKEN-TYPES is a list of token types that if we hit
 the beginning of a line just before a token with one of given token types,
 the function returns.  Typically, this is a list of token types that starts
-list element (e.g. 'case' of switch statement body).  If STOP-AT-BOL-TOKEN-TYPES
+list element (e.g. `case' of switch statement body).  If STOP-AT-BOL-TOKEN-TYPES
 is the symbol `any', it matches all tokens."
   (let*
       ((parent (swift-mode:backward-token-or-list))

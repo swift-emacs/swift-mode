@@ -27,6 +27,7 @@
 ;;; Code:
 
 (require 'swift-mode)
+(require 'swift-mode-test)
 (require 'swift-mode-indent)
 
 (defun swift-mode:run-test:indent

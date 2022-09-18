@@ -47,32 +47,28 @@
   "Path to the Swift CLI.  The string is split by spaces, then unquoted."
   :tag "Swift Mode REPL Executable"
   :type '(choice string (list string))
-  :group 'swift-mode:repl
-  :safe 'stringp)
+  :safe #'stringp)
 
 (defcustom swift-mode:swift-package-executable
   (concat (when (executable-find "xcrun") "xcrun ") "swift package")
   "Path to the Swift command for package manipulation.
 The string is split by spaces, then unquoted."
   :type '(choice string (list string))
-  :group 'swift-mode:repl
-  :safe 'stringp)
+  :safe #'stringp)
 
 (defcustom swift-mode:swift-build-executable
   (concat (when (executable-find "xcrun") "xcrun ") "swift build")
   "Path to the Swift command for building.
 The string is split by spaces, then unquoted."
   :type '(choice string (list string))
-  :group 'swift-mode:repl
-  :safe 'stringp)
+  :safe #'stringp)
 
 (defcustom swift-mode:debugger-executable
   (concat (when (executable-find "xcrun") "xcrun ") "lldb")
   "Path to the debugger command.
 The string is split by spaces, then unquoted."
   :type '(choice string (list string))
-  :group 'swift-mode:repl
-  :safe 'stringp)
+  :safe #'stringp)
 
 (defcustom swift-mode:ios-deploy-executable
   "ios-deploy"
@@ -80,38 +76,33 @@ The string is split by spaces, then unquoted."
 The string is split by spaces, then unquoted."
   :tag "Swift Mode iOS Deploy Executable"
   :type '(choice string (list string))
-  :group 'swift-mode:repl
-  :safe 'stringp)
+  :safe #'stringp)
 
 (defcustom swift-mode:simulator-controller-executable
   (concat (when (executable-find "xcrun") "xcrun ") "simctl")
   "Path to the simulator controller command.
 The string is split by spaces, then unquoted."
   :type '(choice string (list string))
-  :group 'swift-mode:repl
-  :safe 'stringp)
+  :safe #'stringp)
 
 (defcustom swift-mode:xcodebuild-executable
   (concat (when (executable-find "xcrun") "xcrun ") "xcodebuild")
   "Path to the Xcode builder.
 The string is split by spaces, then unquoted."
   :type '(choice string (list string))
-  :group 'swift-mode:repl
-  :safe 'stringp)
+  :safe #'stringp)
 
 (defcustom swift-mode:xcode-select-executable
   "xcode-select"
   "Path to the Xcode selector.
 The string is split by spaces, then unquoted."
   :type '(choice string (list string))
-  :group 'swift-mode:repl
-  :safe 'stringp)
+  :safe #'stringp)
 
 (defcustom swift-mode:debugger-prompt-regexp "^(lldb) +\\|^[0-9]+> +"
   "Regexp to search a debugger prompt."
   :type 'string
-  :group 'swift-mode:repl
-  :safe 'stringp)
+  :safe #'stringp)
 
 (defvar swift-mode:repl-buffer nil
   "Stores the name of the current swift REPL buffer, or nil.")
@@ -187,7 +178,7 @@ Runs the hook `swift-repl-mode-hook' \(after the `comint-mode-hook' is run).
       (swift-repl-mode)
       (setq-local swift-mode:repl-buffer buffer))
     (unless (comint-check-proc buffer)
-      (apply 'make-comint-in-buffer
+      (apply #'make-comint-in-buffer
              cmd-string buffer (car cmd-list) nil (cdr cmd-list))
       (with-current-buffer buffer
         (while (= old-size (buffer-size))
@@ -196,7 +187,7 @@ Runs the hook `swift-repl-mode-hook' \(after the `comint-mode-hook' is run).
       (pop-to-buffer buffer))))
 
 ;;;###autoload
-(defalias 'run-swift 'swift-mode:run-repl)
+(defalias 'run-swift #'swift-mode:run-repl)
 
 ;;;###autoload
 (defun swift-mode:send-region (start end)
@@ -254,7 +245,7 @@ ARGS are rest arguments, appended to the argument list.
 Returns the exit status."
   (let ((command-list
          (append (swift-mode:command-string-to-list executable) args)))
-    (apply 'call-process
+    (apply #'call-process
            (append
             (list (car command-list))
             (list infile destination display)
@@ -432,7 +423,7 @@ or its ancestors."
   "List available iOS simulator devices."
   (let* ((json (swift-mode:list-ios-simulators))
          (devices (cdr (assoc 'devices json)))
-         (flattened (apply 'seq-concatenate 'list (seq-map 'cdr devices)))
+         (flattened (apply #'seq-concatenate 'list (seq-map #'cdr devices)))
          (available-devices
           (seq-filter
            (lambda (device) (cdr (assoc 'isAvailable device)))
@@ -553,7 +544,7 @@ An list ARGS are appended for builder command line arguments."
     (let ((progress-reporter (make-progress-reporter "Building...")))
       (unless
           (zerop
-           (apply 'swift-mode:call-process
+           (apply #'swift-mode:call-process
                   swift-mode:swift-build-executable
                   "--package-path" project-directory
                   args))
@@ -627,7 +618,7 @@ the value of `swift-mode:ios-project-scheme' is used."
       (unless
           (zerop
            (let ((default-directory project-directory))
-             (apply 'swift-mode:call-process xcodebuild-args)))
+             (apply #'swift-mode:call-process xcodebuild-args)))
         (compilation-mode)
         (goto-char (point-min))
         (pop-to-buffer (current-buffer))
@@ -662,7 +653,7 @@ STRING is passed to the command."
         (comint-send-input))
       (unless swift-mode:repl-command-queue
         (remove-hook 'comint-output-filter-functions
-                     'swift-mode:wait-for-prompt-then-execute-commands t)))))
+                     #'swift-mode:wait-for-prompt-then-execute-commands t)))))
 
 (defun swift-mode:enqueue-repl-commands (&rest commands)
   "Enqueue COMMANDS to be executed on REPL."
@@ -670,7 +661,7 @@ STRING is passed to the command."
     (setq-local swift-mode:repl-command-queue
                 (append swift-mode:repl-command-queue commands))
     (add-hook 'comint-output-filter-functions
-              'swift-mode:wait-for-prompt-then-execute-commands
+              #'swift-mode:wait-for-prompt-then-execute-commands
               nil t)))
 
 (defun swift-mode:debug-swift-module-library (project-directory)
@@ -787,7 +778,7 @@ If WAIT-FOR-DEBUGGER is non-nil, the new process is suspended until a debugger
 attaches to it."
   (with-temp-buffer
     (unless (zerop (apply
-                    'swift-mode:call-process
+                    #'swift-mode:call-process
                     swift-mode:simulator-controller-executable
                     (append
                      '("launch")
