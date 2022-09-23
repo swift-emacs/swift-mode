@@ -49,9 +49,7 @@
   :group 'languages
   :prefix "swift-mode:")
 
-;; FIXME: Could you report the need for these `custom-add-load' as a bug (or
-;; a feature request, but both go through `report-emacs-bug' anyway).
-;;`update-directory-autoloads' does not handle `:group'.
+;; WORKAROUND: `update-directory-autoloads' does not handle `:group'.
 ;;;###autoload (custom-add-load 'languages 'swift-mode)
 
 ;; WORKAROUND: `cus-load' overrides `custom-loads'
@@ -152,6 +150,8 @@ Signal `scan-error' if it hits opening parentheses."
 ;;;###autoload
 (defsubst swift-mode:add-supported-extension-for-speedbar ()
   "Register .swift to speedbar."
+  ;; FIXME: Use `with-eval-after-load' when `package-lint' allows it.
+  ;; See also https://github.com/swift-emacs/swift-mode/pull/179
   (if (fboundp 'speedbar-add-supported-extension)
       (speedbar-add-supported-extension ".swift")
     (add-hook 'speedbar-load-hook
