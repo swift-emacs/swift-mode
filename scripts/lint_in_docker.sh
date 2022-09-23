@@ -4,7 +4,6 @@
 
 for version in 28 27 26 25 24
 do
-    rm -f *.elc test/*.elc
     docker \
         run \
         --rm \
