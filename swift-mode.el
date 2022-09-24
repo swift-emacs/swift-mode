@@ -50,9 +50,13 @@
   :prefix "swift-mode:")
 
 ;; WORKAROUND: `update-directory-autoloads' does not handle `:group'.
+;; Fixed in 29.1 https://debbugs.gnu.org/cgi/bugreport.cgi?bug=58015.
+;; commit: 212e94c3f445ebe1388f6fab134133ebad9316d0
 ;;;###autoload (custom-add-load 'languages 'swift-mode)
 
 ;; WORKAROUND: `cus-load' overrides `custom-loads'
+;; Fixed in 29.1 https://debbugs.gnu.org/cgi/bugreport.cgi?bug=58015.
+;; commit: 75b3f4d0ac00bf47459629615ab2246c8a34b4c6
 ;;;###autoload (with-eval-after-load 'cus-load
 ;;;###autoload   (custom-add-load 'languages 'swift-mode))
 
