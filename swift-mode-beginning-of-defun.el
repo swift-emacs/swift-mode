@@ -151,7 +151,7 @@ The cursor must be at the beginning of a statement."
        ((member (swift-mode:token:text token) '("var" "let"))
         (when (swift-mode:class-like-member-p) token))
        ((equal (swift-mode:token:text token) "case")
-        (swift-mode:backward-sexps-until '({))
+        (swift-mode:backward-sexps-until-open-curly-brace)
         (swift-mode:beginning-of-statement)
         (let ((parent-token (swift-mode:find-defun-keyword-simple)))
           (when (equal (swift-mode:token:text parent-token) "enum")
@@ -201,7 +201,7 @@ The cursor must be at the beginning of a statement."
 Also return t if the cursor is on a global declaration.
 Return nil otherwise."
   (or
-   (let ((parent (swift-mode:backward-sexps-until '({))))
+   (let ((parent (swift-mode:backward-sexps-until-open-curly-brace)))
      (eq (swift-mode:token:type parent) 'outside-of-buffer))
    (progn
      (swift-mode:beginning-of-statement)
@@ -1391,7 +1391,7 @@ of ancestors."
   (if (bobp)
       nil
     (let ((name-token (swift-mode:current-defun-name-token)))
-      (swift-mode:backward-sexps-until '({))
+      (swift-mode:backward-sexps-until-open-curly-brace)
       (if name-token
           (cons name-token (swift-mode:current-defun-name-token-list))
         (swift-mode:current-defun-name-token-list)))))

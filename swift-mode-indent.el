@@ -653,7 +653,7 @@ Also used for regexes."
      ;; After "in" for anonymous function parameters
      ((eq previous-type 'anonymous-function-parameter-in)
       (goto-char (swift-mode:token:start previous-token))
-      (swift-mode:backward-sexps-until '({))
+      (swift-mode:backward-sexps-until-open-curly-brace)
       (swift-mode:calculate-indent-after-open-curly-brace
        swift-mode:basic-offset))
 
@@ -1352,6 +1352,24 @@ is the symbol `any', it matches all tokens."
       (setq type (swift-mode:token:type parent))
       (setq text (swift-mode:token:text parent)))
     parent))
+
+(defun swift-mode:backward-sexps-until-open-curly-brace ()
+  "Backward sexps until an open curly brace appears.
+Return the brace token.
+When this function returns, the cursor is at the start of the token.
+
+If there is no open curly braces, return `outside-of-buffer' token.
+
+This is optimized version of (swift-mode:backward-sexps-until '({}))."
+  (let* ((parent-position (nth 1 (syntax-ppss))))
+    (while (and parent-position
+                (and (goto-char parent-position)
+                     (not (eq (char-after) ?{))))
+      (setq parent-position (nth 1 (syntax-ppss))))
+    (if (eq (char-after) ?{)
+        (save-excursion (swift-mode:forward-token))
+      (goto-char (point-min))
+      (swift-mode:backward-token))))
 
 (defun swift-mode:align-with-next-token (parent &optional offset)
   "Return indentation with the PARENT and OFFSET."
