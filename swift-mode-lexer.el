@@ -508,6 +508,11 @@ return non-nil."
           (if (memq (char-after) '(?/ ?*))
               (goto-char limit)
             (setq end-of-regex (point)))))))
+    (when (and end-of-regex
+               (memq (char-before (1- end-of-regex)) '(?\s ?\t))
+               (not (swift-mode:escaped-p (- end-of-regex 2) 0)))
+      ;; Cannot ends with spaces or tabs unless escaped.
+      (setq end-of-regex nil))
     (unless end-of-regex
       (goto-char pos))
     end-of-regex))

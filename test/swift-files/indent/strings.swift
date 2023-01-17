@@ -169,7 +169,7 @@ func f() {
     let x = /a/
 
     // Slashes can be escaped.
-    let x = /\/ /
+    let x = /\/ +/
 
     // Slashes must be escaped in character classes.
     let x = /[/ + "]/ + // "
@@ -217,18 +217,18 @@ func f() {
 
     // Regexes without extended delimiters cannot be preceded by infix
     // operators without whitespaces.
-    // `a`, infix operator `+/`, `b`, and infix operator `/`
-    let x = a+/b /
+    // `a`, infix operator `+/`, `b`, and infix operator `%/`
+    let x = a+/b %/
       c()
 
     // Regexes without extended delimiters can be preceded by infix operators
     // with whitespaces.
-    // `a`, infix operator `+`, and regex /b /
-    let x = a + /b /
+    // `a`, infix operator `+`, and regex /b %/
+    let x = a + /b %/
     c()
 
     // Comments are whitespaces.
-    let x = a/**/+/**//b /
+    let x = a/**/+/**//b %/
     c()
 
     // Regexes with extended delimiters can be preceded by infix operators
@@ -240,26 +240,42 @@ func f() {
     // Regexes without extended delimiters cannot start with spaces.
     let regex = Regex {
         digit
-          / [+-] /
+        // infix operator `/`, and `a` with postfix operator `/'
+          / a/
+        digit
+    }
+    // Regexes without extended delimiters cannot end with spaces.
+    let regex = Regex {
+        digit
+        // prefix operator `/`, `a`, and infix operator `/'
+        /a /
           digit
     }
     let regex = Regex {
         digit
-        /[+-]/
+        // regex /a/
+        /a/
         digit
     }
 
     // Initial space must be escaped.
     let regex = Regex {
         digit
-        /\ [+-] /
+        /\ a/
+        digit
+    }
+
+    // Final space must be escaped.
+    let regex = Regex {
+        digit
+        /a\ /
         digit
     }
 
     // Regexes with extended delimiters can start with spaces.
     let regex = Regex {
         digit
-        #/ [+-] /#
+        #/ a /#
         digit
     }
 
@@ -291,39 +307,39 @@ func f() {
       c()
 
     // Regexes can be preceded with prefix operators wihtout spaces.
-    // prefix operator `+` and regex /a /.
-    let x = +/a /
+    // prefix operator `+` and regex /a %/.
+    let x = +/a %/
     b()
 
     // Regexes without extended delimiters cannot contain unmatching close
     // parentheses.
-    array.reduce(1, /) { otherArray.reduce(1, /)
-                         array.reduce(1, /) }; otherArray.reduce(1, /)
+    array.reduce(1,/) { otherArray.reduce(1,/)
+                        array.reduce(1,/) }; otherArray.reduce(1,/)
 
     // Regexes without extended delimiters can contain matching close
     // parentheses.
-    array.reduce(1, /(a) { otherArray.reduce(1, /)
-    array.reduce(1, /(a) }; otherArray.reduce(1, /)
+    array.reduce(1,/(a) { otherArray.reduce(1,/)
+    array.reduce(1,/(a) }; otherArray.reduce(1,/)
 
     // Regexes without extended delimiters can contain escaped close
     // parentheses.
-    array.reduce(1, /\) { otherArray.reduce(1, /)
-    array.reduce(1, /\) }; otherArray.reduce(1, /)
+    array.reduce(1,/\) { otherArray.reduce(1,/)
+    array.reduce(1,/\) }; otherArray.reduce(1,/)
 
     // Character classes can contain closing parentheses.
-    array.reduce(1, /[)] { otherArray.reduce(1, /)
-    array.reduce(1, /[)] }; otherArray.reduce(1, /)
+    array.reduce(1,/[)] { otherArray.reduce(1,/)
+    array.reduce(1,/[)] }; otherArray.reduce(1,/)
 
     // Regexes with extended delimiters can contain unmatching close
     // parentheses.
-    array.reduce(1, #/) { otherArray.reduce(1, /#)
-    array.reduce(1, #/) }; otherArray.reduce(1, /#)
+    array.reduce(1,#/) { otherArray.reduce(1,/#)
+    array.reduce(1,#/) }; otherArray.reduce(1,/#)
 
 
     // Regexes can contain unmatching close square brackets.
-    let d = a[/] /
+    let d = a[/] %/
     ]
-    let d = a[(/)] /
+    let d = a[(/)] %/
       b()
 
     // Comments have higher precedence.
