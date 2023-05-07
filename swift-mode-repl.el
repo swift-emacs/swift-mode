@@ -43,7 +43,7 @@
   :group 'swift)
 
 (defcustom swift-mode:repl-executable
-  (concat (when (executable-find "xcrun") "xcrun ") "swift")
+  (concat (when (executable-find "xcrun") "xcrun ") "swift repl")
   "Path to the Swift CLI.  The string is split by spaces, then unquoted."
   :tag "Swift Mode REPL Executable"
   :type '(choice string (list string))
