@@ -554,16 +554,15 @@ Return non-nil if skipped a paragraph.  Return nil otherwise."
   (swift-mode:fill-skip-paragraph-in-multiline-chunk
    chunk
    direction
-   "\\s *#*\"+\\s *$\\|\\s *\"+#*/\\s *$"
+   "\\s *#*\"+\\s *$\\|\\s *\"+#*\\s *$"
    (if (eq direction 'backward)
        (lambda ()
          (skip-chars-forward "#")
          (skip-chars-forward "\"")
          (skip-syntax-forward " "))
      (lambda ()
-       (when (memq (char-before) '(?# ?\"))
-         (skip-chars-backward "#")
-         (skip-chars-backward "\""))
+       (skip-chars-backward "#")
+       (skip-chars-backward "\"")
        (skip-syntax-backward " ")))))
 
 (defun swift-mode:fill-skip-paragraph-in-multiline-chunk
