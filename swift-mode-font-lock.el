@@ -549,9 +549,17 @@ Excludes true, false, and keywords begin with a number sign.")
 
 (defconst swift-mode:build-config-keywords
   '("os" "arch" "swift" "compiler" "canImport" "targetEnvironment"
-    "OSX" "macOS" "iOS" "watchOS" "tvOS" "i386" "x86_64" "arm" "arm64"
-    "iOSApplicationExtension" "OSXApplicationExtension"
-    "macOSApplicationExtension" "simulator" "unavailable" "noasync")
+    "i386" "x86_64" "arm" "arm64"
+    "OSX" "OSXApplicationExtension"
+    "macOS" "macOSApplicationExtension"
+    "iOS" "iOSApplicationExtension"
+    "watchOS" "watchOSApplicationExtension"
+    "tvOS" "tvOSApplicationExtension"
+    "macCatalyst" "macCatalystApplicationExtension"
+    "Linux" "Windows"
+    "simulator" "unavailable" "noasync"
+    "hasFeature" "hasAttribute" "before" "introduced" "deprecated" "obsoleted"
+    "message" "renamed")
   "Keywords for build configuration statements.")
 
 (defconst swift-mode:standard-precedence-groups
