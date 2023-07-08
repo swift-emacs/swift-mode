@@ -9,7 +9,7 @@
 ;;       Arthur Evstifeev <lod@pisem.net>
 ;; Maintainer: taku0 <mxxouy6x3m_github@tatapa.org>
 ;;
-;; Version: 8.6.0
+;; Version: 9.0.0
 ;; Package-Requires: ((emacs "24.4") (seq "2.3"))
 ;; Keywords: languages swift
 ;; URL: https://github.com/swift-emacs/swift-mode
