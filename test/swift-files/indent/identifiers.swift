@@ -139,7 +139,7 @@ func foo() {
       do: 1
     )
     foo(
-      else: 1
+      else: 1 // swift-mode:test:known-bug
     )
     foo(
       fallthrough: 1

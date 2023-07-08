@@ -1077,17 +1077,27 @@ switch
 // Labeled statements
 
 
+// "if" and "switch" are now expression in limited contexts.
+// Should we indent them like statements like "for" or expressions like this?
+
 foo:
   if foo
        .bar == baz {
-}
+  }
 
 foo:
   if
-  foo
-    .bar == baz {
-}
+    foo
+      .bar == baz {
+  }
 
+foo:
+  switch x {
+  case 1:
+      1
+  default:
+      2
+  }
 
 foo:
   for

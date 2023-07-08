@@ -640,6 +640,12 @@ return non-nil."
                                       (swift-mode:forward-token-simple)))
              "let"))
 
+     ;; Suppress implicit semicolon around else
+     ((or
+       (equal (swift-mode:token:text previous-token) "else")
+       (equal (swift-mode:token:text next-token) "else"))
+      nil)
+
      ;; Inserts semicolon before open curly bracket.
      ;;
      ;; Open curly bracket may continue the previous line, but we do not indent
@@ -718,7 +724,7 @@ return non-nil."
      ;; Inserts implicit semicolon before keywords that starts a new
      ;; statement.
      ((member (swift-mode:token:text next-token)
-              '("for" "repeat" "switch"  "case" "default" "defer" "do" "if"
+              '("for" "repeat" "case" "default" "defer" "do"
                 "guard" "let" "var" "throw" "import" "return"))
       t)
 
@@ -739,12 +745,6 @@ return non-nil."
                     (swift-mode:backquote-identifier-if-after-dot
                      (swift-mode:backward-token-simple)))
                    "repeat"))))))
-
-     ;; Inserts implicit semicolon around else
-     ((or
-       (equal (swift-mode:token:text previous-token) "else")
-       (equal (swift-mode:token:text next-token) "else"))
-      t)
 
      ;; Inserts implicit semicolon before keywords that behave like method
      ;; names.

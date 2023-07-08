@@ -619,3 +619,205 @@ let x = foo.bar {
 } baz: {
     aaa()
 }
+
+let x =
+  foo
+  .bar {
+      aaa()
+  } baz: {
+      aaa()
+  }
+
+
+// If expression and Switch expression
+// https://github.com/apple/swift-evolution/blob/main/proposals/0380-if-switch-expressions.md
+
+let a =
+  if x { 1 }
+  else if y { 2 }
+  else { 3 }
+
+let a = if x { 1 }
+  else if y { 2 }
+  else { 3 }
+
+let a = if x
+    { 1 } // swift-mode:test:known-bug
+  else if y
+    { 2 }
+  else
+    { 3 }
+
+let a = if x { 1 } else if y { 2 } // swift-mode:test:known-bug
+  else { 3 }
+
+let a = if x { 1 } else if y { 2 } else
+  { 3 }
+
+let a = if x { 1 } else
+  if y { 2 } else
+    { 3 }
+
+let a = if x { 1 }
+  else
+    if y { 2 }
+    else { 3 }
+
+let a =
+  if x { 1 }
+  else
+    if y { 2 }
+    else { 3 }
+
+let a =
+  if x { 1 } else
+    if y { 2 } else
+      { 3 }
+
+let a = if x {
+    1
+} else if y {
+    2
+} else {
+    3
+}
+
+let a = if
+  x {
+    1
+} else if y {
+    2
+} else {
+    3
+}
+
+let a = if x
+             .foo()
+             .bar() { foo() }
+  else { bar() }
+
+let a = if x
+             .foo()
+             .bar() {
+    foo()
+} else {
+    bar()
+}
+
+let a =
+  if
+    x
+      .foo()
+      .bar() { foo() }
+  else { bar() }
+
+let a =
+  if
+    x
+      .foo()
+      .bar() {
+      foo()
+  } else {
+      bar()
+  }
+
+let a = if
+  let
+    x
+    =
+    xx,
+  var
+    y
+    =
+    yy,
+  x
+    ==
+    y,
+  case
+    (
+      a,
+      b
+    )
+    =
+    ab {
+    foo()
+} else {
+    bar()
+}
+
+func foo() -> Int {
+    return if x { bar() }
+      else { baz() }
+}
+
+func foo() -> Int {
+    return
+      if x { bar() }
+      else { baz() }
+}
+
+func foo() -> Int {
+    return
+      if x {
+          bar()
+      }
+      else {
+          baz()
+      }
+}
+
+func foo() -> Int {
+    return if x {
+        bar()
+    }
+      else {
+        baz()
+    }
+}
+
+let x = switch foo.bar {
+case foo:
+    foo()
+      .bar()
+default:
+    foo()
+}
+
+
+let x = switch foo
+  .bar {
+case foo:
+    foo()
+default:
+    foo()
+}
+
+let x = switch
+  foo
+  .bar {
+case foo:
+    foo()
+    foo()
+default:
+    foo()
+    foo()
+}
+
+func foo() {
+    return switch x {
+    case 1:
+        1
+    default:
+        2
+    }
+}
+
+func foo() {
+    return
+      switch x {
+      case 1:
+          1
+      default:
+          2
+      }
+}

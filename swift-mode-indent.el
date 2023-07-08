@@ -308,7 +308,7 @@ Also used for regexes."
      ((and next-is-on-current-line (eq next-type '}))
       (goto-char (swift-mode:token:end next-token))
       (backward-list)
-      (swift-mode:calculate-indent-after-open-curly-brace 0))
+      (swift-mode:calculate-indent-for-curly-bracket 0))
 
      ;; Before ) or ] on the current line
      ((and next-is-on-current-line (memq next-type '(\) \])))
@@ -417,11 +417,55 @@ Also used for regexes."
                      '("switch") nil '("case" "default"))))
         (if (equal (swift-mode:token:text parent) "switch")
             ;; Inside a switch-statement. Aligns with the "switch"
-            (swift-mode:find-parent-and-align-with-next
-             swift-mode:statement-parent-tokens
-             swift-mode:switch-case-offset)
+            (if (swift-mode:bol-other-than-comments-p)
+                (swift-mode:align-with-current-line
+                 swift-mode:switch-case-offset)
+              (swift-mode:find-parent-and-align-with-next
+               swift-mode:statement-parent-tokens
+               swift-mode:switch-case-offset))
           ;; Other cases. Aligns with the previous case.
           (swift-mode:align-with-current-line))))
+
+     ;; Before "else" on the current line
+     ((and next-is-on-current-line (equal next-text "else"))
+      (swift-mode:calculate-indent-before-else))
+
+     ;; After "else"
+     ;;
+     ;; let a =
+     ;;   if x { 1 }
+     ;;   else
+     ;;     if y { 2 }
+     ;;     else { 3 }
+     ;;
+     ;; let a =
+     ;;   if x { 1 } else
+     ;;     if y { 2 } else
+     ;;       { 3 }
+     ;;
+     ;; let a = if x { 1 } else if y { 2 } else
+     ;;   { 3 }
+     ((equal previous-text "else")
+      (goto-char (swift-mode:token:start previous-token))
+      (if (swift-mode:bol-other-than-comments-p)
+          (swift-mode:align-with-current-line
+           swift-mode:multiline-statement-offset)
+        (swift-mode:calculate-indent-before-else
+         swift-mode:multiline-statement-offset)))
+
+     ;; After "if"
+     ;;
+     ;; let a = if
+     ;;           x
+     ;;             .foo() {
+     ;;     1
+     ;; } else {
+     ;;     2
+     ;; }
+     ((equal previous-text "if")
+      (goto-char (swift-mode:token:start previous-token))
+      (swift-mode:align-with-current-line
+       swift-mode:multiline-statement-offset))
 
      ;; After "catch"
      ((equal previous-text "catch")
@@ -432,7 +476,7 @@ Also used for regexes."
      ;; After {
      ((eq previous-type '{)
       (goto-char (swift-mode:token:start previous-token))
-      (swift-mode:calculate-indent-after-open-curly-brace
+      (swift-mode:calculate-indent-for-curly-bracket
        swift-mode:basic-offset))
 
      ;; After (, [,  or < as a open angle bracket
@@ -653,8 +697,8 @@ Also used for regexes."
      ;; After "in" for anonymous function parameters
      ((eq previous-type 'anonymous-function-parameter-in)
       (goto-char (swift-mode:token:start previous-token))
-      (swift-mode:backward-sexps-until-open-curly-brace)
-      (swift-mode:calculate-indent-after-open-curly-brace
+      (swift-mode:backward-sexps-until-open-curly-bracket)
+      (swift-mode:calculate-indent-for-curly-bracket
        swift-mode:basic-offset))
 
      ;; After "in" for "for" statements
@@ -841,14 +885,80 @@ the expression."
                (swift-mode:forward-token-simple))
              (point))))))
 
-(defun swift-mode:calculate-indent-after-open-curly-brace (offset)
-  "Return indentation after open curly braces.
+(defun swift-mode:calculate-indent-before-else (&optional offset)
+  "Return indentation before \"else\" token.
 
-Assuming the cursor is on the open brace.
-OFFSET is the offset of the contents.
-This function is also used for close-curly-brace."
+Assuming the cursor is before \"else\".
+OFFSET is extra offset if given."
+  ;; let x = if x { 1 }
+  ;;   else if y { 2 }
+  ;;   else { 3 }
+  ;;
+  ;; let x =
+  ;;   if x { 1 }
+  ;;   else if y { 2 }
+  ;;   else { 3 }
+  ;;
+  ;; let a = if x { 1 }
+  ;;   else
+  ;;     if y { 2 }
+  ;;     else { 3 }
+  ;;
+  ;; let a =
+  ;;   if x { 1 }
+  ;;   else
+  ;;     if y { 2 }
+  ;;     else { 3 }
+  (let ((parent (swift-mode:backward-sexps-until
+                 (append
+                  (remove 'implicit-\; swift-mode:statement-parent-tokens)
+                  '("if")))))
+    (if (equal (swift-mode:token:text parent) "if")
+        (cond
+         ;; Found "if" at the beginning of a line.  Align with it.
+         ;;
+         ;; let a =
+         ;;   if x { 1 }
+         ;;   else
+         ;;     if y { 2 }
+         ;;     else { 3 }
+         ((swift-mode:bol-other-than-comments-p)
+          (swift-mode:align-with-current-line offset))
+
+         ;; Found "else if".
+         ;;
+         ;; let x =
+         ;;   if x { 1 }
+         ;;   else if y { 2 }
+         ;;   else { 3 }
+         ;;
+         ;; let x =
+         ;;   if x { 1 } else if y { 2 }
+         ;;   else { 3 }
+         ((equal (swift-mode:token:text (save-excursion
+                                          (swift-mode:backward-token)))
+                 "else")
+          (swift-mode:backward-token)
+          (if (swift-mode:bol-other-than-comments-p)
+              (swift-mode:align-with-current-line offset)
+            (swift-mode:calculate-indent-before-else offset)))
+
+         ;; let x = if x { 1 }
+         ;;   else { 2 }
+         (t
+          (swift-mode:calculate-indent-of-expression
+           (or offset swift-mode:multiline-statement-offset))))
+      (swift-mode:align-with-current-line offset))))
+
+(defun swift-mode:calculate-indent-for-curly-bracket (offset)
+  "Return indentation relating to curly brackets.
+
+It is used for indentation after open curly brackets and for close brackets.
+
+Assuming the cursor is on the open bracket.
+OFFSET is the offset of the contents."
   ;; If the statement is multiline expression, aligns with the start of
-  ;; the line on which the open brace is:
+  ;; the line on which the open bracket is:
   ;;
   ;; foo()
   ;;   .then { x in
@@ -860,7 +970,7 @@ This function is also used for close-curly-brace."
   ;;     foo()
   ;;   }
   ;;
-  ;; rather than
+  ;; rather than the start of the statement:
   ;;
   ;; foo()
   ;;   .then { x in
@@ -886,7 +996,7 @@ This function is also used for close-curly-brace."
   ;;       .foo() {
   ;;       }
   ;;
-  ;; Note that curly brace after binary operator is a part of
+  ;; Note that curly bracket after binary operator is a part of
   ;; a multiline expression:
   ;;
   ;; for x in
@@ -930,7 +1040,7 @@ This function is also used for close-curly-brace."
           (cond
            ((member
              (swift-mode:token:text next-token)
-             '("for" "while" "repeat" "switch" "if" "else" "guard"
+             '("for" "while" "repeat" "guard" "switch" "if" "else"
                "defer" "do" "catch"
                "get" "set" "willSet" "didSet" "func" "init" "subscript"
                "enum" "struct" "actor" "class" "extension"
@@ -987,21 +1097,36 @@ This function is also used for close-curly-brace."
             ;; foo {
             ;;   A
             ;;
-            ;; This function is called on the open curly brace.
-            ;; If the close curly brace doesn't exist,
+            ;; This function is called on the open curly bracket.
+            ;; If the close curly bracket doesn't exist,
             ;; swift-mode:forward-token-or-list results in
             ;; "Unbalanced parentheses" error.
-            ;; So if the point is just before the open curly brace,
+            ;; So if the point is just before the open curly bracket,
             ;; exits immediately.
             (forward-comment (point-max))
             (if (< (point) pos)
                 (setq next-token (swift-mode:forward-token-or-list))
               (goto-char (1+ pos))))))))
-    (if is-declaration-or-control-statement-body
+    (cond
+     ((equal (swift-mode:token:text previous-token) "else")
+      (goto-char (swift-mode:token:start previous-token))
+      (swift-mode:calculate-indent-before-else offset))
+
+     ((or (member (swift-mode:token:text next-token) '("if" "switch")))
+      (goto-char (swift-mode:token:start next-token))
+      (if (swift-mode:bol-other-than-comments-p)
+          (swift-mode:align-with-current-line offset)
         (swift-mode:find-parent-and-align-with-next
          swift-mode:statement-parent-tokens
-         offset)
-      (swift-mode:calculate-indent-of-expression offset offset))))
+         offset)))
+
+     (is-declaration-or-control-statement-body
+      (swift-mode:find-parent-and-align-with-next
+       swift-mode:statement-parent-tokens
+       offset))
+
+     (t
+      (swift-mode:calculate-indent-of-expression offset offset)))))
 
 (defun swift-mode:calculate-indent-of-prefix-comma ()
   "Return indentation for prefix comma.
@@ -1353,7 +1478,7 @@ is the symbol `any', it matches all tokens."
       (setq text (swift-mode:token:text parent)))
     parent))
 
-(defun swift-mode:backward-sexps-until-open-curly-brace ()
+(defun swift-mode:backward-sexps-until-open-curly-bracket ()
   "Backward sexps until an open curly brace appears.
 Return the brace token.
 When this function returns, the cursor is at the start of the token.
