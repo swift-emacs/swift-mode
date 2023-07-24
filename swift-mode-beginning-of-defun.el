@@ -1378,9 +1378,16 @@ Interactively, the behavior depends on ‘narrow-to-defun-include-comments’."
 (defun swift-mode:current-defun-name ()
   "Return fully qualified name of defun under the point."
   (save-excursion
-    (let ((token-list (reverse (swift-mode:current-defun-name-token-list))))
+    (let ((token-list (reverse (swift-mode:current-defun-name-token-list)))
+          text)
       (if token-list
-          (mapconcat #'swift-mode:token:text token-list ".")
+          (mapconcat (lambda (token)
+                       (setq text (swift-mode:token:text token))
+                       (if (eq (aref text 0) ?`)
+                           (substring text 1 (1- (length text)))
+                         text))
+                     token-list
+                     ".")
         nil))))
 
 (defun swift-mode:current-defun-name-token-list ()
@@ -1390,11 +1397,27 @@ The first element is the name token of the current defun.  The rest are the ones
 of ancestors."
   (if (bobp)
       nil
-    (let ((name-token (swift-mode:current-defun-name-token)))
-      (swift-mode:backward-sexps-until-open-curly-bracket)
+    (let ((name-token (swift-mode:current-defun-name-token))
+          name-tokens
+          next-token)
       (if name-token
-          (cons name-token (swift-mode:current-defun-name-token-list))
-        (swift-mode:current-defun-name-token-list)))))
+          (progn
+            (save-excursion
+              (swift-mode:backward-sexps-until-open-curly-bracket)
+              (setq name-tokens (swift-mode:current-defun-name-token-list)))
+            (while name-token
+              (push name-token name-tokens)
+              (goto-char (swift-mode:token:end name-token))
+              (setq next-token (swift-mode:forward-token-or-list))
+              (when (eq (swift-mode:token:type next-token) '<>)
+                (setq next-token (swift-mode:forward-token-or-list)))
+              (setq name-token
+                    (when (equal (swift-mode:token:text next-token) ".")
+                      (setq next-token (swift-mode:forward-token-or-list))
+                      (when (eq (swift-mode:token:type next-token) 'identifier)
+                        next-token))))
+            name-tokens)
+        '()))))
 
 (defun swift-mode:current-defun-name-token ()
   "Return the name token of the defun under the point."
