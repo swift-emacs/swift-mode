@@ -7,7 +7,7 @@
 ;;       Chris Barrett <chris.d.barrett@me.com>
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Arthur Evstifeev <lod@pisem.net>
-;;       Michael Sanders <michael.sanders@fastmail.com>
+;;       Michael Sanders <https://github.com/msanders>
 
 ;; This file is not part of GNU Emacs.
 
