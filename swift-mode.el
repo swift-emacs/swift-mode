@@ -66,7 +66,7 @@
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map prog-mode-map)
     (define-key map [remap indent-new-comment-line]
-      #'swift-mode:indent-new-comment-line)
+                #'swift-mode:indent-new-comment-line)
     (define-key map (kbd "C-c C-z") #'swift-mode:run-repl)
     (define-key map (kbd "C-c C-f") #'swift-mode:send-buffer)
     (define-key map (kbd "C-c C-r") #'swift-mode:send-region)
@@ -78,7 +78,7 @@
     (define-key map [remap forward-sentence] #'swift-mode:forward-sentence)
     (define-key map [remap kill-sentence] #'swift-mode:kill-sentence)
     (define-key map [remap backward-kill-sentence]
-      #'swift-mode:backward-kill-sentence)
+                #'swift-mode:backward-kill-sentence)
     ;; (define-key map (kbd "???") #'swift-mode:mark-sentence)
     (define-key map [remap narrow-to-sentence] #'swift-mode:narrow-to-sentence)
 

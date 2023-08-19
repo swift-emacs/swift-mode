@@ -1485,7 +1485,7 @@ When this function returns, the cursor is at the start of the token.
 
 If there is no open curly braces, return `outside-of-buffer' token.
 
-This is optimized version of (swift-mode:backward-sexps-until '({}))."
+This is optimized version of (swift-mode:backward-sexps-until \\='({}))."
   (let* ((parent-position (nth 1 (syntax-ppss))))
     (while (and parent-position
                 (and (goto-char parent-position)

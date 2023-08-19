@@ -167,12 +167,12 @@ Otherwise, return nil.
 The cursor must be at the beginning of a statement."
   (let ((token (swift-mode:forward-token-or-list))
         (defun-keywords
-          '("import" "typealias" "associatedtype"
-            "enum" "struct" "actor" "protocol" "extension"
-            "func" "init" "deinit" "subscript" "get" "set" "willSet" "didSet"
-            "prefix" "postfix" "infix" "precedencegroup"
-            "var" "let"
-            "case"))
+         '("import" "typealias" "associatedtype"
+           "enum" "struct" "actor" "protocol" "extension"
+           "func" "init" "deinit" "subscript" "get" "set" "willSet" "didSet"
+           "prefix" "postfix" "infix" "precedencegroup"
+           "var" "let"
+           "case"))
         (stop-tokens '(\; implicit-\; {} { } \( \) \[ \]
                        anonymous-function-parameter-in outside-of-buffer))
         (class-token nil))
