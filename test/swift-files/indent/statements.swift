@@ -715,6 +715,14 @@ guard
 else {
 }
 
+// Inner scope guard
+
+func main() {
+    guard foo else {
+        bar()
+    }
+}
+
 // Switch statement
 
 switch foo

@@ -912,7 +912,7 @@ OFFSET is extra offset if given."
   (let ((parent (swift-mode:backward-sexps-until
                  (append
                   (remove 'implicit-\; swift-mode:statement-parent-tokens)
-                  '("if")))))
+                  '("if" "guard")))))
     (if (equal (swift-mode:token:text parent) "if")
         (cond
          ;; Found "if" at the beginning of a line.  Align with it.
