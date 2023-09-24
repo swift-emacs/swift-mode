@@ -833,3 +833,13 @@ func foo() {
 
     return y
 }
+
+
+// copy operator
+// https://github.com/apple/swift-evolution/blob/main/proposals/0377-parameter-ownership-modifiers.md
+
+func foo() {
+    // copy operator cannot be followed by a line break.
+    copy
+    x
+}

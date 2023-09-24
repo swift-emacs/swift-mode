@@ -524,7 +524,8 @@ Return nil otherwise."
   '("associatedtype" "class" "deinit" "enum" "extension" "fileprivate" "func"
     "import" "init" "inout" "internal" "let" "open" "operator" "private"
     "protocol" "public" "any" "some" "static" "struct" "subscript" "typealias"
-    "var" "actor" "nonisolated" "isolated" "distributed")
+    "var" "actor" "nonisolated" "isolated" "distributed"
+    "borrowing" "consuming")
   "Keywords used in declarations.")
 
 (defconst swift-mode:statement-keywords
@@ -534,7 +535,7 @@ Return nil otherwise."
 
 (defconst swift-mode:expression-keywords
   '("as" "catch" "dynamicType" "is" "rethrows" "super" "self" "Self" "throws"
-    "throw" "try" "async" "await" "consume")
+    "throw" "try" "async" "await" "consume" "copy")
   "Keywords used in expressions and types.
 
 Excludes true, false, and keywords begin with a number sign.")

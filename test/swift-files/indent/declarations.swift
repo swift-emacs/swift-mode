@@ -343,11 +343,13 @@ private
       inout
       Int,
     y:
+      borrowing
       Int
       =
       1,
     z,
     w:
+      consuming
       Int
       ...
   )

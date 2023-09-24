@@ -68,6 +68,12 @@ func foo() {
       inout: 1
     )
     foo(
+      borrowing: 1
+    )
+    foo(
+      consuming: 1
+    )
+    foo(
       internal: 1
     )
     foo(
@@ -214,6 +220,9 @@ func foo() {
     )
     foo(
       consume: 1
+    )
+    foo(
+      copy: 1
     )
 
     // Keywords reserved in particular contexts
