@@ -1649,6 +1649,7 @@ It is a Generic parameter list if:
     "as" "as?" "as!"
     "is"
     "await"
+    "consume"
     "in"
     "init" "deinit" "get" "set" "willSet" "didSet" "subscript"
     "for" "case" "default" "while" "let" "var" "repeat" "if" "else"

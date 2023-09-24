@@ -212,6 +212,9 @@ func foo() {
     foo(
       await: 1
     )
+    foo(
+      consume: 1
+    )
 
     // Keywords reserved in particular contexts
     foo(

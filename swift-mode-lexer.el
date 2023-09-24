@@ -99,7 +99,7 @@ END is the point after the token."
 
 ;; Token types is one of the following symbols:
 ;;
-;; - prefix-operator (including try, try?, try!, and await)
+;; - prefix-operator (including try, try?, try!, await, and consume)
 ;; - postfix-operator
 ;; - binary-operator (including as, as?, as!, is, =, ., and ->)
 ;; - attribute (e.g. @objc, @abc(def))
@@ -987,7 +987,8 @@ Other properties are the same as the TOKEN."
        (type
         (cond
          (is-declaration 'identifier)
-         ((member text '("try" "try?" "try!" "await")) 'prefix-operator)
+         ((member text '("try" "try?" "try!" "await" "consume"))
+          'prefix-operator)
          ((equal text ".") 'binary-operator)
          ((and has-preceding-space has-following-space) 'binary-operator)
          (has-preceding-space 'prefix-operator)
@@ -1145,7 +1146,7 @@ This function does not return `implicit-;' or `type-:'."
        pos-after-comment
        (point))))
 
-   ;; Operator (other than as, try, is, or await)
+   ;; Operator (other than as, try, is, await, or consume)
    ;;
    ;; Operators starts with a dot can contains dots. Other operators cannot
    ;; contain dots.
@@ -1244,7 +1245,7 @@ This function does not return `implicit-;' or `type-:'."
                           text
                           (- (point) (length text))
                           (point)))
-       ((equal text "await")
+       ((member text '("await" "consume"))
         (swift-mode:token 'prefix-operator
                           text
                           (- (point) (length text))
@@ -1417,7 +1418,7 @@ This function does not return `implicit-;' or `type-:'."
        (point)
        pos-before-comment)))
 
-   ;; Operator (other than as, try, is, or await)
+   ;; Operator (other than as, try, is, await, or consume)
    ;;
    ;; Operators which starts with a dot can contain other dots. Other
    ;; operators cannot contain dots.
@@ -1499,7 +1500,7 @@ This function does not return `implicit-;' or `type-:'."
                           text
                           (point)
                           (+ (point) (length text))))
-       ((member text '("try" "await"))
+       ((member text '("try" "await" "consume"))
         (swift-mode:token 'prefix-operator
                           text
                           (point)

@@ -821,3 +821,15 @@ func foo() {
           2
       }
 }
+
+// consume operator
+// https://github.com/apple/swift-evolution/blob/main/proposals/0366-move-function.md
+
+func foo() {
+    // consume operator cannot be followed by a line break.
+    let y =
+      consume
+    x
+
+    return y
+}
