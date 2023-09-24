@@ -669,7 +669,7 @@ return non-nil."
               '("indirect" "convenience" "dynamic" "final" "infix" "lazy"
                 "mutating" "nonmutating" "optional" "override" "postfix"
                 "prefix" "required" "static" "unowned" "weak" "internal"
-                "private" "public" "open" "fileprivate" "nonisolated"
+                "package" "private" "public" "open" "fileprivate" "nonisolated"
                 "distributed"))
       nil)
 
@@ -703,7 +703,7 @@ return non-nil."
               '("indirect" "convenience" "dynamic" "final" "infix" "lazy"
                 "mutating" "nonmutating" "optional" "override" "postfix"
                 "prefix" "required" "static" "unowned" "weak" "internal"
-                "private" "public" "open" "fileprivate" "nonisolated"
+                "package" "private" "public" "open" "fileprivate" "nonisolated"
                 "distributed"))
       t)
 

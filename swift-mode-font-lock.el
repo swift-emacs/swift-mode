@@ -522,9 +522,9 @@ Return nil otherwise."
 
 (defconst swift-mode:declaration-keywords
   '("associatedtype" "class" "deinit" "enum" "extension" "fileprivate" "func"
-    "import" "init" "inout" "internal" "let" "open" "operator" "private"
-    "protocol" "public" "any" "some" "static" "struct" "subscript" "typealias"
-    "var" "actor" "nonisolated" "isolated" "distributed"
+    "import" "init" "inout" "internal" "let" "open" "operator" "package"
+    "private" "protocol" "public" "any" "some" "static" "struct" "subscript"
+    "typealias" "var" "actor" "nonisolated" "isolated" "distributed"
     "borrowing" "consuming")
   "Keywords used in declarations.")
 

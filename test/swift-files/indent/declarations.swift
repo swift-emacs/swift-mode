@@ -760,6 +760,10 @@ class Foo {
       subscript(foo: Int) -> Int {
         return foo
     }
+
+    package
+      func foo() {
+    }
 }
 
 // async let

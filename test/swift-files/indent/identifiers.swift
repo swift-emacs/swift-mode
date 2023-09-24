@@ -95,6 +95,9 @@ func foo() {
       public: 1
     )
     foo(
+      package: 1
+    )
+    foo(
       static: 1
     )
     foo(
