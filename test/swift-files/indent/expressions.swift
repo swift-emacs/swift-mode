@@ -843,3 +843,13 @@ func foo() {
     copy
     x
 }
+
+
+// discard self
+// https://github.com/apple/swift-evolution/blob/main/proposals/0390-noncopyable-structs-and-enums.md
+
+func foo() {
+    // discard operator cannot be followed by a line break.
+    discard
+    self
+}

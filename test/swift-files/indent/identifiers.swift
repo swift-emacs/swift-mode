@@ -227,6 +227,9 @@ func foo() {
     foo(
       copy: 1
     )
+    foo(
+      discard: 1
+    )
 
     // Keywords reserved in particular contexts
     foo(
