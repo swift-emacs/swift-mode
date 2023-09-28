@@ -241,7 +241,7 @@ Signal `scan-error' if it hits opening parentheses."
                 (swift-mode:current-defun-name))))
   (setq-local add-log-current-defun-function #'swift-mode:current-defun-name))
 
-;;;###autoload (add-to-list 'auto-mode-alist '("\\.swift\\'" . swift-mode))
+;;;###autoload (add-to-list 'auto-mode-alist '("\\.swift\\(interface\\)?\\'" . swift-mode))
 
 ;;;###autoload (swift-mode:add-supported-extension-for-speedbar)
 
