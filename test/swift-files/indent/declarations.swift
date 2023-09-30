@@ -851,3 +851,22 @@ func foo()
   Foo {
     return Bar()
 }
+
+
+// Value and Type Parameter Packs
+// https://github.com/apple/swift-evolution/blob/main/proposals/0393-parameter-packs.md#introduction
+// https://github.com/apple/swift-evolution/blob/main/proposals/0398-variadic-types.md
+
+func constrain<each S: Sequence>(
+  _: repeat
+    each // swift-mode:test:known-bug
+    S // swift-mode:test:known-bug
+) where (
+          repeat
+            ( // swift-mode:test:known-bug
+              each
+                S
+            )
+              .Element
+        ) == (Int, String) {
+}

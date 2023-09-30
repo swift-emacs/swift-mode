@@ -230,6 +230,9 @@ func foo() {
     foo(
       discard: 1
     )
+    foo(
+      each: 1
+    )
 
     // Keywords reserved in particular contexts
     foo(

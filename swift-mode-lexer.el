@@ -99,8 +99,8 @@ END is the point after the token."
 
 ;; Token types is one of the following symbols:
 ;;
-;; - prefix-operator (including try, try?, try!, await, consume, copy, and
-;;   discard)
+;; - prefix-operator (including try, try?, try!, await, consume, copy, discard,
+;;   and each)
 ;; - postfix-operator
 ;; - binary-operator (including as, as?, as!, is, =, ., and ->)
 ;; - attribute (e.g. @objc, @abc(def))
@@ -611,7 +611,7 @@ return non-nil."
        ;; statements.
        (member (swift-mode:token:text previous-token)
                '("any" "some" "inout" "borrowing" "consuming" "in" "where"
-                 "isolated"))
+                 "isolated" "each"))
        (member (swift-mode:token:text next-token)
                '("any" "some" "inout" "borrowing" "consuming" "throws"
                  "rethrows" "in" "where" "isolated")))
@@ -990,7 +990,7 @@ Other properties are the same as the TOKEN."
         (cond
          (is-declaration 'identifier)
          ((member text '("try" "try?" "try!" "await" "consume" "copy"
-                         "discard"))
+                         "discard" "each"))
           'prefix-operator)
          ((equal text ".") 'binary-operator)
          ((and has-preceding-space has-following-space) 'binary-operator)
@@ -1149,7 +1149,7 @@ This function does not return `implicit-;' or `type-:'."
        pos-after-comment
        (point))))
 
-   ;; Operator (other than as, try, is, await, consume, copy, or discard)
+   ;; Operator (other than as, try, is, await, consume, copy, discard, or each)
    ;;
    ;; Operators starts with a dot can contains dots. Other operators cannot
    ;; contain dots.
@@ -1248,7 +1248,7 @@ This function does not return `implicit-;' or `type-:'."
                           text
                           (- (point) (length text))
                           (point)))
-       ((member text '("await" "consume" "copy" "discard"))
+       ((member text '("await" "consume" "copy" "discard" "each"))
         (swift-mode:token 'prefix-operator
                           text
                           (- (point) (length text))
@@ -1421,7 +1421,7 @@ This function does not return `implicit-;' or `type-:'."
        (point)
        pos-before-comment)))
 
-   ;; Operator (other than as, try, is, await, consume, copy, or discard)
+   ;; Operator (other than as, try, is, await, consume, copy, discard, or each)
    ;;
    ;; Operators which starts with a dot can contain other dots. Other
    ;; operators cannot contain dots.
@@ -1503,7 +1503,7 @@ This function does not return `implicit-;' or `type-:'."
                           text
                           (point)
                           (+ (point) (length text))))
-       ((member text '("try" "await" "consume" "copy" "discard"))
+       ((member text '("try" "await" "consume" "copy" "discard" "each"))
         (swift-mode:token 'prefix-operator
                           text
                           (point)

@@ -535,7 +535,7 @@ Return nil otherwise."
 
 (defconst swift-mode:expression-keywords
   '("as" "catch" "dynamicType" "is" "rethrows" "super" "self" "Self" "throws"
-    "throw" "try" "async" "await" "consume" "copy" "discard")
+    "throw" "try" "async" "await" "consume" "copy" "discard" "each")
   "Keywords used in expressions and types.
 
 Excludes true, false, and keywords begin with a number sign.")
