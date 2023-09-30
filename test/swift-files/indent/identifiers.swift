@@ -127,6 +127,9 @@ func foo() {
     foo(
       isolated: 1
     )
+    foo(
+      macro: 1
+    )
 
     // Keywords used in statements
     foo(

@@ -1,4 +1,5 @@
-((precedencegroup (identifier "precedenceGroup" 2759 2774) nil)
+((macro (identifier "fooMacro(x:)" 2866 2874) nil)
+ (precedencegroup (identifier "precedenceGroup" 2759 2774) nil)
  (operator (identifier "*****" 2719 2724) nil)
  (operator (identifier "-----" 2679 2684) nil)
  (operator (identifier "+++++" 2640 2645) nil)

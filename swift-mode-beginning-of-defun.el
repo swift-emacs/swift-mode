@@ -169,7 +169,8 @@ The cursor must be at the beginning of a statement."
         (defun-keywords
          '("import" "typealias" "associatedtype"
            "enum" "struct" "actor" "protocol" "extension"
-           "func" "init" "deinit" "subscript" "get" "set" "willSet" "didSet"
+           "func" "init" "deinit" "subscript" "macro"
+           "get" "set" "willSet" "didSet"
            "prefix" "postfix" "infix" "precedencegroup"
            "var" "let"
            "case"))
@@ -1441,7 +1442,7 @@ of ancestors."
        name-token
        (cond
         ((member keyword-text
-                 '("typealias" "associatedtype" "precedencegroup" "func"
+                 '("typealias" "associatedtype" "precedencegroup" "func" "macro"
                    "class" "enum" "struct" "actor" "protocol" "extension"))
          (swift-mode:forward-token))
 

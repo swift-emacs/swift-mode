@@ -870,3 +870,21 @@ func constrain<each S: Sequence>(
               .Element
         ) == (Int, String) {
 }
+
+
+// Macro declaration
+
+@Foo
+@freestanding(expression)
+macro
+  foo<T>(_: T)
+  ->
+  (T, String)
+  =
+  #externalMacro(
+    module: "A",
+    type: "B"
+  )
+  where
+    T: AAA,
+    T == Foo

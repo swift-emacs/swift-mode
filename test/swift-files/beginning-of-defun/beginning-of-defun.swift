@@ -299,6 +299,18 @@ public
     }/*}*/
 }/*}*/
 
+// /*[*/Macro declaratoins/*]*/
+/*{*/macro foo() = #bar/*}*/
+
+/*{*/@Foo
+macro
+  foo<T>()
+  =
+  #bar
+  where
+    T: A,
+    T == B/*}*/
+
 // /*[*/Multiple declaratoins in single line/*]*/
 
 /*{*/func foo(){};/*}*/ /*{*/func foo(){/*{*/func foo(){}/*}*/};/*}*//*{*/func foo(){} ;/*}*/ /*{*/func foo() {} /* */ ;/*}*/ /*{*//* */ func foo() {}/*}*/

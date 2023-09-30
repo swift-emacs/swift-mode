@@ -694,7 +694,8 @@ return non-nil."
      ;; Suppress implicit semicolon after declaration starters.
      ((member (swift-mode:token:text previous-token)
               '("class" "struct" "actor" "protocol" "enum" "extension" "func"
-                "typealias" "associatedtype" "precedencegroup" "operator"))
+                "typealias" "associatedtype" "precedencegroup" "operator"
+                "macro"))
       nil)
 
      ;; Insert implicit semicolon before modifiers.
@@ -765,7 +766,7 @@ return non-nil."
      ;; `protocol' is handled by the next rule
      ((member (swift-mode:token:text next-token)
               '("class" "struct" "actor" "enum" "extension" "func" "typealias"
-                "associatedtype" "precedencegroup"))
+                "associatedtype" "precedencegroup" "macro"))
       t)
 
      ;; Inserts implicit semicolon before protocol unless it is followed by <.
@@ -842,7 +843,7 @@ return non-nil."
      (t t))))
 
 (defun swift-mode:function-parameter-clause-p ()
-  "Return t if the cursor is before a function parameter clause.
+  "Return t if the cursor is before a function/macro parameter clause.
 
 Return nil otherwise."
   (save-excursion
@@ -856,8 +857,8 @@ Return nil otherwise."
              (progn (swift-mode:try-backward-generic-parameters) (point)))
          (swift-mode:function-parameter-clause-p)))
        ((eq previous-type 'identifier)
-        (equal (swift-mode:token:text (swift-mode:backward-token-simple))
-               "func"))
+        (member (swift-mode:token:text (swift-mode:backward-token-simple))
+                '("func" "macro")))
        (t nil)))))
 
 (defun swift-mode:supertype-colon-p ()
@@ -948,7 +949,8 @@ Return nil otherwise."
     (or (member (swift-mode:token:text (swift-mode:backward-token-simple))
                 '("init" "subscript"))
         (member (swift-mode:token:text (swift-mode:backward-token-simple))
-                '("typealias" "func" "enum" "struct" "actor" "class" "init")))))
+                '("typealias" "func" "enum" "struct" "actor" "class" "init"
+                  "macro")))))
 
 (defun swift-mode:fix-operator-type (token)
   "Return new operator token with proper token type.

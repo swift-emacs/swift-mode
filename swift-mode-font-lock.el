@@ -32,6 +32,7 @@
 
 (require 'swift-mode-standard-types)
 (require 'seq)
+(require 'subr-x)
 
 ;;; Customizations
 
@@ -194,7 +195,12 @@ This function does not search beyond LIMIT."
   (and
    (< (point) limit)
    (looking-at
-    "\\<\\(func\\|enum\\|struct\\|class\\|protocol\\|extension\\|actor\\)\\>")))
+    (concat
+     "\\<\\("
+     (string-join
+      '("func" "enum" "struct" "class" "protocol" "extension" "actor" "macro")
+      "\\|")
+     "\\)\\>"))))
 
 (defun swift-mode:property-access-pos-p (pos limit)
   "Return t if POS is just before the property name of a member expression.
@@ -513,19 +519,12 @@ Return nil otherwise."
   '("true" "false" "nil")
   "Keywords used as constants.")
 
-(defconst swift-mode:preprocessor-keywords
-  '("#available" "#colorLiteral" "#column" "#dsohandle" "#else" "#elseif"
-    "#endif" "#error" "#file" "#filePath" "#fileLiteral" "#function" "#if"
-    "#imageLiteral" "#keyPath" "#line" "#selector" "#sourceLocation"
-    "#unavailable" "#warning")
-  "Keywords that begin with a number sign (#).")
-
 (defconst swift-mode:declaration-keywords
   '("associatedtype" "class" "deinit" "enum" "extension" "fileprivate" "func"
     "import" "init" "inout" "internal" "let" "open" "operator" "package"
     "private" "protocol" "public" "any" "some" "static" "struct" "subscript"
     "typealias" "var" "actor" "nonisolated" "isolated" "distributed"
-    "borrowing" "consuming")
+    "borrowing" "consuming" "macro")
   "Keywords used in declarations.")
 
 (defconst swift-mode:statement-keywords
@@ -590,7 +589,8 @@ Excludes true, false, and keywords begin with a number sign.")
      .
      'swift-mode:constant-keyword-face)
 
-    (,(regexp-opt swift-mode:preprocessor-keywords 'symbols)
+    ;; Preprocessor keywords
+    (,"#\\(\\sw\\|\\s_\\)*"
      .
      'swift-mode:preprocessor-keyword-face)
 

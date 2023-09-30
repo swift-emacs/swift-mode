@@ -124,3 +124,5 @@ precedencegroup precedenceGroup {
     associativity: left
     assignment: true
 }
+
+macro fooMacro<T>(x: Foo) = #bar

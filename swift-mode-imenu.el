@@ -185,9 +185,9 @@ Return found declarations in reverse order."
            (swift-mode:declaration (intern next-text) name-token nil)
            declarations)))
 
-       ((member next-text '("func" "init" "subscript"))
+       ((member next-text '("func" "init" "subscript" "macro"))
         (setq last-class-token nil)
-        (unless (equal next-text "func")
+        (unless (member next-text '("func" "macro"))
           (goto-char (swift-mode:token:start next-token)))
         (let ((declaration-type (intern next-text))
               (names (swift-mode:scan-function-name-and-parameter-names)))
@@ -324,11 +324,11 @@ TYPE is one of `case', `let', or `var'."
     items))
 
 (defun swift-mode:scan-function-name-and-parameter-names ()
-  "Parse function name and parameter names.
+  "Parse function/macro name and parameter names.
 
-The point is assumed to be before a function name.
+The point is assumed to be before a function/macro name.
 
-Return tokens of function names and parameter names.
+Return tokens of function/macro names and parameter names.
 
 For example, given the following code, this return tokens \"foo\", \"a\",
 and \"c\".
