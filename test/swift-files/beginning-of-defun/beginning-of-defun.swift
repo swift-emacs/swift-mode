@@ -166,17 +166,17 @@ foo() {
 /*{*/enum Foo<A> where A: B {
     /*{*/case Foo(a: Int)/*}*/
     /*{*/case Bar(b: Int), Baz/*}*/
-    /*{*/case
-      A(
-        b
-          :
-          Int)
-            ,
-      @Foo
+    /*{*/@Foo
       indirect
+        case
+        A(
+          b
+            :
+            Int)
+           ,
         B
-        =
-        0/*}*/
+          =
+          0/*}*/
 
     /*{*/func foo() -> a {
         /*[*/switch this {

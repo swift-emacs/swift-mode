@@ -24,7 +24,7 @@
 ;; `beginning-of-defun' and `end-of-defun'
 ;;
 ;; A defun is a declaration except local variable, "get", "set", "willSet",
-;; "didSet", or "case" within enum.
+;; "didSet", "case" within enum, or "init" within var.
 ;;
 ;; A defun include modifiers, attributes, and comments on the same line.
 ;;
@@ -1417,7 +1417,8 @@ of ancestors."
                       (when (eq (swift-mode:token:type next-token) 'identifier)
                         next-token))))
             name-tokens)
-        '()))))
+        (swift-mode:backward-sexps-until-open-curly-bracket)
+        (swift-mode:current-defun-name-token-list)))))
 
 (defun swift-mode:current-defun-name-token ()
   "Return the name token of the defun under the point."

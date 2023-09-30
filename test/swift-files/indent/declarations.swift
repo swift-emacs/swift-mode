@@ -220,6 +220,10 @@ class Foo {
     }
 
     var x {
+        init {
+            x = 1
+        }
+
         get {
             1
         }
@@ -230,12 +234,48 @@ class Foo {
     }
 
     var x {
+        init
+        {
+            x = 1
+        }
+
         get
         {
             1
         }
 
         set
+        {
+            foo()
+        }
+    }
+
+    var x {
+        init(newValue) {
+            x = 1
+        }
+
+        get {
+            1
+        }
+
+        set(newValue) {
+            foo()
+        }
+    }
+
+    var x {
+        init(newValue)
+        {
+            x = 1
+        }
+
+        get
+        {
+            1
+        }
+
+        set(newValue)
         {
             foo()
         }
