@@ -32,7 +32,7 @@ foo !== bar // "foo !== bar"
 
 a.b.c! // #("a.b.c!" 2 3 (face swift-mode:property-access-face) 4 5 (face swift-mode:property-access-face))
 
-a.b.c_! // #("a.b.c_!" 2 3 (face swift-mode:property-access-face) 4 5 (face swift-mode:property-access-face))
+a.b.c_! // #("a.b.c_!" 2 3 (face swift-mode:property-access-face) 4 6 (face swift-mode:property-access-face))
 
 a.b.aあ! // #("a.b.a\343\201\202!" 2 3 (face swift-mode:property-access-face) 4 8 (face swift-mode:property-access-face))
 

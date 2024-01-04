@@ -196,11 +196,11 @@ This function does not search beyond LIMIT."
    (< (point) limit)
    (looking-at
     (concat
-     "\\<\\("
+     "\\_<\\("
      (string-join
       '("func" "enum" "struct" "class" "protocol" "extension" "actor" "macro")
       "\\|")
-     "\\)\\>"))))
+     "\\)\\_>"))))
 
 (defun swift-mode:property-access-pos-p (pos limit)
   "Return t if POS is just before the property name of a member expression.
@@ -350,7 +350,7 @@ The predicate MATCH-P is called with two arguments:
     (while (and
             (< (point) limit)
             (not result)
-            (re-search-forward "\\<\\(\\sw\\|\\s_\\)+\\>" limit t))
+            (re-search-forward "\\_<\\(\\sw\\|\\s_\\)+\\_>" limit t))
       (when (save-excursion
               (save-match-data
                 (funcall match-p (match-beginning 0) limit)))
@@ -585,7 +585,7 @@ Excludes true, false, and keywords begin with a number sign.")
     ;; Attributes
     "@\\(\\sw\\|\\s_\\)*"
 
-    (,(regexp-opt swift-mode:constant-keywords 'words)
+    (,(regexp-opt swift-mode:constant-keywords 'symbols)
      .
      'swift-mode:constant-keyword-face)
 
@@ -598,7 +598,7 @@ Excludes true, false, and keywords begin with a number sign.")
                           swift-mode:statement-keywords
                           swift-mode:expression-keywords
                           swift-mode:context-keywords)
-                  'words)
+                  'symbols)
      .
      'swift-mode:keyword-face)
 
@@ -634,13 +634,11 @@ Excludes true, false, and keywords begin with a number sign.")
      .
      'swift-mode:builtin-constant-face)
 
-    (,(regexp-opt swift-mode:build-config-keywords 'words)
+    (,(regexp-opt swift-mode:build-config-keywords 'symbols)
      .
      'swift-mode:build-config-keyword-face)
 
-    (,(concat "\\<"
-              (regexp-opt swift-mode:standard-precedence-groups 'non-nil)
-              "\\>")
+    (,(regexp-opt swift-mode:standard-precedence-groups 'symbols)
      .
      'swift-mode:builtin-precedence-group-face)
 
@@ -650,7 +648,7 @@ Excludes true, false, and keywords begin with a number sign.")
      'swift-mode:function-name-face)
 
     ;; Method/function calls
-    ("\\<\\(\\(\\sw\\|\\s_\\)+\\)\\>\\??\\s-*("
+    ("\\_<\\(\\(\\sw\\|\\s_\\)+\\)\\_>\\??\\s-*("
      1
      'swift-mode:function-call-face)
 
