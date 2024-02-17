@@ -8,5 +8,6 @@
   --eval "(add-to-list 'load-path \"$(readlink -f .)\")" \
   --eval "(add-to-list 'load-path \"$(readlink -f .)/test\")" \
   --eval "(setq debug-on-error t)" \
+  --eval "(setq max-lisp-eval-depth 1600)" \
   -l test/swift-mode-test.el \
   -f swift-mode:run-test
