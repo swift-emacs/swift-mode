@@ -675,7 +675,7 @@ return non-nil."
       nil)
 
      ;; internal(set) private(set) public(set) open(set) fileprivate(set)
-     ;; unowned(safe) unowned(unsafe)
+     ;; unowned(safe) unowned(unsafe) nonisolated(unsafe)
      ((and
        (eq (swift-mode:token:type previous-token) '\))
        (save-excursion
@@ -688,7 +688,7 @@ return non-nil."
                    (swift-mode:backquote-identifier-if-after-dot
                     (swift-mode:backward-token-simple)))
                   '("unowned" "internal" "private" "public" "open"
-                    "fileprivate")))))
+                    "fileprivate" "nonisolated")))))
       nil)
 
      ;; Suppress implicit semicolon after declaration starters.

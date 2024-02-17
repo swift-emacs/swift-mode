@@ -804,6 +804,14 @@ class Foo {
     package
       func foo() {
     }
+
+    func foo() async {
+        nonisolated
+          (
+            unsafe
+          )
+          var x = 1
+    }
 }
 
 // async let
