@@ -698,6 +698,7 @@ protocol Foo {
     func foo(x: Int, y: Int) throws -> (A, B)
     func bar(x: Int) throws
     func baz(x: () throws -> Int) rethrows
+    func aaa() async
     init<A, B>(x: Int) throws
       where
         A: C
