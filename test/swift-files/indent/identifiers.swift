@@ -74,6 +74,9 @@ func foo() {
       consuming: 1
     )
     foo(
+      sending: 1
+    )
+    foo(
       internal: 1
     )
     foo(

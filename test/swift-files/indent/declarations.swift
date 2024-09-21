@@ -390,12 +390,14 @@ private
     z,
     w:
       consuming
+      sending
       Int
       ...
   )
   async
   throws
   ->
+  sending
   [A]
   where
     A:

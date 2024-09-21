@@ -524,7 +524,7 @@ Return nil otherwise."
     "import" "init" "inout" "internal" "let" "open" "operator" "package"
     "private" "protocol" "public" "any" "some" "static" "struct" "subscript"
     "typealias" "var" "actor" "nonisolated" "isolated" "distributed"
-    "borrowing" "consuming" "macro")
+    "borrowing" "consuming" "sending" "macro")
   "Keywords used in declarations.")
 
 (defconst swift-mode:statement-keywords

@@ -610,10 +610,10 @@ return non-nil."
        ;; Suppress implicit semicolon around keywords that cannot start or end
        ;; statements.
        (member (swift-mode:token:text previous-token)
-               '("any" "some" "inout" "borrowing" "consuming" "in" "where"
-                 "isolated" "each"))
+               '("any" "some" "inout" "borrowing" "consuming" "sending" "in"
+                 "where" "isolated" "each"))
        (member (swift-mode:token:text next-token)
-               '("any" "some" "inout" "borrowing" "consuming" "throws"
+               '("any" "some" "inout" "borrowing" "consuming" "sending" "throws"
                  "rethrows" "in" "where" "isolated" "each"))
 
        ;; Suppress implicit semicolon between throws and open parenthesis.
