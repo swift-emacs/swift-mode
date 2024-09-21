@@ -614,7 +614,11 @@ return non-nil."
                  "isolated" "each"))
        (member (swift-mode:token:text next-token)
                '("any" "some" "inout" "borrowing" "consuming" "throws"
-                 "rethrows" "in" "where" "isolated" "each")))
+                 "rethrows" "in" "where" "isolated" "each"))
+
+       ;; Suppress implicit semicolon between throws and open parenthesis.
+       (and (equal (swift-mode:token:text previous-token) "throws")
+            (eq (swift-mode:token:type next-token) '\()))
       nil)
 
      ;; Before async

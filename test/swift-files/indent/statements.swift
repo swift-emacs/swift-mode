@@ -1228,6 +1228,18 @@ catch
     foo()
 }
 
+do
+  throws
+  (
+    any
+      Error
+  ) {
+    foo()
+} catch
+  let
+    e {
+}
+
 // Multi-Pattern Catch Clauses
 // https://github.com/apple/swift-evolution/blob/master/proposals/0276-multi-pattern-catch-clauses.md
 

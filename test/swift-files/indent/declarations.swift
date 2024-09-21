@@ -489,6 +489,17 @@ func foo
   ) {
 }
 
+func foo()
+  throws
+  (
+    any
+      Error
+  )
+  ->
+  Int {
+    1
+}
+
 // Enumeration declarations
 
 fileprivate
