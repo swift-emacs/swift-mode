@@ -239,7 +239,9 @@ Signal `scan-error' if it hits opening parentheses."
               (when (equal (with-current-buffer (current-buffer) major-mode)
                            'swift-mode)
                 (swift-mode:current-defun-name))))
-  (setq-local add-log-current-defun-function #'swift-mode:current-defun-name))
+  (setq-local add-log-current-defun-function #'swift-mode:current-defun-name)
+
+  (swift-mode:setup-swift-testing))
 
 ;;;###autoload (add-to-list 'auto-mode-alist
 ;;;###autoload              '("\\.swift\\(interface\\)?\\'" . swift-mode))
