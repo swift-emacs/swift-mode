@@ -35,6 +35,7 @@
 (require 'seq)
 (require 'subr-x)
 (require 'wid-edit)
+(require 'compile)
 
 ;;;###autoload
 (defgroup swift-mode:repl nil
@@ -103,6 +104,19 @@ The string is split by spaces, then unquoted."
   "Regexp to search a debugger prompt."
   :type 'string
   :safe #'stringp)
+
+(defcustom swift-mode:swift-testing-command-regexp "\\<swift test\\>"
+  "Regexp to of command line of Swift Testing.
+
+When the command of `compile' matches this regexp, its
+`compilation-error-regexp-alist' is overridden."
+  :type 'string
+  :safe #'stringp)
+
+(defcustom swift-mode:resolve-swift-test-file-function
+  #'swift-mode:resolve-swift-test-file
+  "Function to resolve Swift Testing files."
+  :type 'function)
 
 (defvar swift-mode:repl-buffer nil
   "Stores the name of the current swift REPL buffer, or nil.")
@@ -958,6 +972,127 @@ the value of `swift-mode:ios-project-scheme' is used."
                                              scheme
                                              codesigning-folder-path
                                              product-bundle-identifier))))
+
+(defvar swift-mode:compilation-swift-files nil
+  "Hash table from Swift filenames in the project to its absolute path.")
+
+(defun swift-mode:setup-swift-testing-buffer ()
+  "Prepare *compilation* buffer for Swift Testing.
+
+Initialize a hash table from names of swift files to its absolute path.
+
+Adds `ansi-color-compilation-filter' to `compilation-filter-hook'.
+
+Overrides `compilation-error-regexp-alist'."
+  (setq-local swift-mode:compilation-swift-files nil)
+  (when (fboundp 'ansi-color-compilation-filter)
+    (add-hook 'compilation-filter-hook #'ansi-color-compilation-filter nil t))
+  (setq-local compilation-error-regexp-alist '(swift-testing)))
+
+(defvar swift-mode:original-compilation-process-setup-function nil
+  "`compilation-process-setup-function' before `swift-mode:setup-swift-testing'.
+
+It is called from `swift-mode:compilation-process-setup-function'.")
+
+(defun swift-mode:swift-testing-compilation-process-setup-function ()
+  "`compilation-process-setup-function' for Swift Testing.
+
+Call original `compilation-process-setup-function' and prepare *compilation*
+buffer.
+
+See also `swift-mode:setup-swift-testing-buffer'."
+  (when swift-mode:original-compilation-process-setup-function
+    (funcall swift-mode:original-compilation-process-setup-function))
+  (when (string-match-p swift-mode:swift-testing-command-regexp
+                        (car compilation-arguments))
+    (swift-mode:setup-swift-testing-buffer)))
+
+(defun swift-mode:find-test-sources (project-directory target)
+  "Return a list of the absolute paths of test sources.
+
+The manifest file is searched from the PROJECT-DIRECTORY, defaults to
+`default-directory', or its ancestors.
+
+If TARGET is non-nil, return only sources of that target."
+  (let* ((description (swift-mode:describe-package project-directory))
+         (targets (cdr (assoc 'targets description)))
+         (test-targets (seq-filter
+                        (lambda (module)
+                          (and (equal "test" (cdr (assoc 'type module)))
+                               (or (null target)
+                                   (equal target (cdr (assoc 'name module))))))
+                        targets))
+         (project-path (cdr (assoc 'path description)))
+         target-path)
+    (seq-mapcat
+     (lambda (target)
+       (setq target-path
+             (expand-file-name (cdr (assoc 'path target)) project-path))
+       (mapcar (lambda (source)
+                 (expand-file-name source target-path))
+               (cdr (assoc 'sources target))))
+     test-targets)))
+
+(defun swift-mode:resolve-swift-test-file (file)
+  "Return full path of Swift Testing FILE in the project if any.
+
+If FILE is an absolute path, return it as is, even if it doesn't exist.
+
+If FILE doesn't exist in the project, return nil."
+  (if (file-name-absolute-p file)
+      (list file)
+    (when (null swift-mode:compilation-swift-files)
+      (setq-local swift-mode:compilation-swift-files
+                  (make-hash-table :test 'equal))
+      (dolist (path (swift-mode:find-test-sources
+                     (or compilation-directory default-directory)
+                     ;; TODO
+                     nil))
+        (puthash (file-name-nondirectory path)
+                 path
+                 swift-mode:compilation-swift-files)))
+    (let ((path (gethash (file-name-nondirectory file)
+                         swift-mode:compilation-swift-files)))
+      (and path (list path)))))
+
+(defun swift-mode:setup-swift-testing ()
+  "Setup `compilation-process-setup-function' for Swift Testing.
+
+Save original `compilation-process-setup-function' and set
+`compilation-process-setup-function' to
+`swift-mode:swift-testing-compilation-process-setup-function'.
+
+Also add an entry to `compilation-error-regexp-alist-alist'."
+  (unless swift-mode:original-compilation-process-setup-function
+    (setq swift-mode:original-compilation-process-setup-function
+          (or compilation-process-setup-function #'ignore))
+    (setq compilation-process-setup-function
+          #'swift-mode:swift-testing-compilation-process-setup-function)
+    (add-to-list 'compilation-error-regexp-alist-alist
+                 `(swift-testing
+                   ,(rx bol
+                        (zero-or-one (seq (* not-newline) (any " \t")))
+                        (group
+                         (group (+ (not (any " \t\n"))) ".swift")
+                         ":"
+                         (group (+ digit))
+                         (zero-or-one
+                          ":"
+                          (group (+ digit))))
+                        ": ")
+                   ;; filename
+                   ,(lambda ()
+                      (save-match-data
+                        (funcall swift-mode:resolve-swift-test-file-function
+                                 (match-string 2))))
+                   ;; line
+                   3
+                   ;; column
+                   4
+                   ;; type
+                   nil
+                   ;; hyperlink
+                   1))))
 
 (provide 'swift-mode-repl)
 
