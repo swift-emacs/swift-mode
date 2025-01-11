@@ -251,7 +251,7 @@ Intended for `syntax-propertize-function'."
      ((swift-mode:chunk:comment-p chunk)
       (goto-char (swift-mode:chunk:start chunk))
       (setq comment-start (point))
-      (forward-comment 1)
+      (swift-mode:forward-comment 1 end)
       (put-text-property comment-start (point) 'swift-mode:comment t))))
   (swift-mode:syntax-propertize:scan end 0))
 
@@ -304,7 +304,7 @@ stops where the level becomes zero."
            ;; Comments
            ((memq (char-after) '(?/ ?*))
             (goto-char start)
-            (forward-comment 1)
+            (swift-mode:forward-comment 1 end)
             (put-text-property start (point) 'swift-mode:comment t))
 
            ;; Operators
@@ -322,6 +322,62 @@ stops where the level becomes zero."
     (unless found-matching-parenthesis
       (goto-char end))
     found-matching-parenthesis))
+
+(defun swift-mode:forward-comment (count &optional end)
+  "Move point after spaces and COUNT comments.
+
+If END is given, do not move beyond END.
+
+COUNT must be positive.
+
+Multiline comments can be nested.
+
+If the comment is not closed, move to END if given, or `point-max' if it
+is nil.
+
+This function doesn't depend on the syntax tables, so that it works in
+`swift-mode:syntax-propertize'."
+  (while (< 0 count)
+    (skip-chars-forward "\s\t\n")
+    (cond
+     ;; Single line comment
+     ((and (eq (char-after) ?/)
+           (eq (char-after (1+ (point))) ?/))
+      (forward-line))
+
+     ;; Multiline comment
+     ((and (eq (char-after) ?/)
+           (eq (char-after (1+ (point))) ?*))
+      (swift-mode:forward-multiline-comment (or end (point-max))))
+
+     ;; Not a comment
+     (t
+      (setq count 1)))
+    (setq count (1- count))))
+
+(defun swift-mode:forward-multiline-comment (end)
+  "Move point after a multiline comment.
+
+Assuming the point is just before a multiline comment.
+
+Do not move beyond END.
+
+Multiline comments can be nested.
+
+If the comment is not closed, move to END."
+  (forward-char 2)
+  (let ((pattern (mapconcat #'regexp-quote '("/*" "*/") "\\|"))
+        (nesting-level 1))
+    (while (and (< 0 nesting-level)
+                (< (point) end)
+                (search-forward-regexp pattern end t))
+      (if (eq (char-before) ?*)
+          (setq nesting-level (1+ nesting-level))
+        (setq nesting-level (1- nesting-level))))
+    (when (or (and (not (zerop nesting-level))
+                   (< (point) end))
+              (< end (point)))
+      (goto-char end))))
 
 (defun swift-mode:put-syntax-multiline-property (start end)
   "Put `syntax-multiline` text propery from START to END.
