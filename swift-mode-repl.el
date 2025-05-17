@@ -294,7 +294,9 @@ Return a JSON object."
   (unless project-directory (setq project-directory default-directory))
   (swift-mode:call-process-to-json
    swift-mode:swift-package-executable
-   "--package-path" project-directory "describe" "--type" "json"))
+   "--package-path" (expand-file-name project-directory)
+   "describe"
+   "--type" "json"))
 
 (defun swift-mode:read-main-module (project-directory)
   "Read the main module description from the manifest file Package.swift.
@@ -560,7 +562,7 @@ An list ARGS are appended for builder command line arguments."
           (zerop
            (apply #'swift-mode:call-process
                   swift-mode:swift-build-executable
-                  "--package-path" project-directory
+                  "--package-path" (expand-file-name project-directory)
                   args))
         (compilation-mode)
         (goto-char (point-min))
