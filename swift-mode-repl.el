@@ -106,7 +106,8 @@ The string is split by spaces, then unquoted."
   :type 'string
   :safe #'stringp)
 
-(defcustom swift-mode:swift-testing-command-regexp "\\<swift test\\>"
+(defcustom swift-mode:swift-testing-command-regexp
+  "\\<swift \\(?:test\\|package\\|build\\)\\>"
   "Regexp to of command line of Swift Testing.
 
 When the command of `compile' matches this regexp, its
