@@ -36,6 +36,7 @@
 (require 'subr-x)
 (require 'wid-edit)
 (require 'compile)
+(require 'rx)
 
 ;;;###autoload
 (defgroup swift-mode:repl nil
@@ -1057,6 +1058,25 @@ If FILE doesn't exist in the project, return nil."
                          swift-mode:compilation-swift-files)))
       (and path (list path)))))
 
+(defun swift-mode:resolve-and-highlight-swift-test-file ()
+  "Call `swift-mode:resolve-swift-test-file' on match and highlight if needed.
+
+When a function is specified as the `file' component of
+`compilation-error-regexp-alist-alist', `compile' does not highlight the
+matching filename.  So we have to highlight it here."
+  (save-match-data
+    (let ((start (match-beginning 2))
+          (end (match-end 2))
+          (result (funcall swift-mode:resolve-swift-test-file-function
+                           (match-string 2))))
+      (when result
+        (put-text-property
+         start
+         end
+         'font-lock-face
+         compilation-error-face))
+      result)))
+
 (defun swift-mode:setup-swift-testing ()
   "Setup `compilation-process-setup-function' for Swift Testing.
 
@@ -1083,10 +1103,7 @@ Also add an entry to `compilation-error-regexp-alist-alist'."
                           (group (+ digit))))
                         ": ")
                    ;; filename
-                   ,(lambda ()
-                      (save-match-data
-                        (funcall swift-mode:resolve-swift-test-file-function
-                                 (match-string 2))))
+                   ,#'swift-mode:resolve-and-highlight-swift-test-file
                    ;; line
                    3
                    ;; column
