@@ -299,3 +299,32 @@ let foo: protocol<
   B
 >
   = a
+
+// Integer generic parameters
+// https://github.com/swiftlang/swift-evolution/blob/main/proposals/0452-integer-generic-parameters.md
+
+struct Foo<
+  let
+    x
+    :
+    Int,
+  let
+    y
+    :
+    Int
+> {
+    func foo() {
+    }
+}
+
+extension Foo
+  where x == y {
+    func bar() {
+    }
+}
+
+let x: Foo<1, 2>
+  = Foo<1, 2>()
+
+let x: Foo<-1, -2>
+  = Foo<-1, -2>() // swift-mode:test:known-bug
