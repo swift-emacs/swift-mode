@@ -1042,7 +1042,7 @@ OFFSET is the offset of the contents."
              (swift-mode:token:text next-token)
              '("for" "while" "repeat" "guard" "switch" "if" "else"
                "defer" "do" "catch"
-               "get" "set" "willSet" "didSet" "func" "init" "subscript"
+               "get" "set" "willSet" "didSet" "func" "init" "deinit" "subscript"
                "enum" "struct" "actor" "class" "extension"
                "prefix" "postfix" "infix" "precedencegroup"))
             (setq is-declaration-or-control-statement-body t)

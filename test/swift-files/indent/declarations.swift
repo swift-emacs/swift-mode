@@ -826,6 +826,15 @@ class Foo {
           )
           var x = 1
     }
+
+    // https://github.com/swiftlang/swift-evolution/blob/main/proposals/0371-isolated-synchronous-deinit.md
+    isolated
+      deinit {
+    }
+
+    public
+      deinit {
+    }
 }
 
 // async let
