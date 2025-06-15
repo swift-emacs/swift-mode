@@ -341,3 +341,10 @@ func foo() {
 let こんにちは = 你好 +
   안녕하세요 +
   😊
+
+// https://github.com/swiftlang/swift-evolution/blob/main/proposals/0451-escaped-identifiers.md
+enum
+  `abc def + ( {` {
+    case `50`
+    case `100`
+}
