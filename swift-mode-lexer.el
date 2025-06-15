@@ -743,13 +743,14 @@ return non-nil."
 
      ;; internal(set) private(set) public(set) open(set) fileprivate(set)
      ;; unowned(safe) unowned(unsafe) nonisolated(unsafe)
+     ;; nonisolated(nonsending)
      ((and
        (eq (swift-mode:token:type previous-token) '\))
        (save-excursion
          (and
           (eq (swift-mode:token:type (swift-mode:backward-token-simple)) '\))
           (member (swift-mode:token:text (swift-mode:backward-token-simple))
-                  '("set" "safe" "unsafe"))
+                  '("set" "safe" "unsafe" "nonsending"))
           (eq (swift-mode:token:type (swift-mode:backward-token-simple)) '\()
           (member (swift-mode:token:text
                    (swift-mode:backquote-identifier-if-after-dot
