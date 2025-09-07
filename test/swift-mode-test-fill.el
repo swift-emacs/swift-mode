@@ -56,6 +56,7 @@ interactively."
           (let ((coding-system-for-read 'utf-8))
             (decode-coding-inserted-region (point-min) (point-max) swift-file))
           (swift-mode)
+          (font-lock-mode -1)
           (syntax-propertize (point-max))
           (setq lines (swift-mode:test-fill:parse-fill-test)))
         (dolist (mode '(break join))
@@ -161,6 +162,7 @@ See `swift-mode:run-test:fill' for ERROR-BUFFER and ERROR-COUNTS."
     (switch-to-buffer (current-buffer))
     (insert input)
     (swift-mode)
+    (font-lock-mode -1)
     (syntax-propertize (point-max))
     (let ((fill-column fill-column-for-test)
           (comment-fill-column comment-fill-column-for-test))
@@ -239,6 +241,7 @@ See `swift-mode:run-test:fill' for ERROR-BUFFER and ERROR-COUNTS."
     (with-temp-buffer
       (switch-to-buffer (current-buffer))
       (swift-mode)
+      (font-lock-mode -1)
       (setq regions (nth 0 (swift-mode:test-fill:insert-test lines mode)))
       (syntax-propertize (point-max))
       (dolist (region (reverse regions))
@@ -247,6 +250,7 @@ See `swift-mode:run-test:fill' for ERROR-BUFFER and ERROR-COUNTS."
     (with-temp-buffer
       (switch-to-buffer (current-buffer))
       (swift-mode)
+      (font-lock-mode -1)
       (swift-mode:test-fill:insert-test lines mode)
       (syntax-propertize (point-max))
       (fill-region (point-min) (point-max))
@@ -296,6 +300,7 @@ PROGRESS-REPORTER."
     (with-temp-buffer
       (switch-to-buffer (current-buffer))
       (swift-mode)
+      (font-lock-mode -1)
       (setq regions-and-blocks (swift-mode:test-fill:insert-test lines mode))
       (setq regions (nth 0 regions-and-blocks))
       (setq blocks (nth 1 regions-and-blocks))

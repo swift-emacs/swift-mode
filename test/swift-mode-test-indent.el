@@ -54,6 +54,7 @@ PROGRESS-REPORTER is the progress-reporter."
           (switch-to-buffer (current-buffer))
           (insert-file-contents-literally swift-file)
           (swift-mode)
+          (font-lock-mode -1)
           (setq current-line 0)
           (while (not (eobp))
             (when (not noninteractive)

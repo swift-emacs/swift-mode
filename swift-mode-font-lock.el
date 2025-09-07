@@ -30,6 +30,7 @@
 
 ;;; Code:
 
+(require 'swift-mode-lexer)
 (require 'swift-mode-standard-types)
 (require 'seq)
 (require 'subr-x)
@@ -110,7 +111,9 @@ Example: #if, #endif, and #selector.")
   "Face for highlighting builtin precedence groups.")
 
 (defface swift-mode:function-call-face
-  '((t . (:inherit font-lock-function-name-face)))
+  `((t . (:inherit ,(if (facep 'font-lock-function-call-face)
+                        'font-lock-function-call-face
+                      'font-lock-function-name-face))))
   "Face for highlighting function calls.")
 
 (defface swift-mode:function-name-face
@@ -118,12 +121,88 @@ Example: #if, #endif, and #selector.")
   "Face for highlighting function names.")
 
 (defface swift-mode:property-access-face
-  '((t . (:inherit font-lock-variable-name-face)))
+  `((t . (:inherit ,(if (facep
+                         'font-lock-property-use-face)
+                        'font-lock-property-use-face
+                      'font-lock-variable-name-face))))
   "Face for highlighting property accesses.")
 
 (defface swift-mode:negation-char-face
   '((t . (:inherit font-lock-negation-char-face)))
   "Face for highlighting the negation char.")
+
+(defface swift-mode:comment-delimiter-face
+  '((t . (:inherit font-lock-comment-delimiter-face)))
+  "Face for highlighting the comment delimiters.")
+
+(defface swift-mode:comment-face
+  '((t . (:inherit font-lock-comment-face)))
+  "Face for highlighting the comments.")
+
+(defface swift-mode:doc-face
+  '((t . (:inherit font-lock-doc-face)))
+  "Face for highlighting the documentation strings.")
+
+(defface swift-mode:doc-markup-face
+  `((t . (:inherit ,(if (facep
+                         'font-lock-doc-markup-face)
+                        'font-lock-doc-markup-face
+                      'font-lock-doc-face))))
+  "Face for highlighting the documentation markup.")
+
+(defface swift-mode:type-face
+  '((t . (:inherit font-lock-type-face)))
+  "Face for highlighting the types.")
+
+(defface swift-mode:string-face
+  '((t . (:inherit font-lock-string-face)))
+  "Face for highlighting the strings.")
+
+(defface swift-mode:escaped-identifier-face
+  '((t . (:inherit font-lock-variable-name-face)))
+  "Face for highlighting the escaped/raw identifiers.")
+
+(defface swift-mode:delimiter-face
+  `((t . ,(when (facep 'font-lock-delimiter-face)
+            '(:inherit font-lock-delimiter-face))))
+  "Face for highlighting the delimiters.")
+
+(defface swift-mode:escape-face
+  `((t . ,(when (facep 'font-lock-escape-face)
+            '(:inherit font-lock-escape-face))))
+  "Face for highlighting the escapes.")
+
+(defface swift-mode:misc-punctuation-face
+  `((t . ,(when (facep 'font-lock-misc-punctuation-face)
+            '(:inherit font-lock-misc-punctuation-face))))
+  "Face for highlighting the misc punctuations.")
+
+(defface swift-mode:number-face
+  `((t . ,(when (facep 'font-lock-number-face)
+            '(:inherit font-lock-number-face))))
+  "Face for highlighting the numbers.")
+
+(defface swift-mode:operator-face
+  `((t . ,(when (facep 'font-lock-operator-face)
+            '(:inherit font-lock-operator-face))))
+  "Face for highlighting the operators.")
+
+(defface swift-mode:bracket-face
+  `((t . ,(when (facep 'font-lock-bracket-face)
+            '(:inherit font-lock-bracket-face))))
+  "Face for highlighting the brackets.")
+
+(defface swift-mode:regexp-face
+  `((t . ,(when (facep 'font-lock-regexp-face)
+            '(:inherit font-lock-regexp-face))))
+  "Face for highlighting the regexps.")
+
+(defface swift-mode:attribute-face
+  '((t . (:inherit font-lock-keyword-face)))
+  "Face for highlighting the attributes.")
+
+
+;;; Variables
 
 (defun swift-mode:make-set (list)
   "Return a hash where its keys are elements of the LIST.
@@ -185,22 +264,46 @@ All values are t."
 
 ;;; Supporting functions
 
+(defun swift-mode:skip-identifier-backward ()
+  "Move point before the preceding identifier if any.
+
+Skip also comments and spaces between point and the identifier.
+
+Keep point if point is not after an identifier."
+  (let ((pos (point)))
+    (forward-comment (- (point)))
+    (cond
+     ((eq (char-before) ?`)
+      (backward-char)
+      (swift-mode:beginning-of-string)
+      t)
+
+     ((and (char-before) (memq (char-syntax (char-before)) '(?w ?_)))
+      (skip-syntax-backward "w_")
+      (when (eq (char-before) ?$)
+        (backward-char))
+      t)
+
+     (t
+      (goto-char pos)
+      nil))))
+
 (defun swift-mode:declared-function-name-pos-p (pos limit)
   "Return t if POS is just before the name of a function declaration.
 
 This function does not search beyond LIMIT."
   (goto-char pos)
+  (while (and (progn
+                (forward-comment (- (point)))
+                (eq (char-before) ?.))
+              (progn
+                (backward-char)
+                (swift-mode:skip-identifier-backward))))
   (forward-comment (- (point)))
   (skip-syntax-backward "w_")
   (and
    (< (point) limit)
-   (looking-at
-    (concat
-     "\\_<\\("
-     (string-join
-      '("func" "enum" "struct" "class" "protocol" "extension" "actor" "macro")
-      "\\|")
-     "\\)\\_>"))))
+   (looking-at "\\_<func\\_>")))
 
 (defun swift-mode:property-access-pos-p (pos limit)
   "Return t if POS is just before the property name of a member expression.
@@ -208,10 +311,10 @@ This function does not search beyond LIMIT."
 This function does not search beyond LIMIT."
   ;; foo.bar    // property access
   ;; foo .bar   // property access
-  ;; foo . bar  // INVALID
-  ;; foo. bar   // INVALID
+  ;; foo . bar  // property access
+  ;; foo. bar   // INVALID, but highlight as a property access anyway
   ;; foo?.bar   // property access
-  ;; foo?. bar  // INVALID
+  ;; foo?. bar  // INVALID, but highlight as a property access anyway
   ;; foo ?.bar  // INVALID, but highlight as a property access anyway
   ;; foo? .bar  // property access
   ;; foo.bar()  // NOT property access
@@ -222,28 +325,36 @@ This function does not search beyond LIMIT."
   ;; .1         // NOT property access
   ;; $1.1       // property access
   ;; .x         // property access
+  ;; foo.x<A>   // property access, but highlight as a method call for now
+  ;; foo.x < A, B > (1) // property access
   (and
-   ;; Just after dot
+   ;; After dot
    (progn
      (goto-char pos)
+     (forward-comment (- (point)))
      (eq (char-before) ?.))
 
    ;; Not floating-point literal
    (progn
-     (goto-char pos)
      (backward-char)
-     (skip-syntax-backward "w_")
-     (not (looking-at "[0-9]*\\.[0-9]+\\>")))
+     (let ((pos-before-dot (point)))
+       (forward-comment (- (point)))
+       (when (zerop (skip-syntax-backward "w_"))
+         (goto-char pos-before-dot))
+       (not (looking-at "[0-9]*\\.[0-9]+\\>"))))
 
    ;; Not method/function call
    (progn
      (goto-char pos)
      (skip-syntax-forward "w_" limit)
      (skip-chars-forward "?")
-     ;; I don't sure we can use `forward-comment' beyond limit, so assuming
-     ;; no comments here.
-     (skip-syntax-forward " " limit)
-     (not (eq (char-after) ?\()))))
+     (and
+      (not (eq (char-after) ?<))
+      (progn
+        ;; I don't sure we can use `forward-comment' beyond limit, so assuming
+        ;; no comments here.
+        (skip-syntax-forward " " limit)
+        (not (eq (char-after) ?\()))))))
 
 (defun swift-mode:builtin-name-pos-p (names pos limit)
   "Return t if an identifier in the hash NAMES appears at POS.
@@ -264,7 +375,9 @@ This function does not search beyond LIMIT."
 
 This function does not search beyond LIMIT."
   (and
-   (eq (char-before pos) ?.)
+   (progn
+     (forward-comment (- (point)))
+     (eq (char-before pos) ?.))
    (swift-mode:builtin-name-pos-p names pos limit)))
 
 (defun swift-mode:builtin-method-trailing-closure-name-pos-p (names pos limit)
@@ -273,7 +386,9 @@ This function does not search beyond LIMIT."
 It must followed by open curly bracket.
 This function does not search beyond LIMIT."
   (and
-   (eq (char-before pos) ?.)
+   (progn
+     (forward-comment (- (point)))
+     (eq (char-before pos) ?.))
    (progn
      (goto-char pos)
      (skip-syntax-forward "w_" limit)
@@ -287,13 +402,18 @@ This function does not search beyond LIMIT."
 
 This function does not search beyond LIMIT."
   (and
-   (eq (char-before pos) ?.)
+   (progn
+     (forward-comment (- (point)))
+     (eq (char-before pos) ?.))
    (progn
      (goto-char pos)
      (skip-syntax-forward "w_" limit)
      (skip-chars-forward "?")
-     (skip-syntax-forward " " limit)
-     (eq (char-after) ?\())
+     (or
+      (eq (char-after) ?<)
+      (progn
+        (skip-syntax-forward " " limit)
+        (eq (char-after) ?\())))
    (swift-mode:builtin-name-pos-p names pos limit)))
 
 (defun swift-mode:builtin-property-name-pos-p (names pos limit)
@@ -327,8 +447,11 @@ This function does not search beyond LIMIT."
      (goto-char pos)
      (skip-syntax-forward "w_" limit)
      (skip-chars-forward "?")
-     (skip-syntax-forward " " limit)
-     (eq (char-after) ?\())
+     (or
+      (eq (char-after) ?<)
+      (progn
+        (skip-syntax-forward " " limit)
+        (eq (char-after) ?\())))
    (swift-mode:builtin-name-pos-p names pos limit)))
 
 (defun swift-mode:builtin-constant-name-pos-p (names pos limit)
@@ -343,6 +466,8 @@ This function does not search beyond LIMIT."
 Set `match-data', and return t if the identifier found before position LIMIT.
 Return nil otherwise.
 
+Don't match escapes/raw identifiers.
+
 The predicate MATCH-P is called with two arguments:
 - the position of the identifier, and
 - the limit of search functions."
@@ -350,7 +475,7 @@ The predicate MATCH-P is called with two arguments:
     (while (and
             (< (point) limit)
             (not result)
-            (re-search-forward "\\_<\\(\\sw\\|\\s_\\)+\\_>" limit t))
+            (re-search-forward "\\_<\\(?:\\sw\\|\\s_\\)+\\_>" limit t))
       (when (save-excursion
               (save-match-data
                 (funcall match-p (match-beginning 0) limit)))
@@ -358,11 +483,9 @@ The predicate MATCH-P is called with two arguments:
     result))
 
 (defun swift-mode:font-lock-match-declared-function-names (limit)
-  "Move the cursor just after a function name or others.
+  "Move the cursor just after a function name of a function declaration.
 
-Others includes enum, struct, class, protocol, and extension name.
-Set `match-data', and return t if a function name or others found before
-position LIMIT.
+Set `match-data', and return t if a function name found before position LIMIT.
 Return nil otherwise."
   (swift-mode:font-lock-match-expr
    limit #'swift-mode:declared-function-name-pos-p))
@@ -374,9 +497,9 @@ Return nil otherwise."
   (swift-mode:font-lock-match-expr limit #'swift-mode:property-access-pos-p))
 
 (defmacro swift-mode:font-lock-match-builtin-names (f limit &rest list-of-sets)
-  "Move the cursor just after a builtin name.
+  "Move the cursor just after a builtin name satisfying predicate F.
 
-Function F takes set of names, position, and limit.
+Predicate F takes set of names, position, and limit.
 
 Set `match-data', and return t if a builtin name found before position LIMIT.
 Return nil otherwise.
@@ -510,6 +633,189 @@ Return nil otherwise."
    (and swift-mode:highlight-symbols-in-foundation-framework
         swift-mode:foundation-constants-hash)))
 
+(defun swift-mode:negation-operator-pos-p (pos _limit)
+  "Return non-nil if POS is just before a negation operator.
+
+Return nil otherwise.
+
+Assuming POS is just before ! character."
+  (goto-char pos)
+  (and (or (memq (char-before) '(nil ?\s ?\t ?\n ?\( ?\[ ?{ ?, ?\; ?:))
+           (forward-comment -1))
+       (not (memq (char-after (1+ (point)))
+                  ;; TODO Unicode operators
+                  '(nil ?\s ?\t ?\n ?\) ?\] ?} ?, ?\; ?: ?/ ?= ?- ?+ ?! ?* ?%
+                        ?< ?> ?& ?| ?^ ?? ?~)))))
+
+(defun swift-mode:font-lock-match-negation (limit)
+  "Search a negation operator and return non-nil if found.
+
+Return nil otherwise.
+
+Do not search beyond LIMIT."
+  (let ((result nil))
+    (while (and
+            (< (point) limit)
+            (not result)
+            (search-forward "!" limit t))
+      (when (save-excursion
+              (save-match-data
+                (swift-mode:negation-operator-pos-p (match-beginning 0) limit)))
+        (setq result t)))
+    result))
+
+(defconst swift-mode:syntactic-fontification-mapping
+  '((swift-mode:comment swift-mode:comment-face)
+    (swift-mode:documentation swift-mode:doc-face)
+    (swift-mode:comment-delimiter swift-mode:comment-delimiter-face)
+    (swift-mode:string swift-mode:string-face)
+    (swift-mode:regexp swift-mode:regexp-face)
+    (swift-mode:escaped-identifier swift-mode:escaped-identifier-face)
+    (swift-mode:escape-sequence swift-mode:escape-face t)
+    (swift-mode:matching-parenthesis swift-mode:misc-punctuation-face t))
+  "Mapping from text properties to faces for syntactic fontification.
+
+This is a list with elements of tuple (PROPERTY FACE [PREPEND]).
+
+PROPERTY is the property name, FACE is the face to apply.
+
+If PREPEND is non-nil, the face is prepended.  Otherwise, the face is
+overriden.")
+
+(defun swift-mode:fontify-syntactically (start end &optional _loudly)
+  "Fontify strings and comments based on text properties set by lexer.
+
+Fontify the region from START to END."
+  (syntax-propertize end)
+  (goto-char start)
+  (let ((current start)
+        (old-text-properties (text-properties-at (point)))
+        key
+        face
+        prepend
+        old-face
+        in-documetation
+        start-of-documentation)
+    (while (< (point) end)
+      (goto-char (next-property-change (point) nil end))
+      (dolist (tuple swift-mode:syntactic-fontification-mapping)
+        (setq key (nth 0 tuple))
+        (setq face (nth 1 tuple))
+        (setq prepend (nth 2 tuple))
+        (when (and (plist-get old-text-properties key)
+                   (get-text-property (1- (point)) key))
+          (if prepend
+              (progn
+                (setq old-face (get-text-property current 'face))
+                (unless (or (null old-face) (consp old-face))
+                  (setq old-face (list old-face)))
+                (put-text-property current (point) 'face (cons face old-face)))
+            (put-text-property current (point) 'face face))
+          (put-text-property current (point) 'fontified t)))
+      (setq current (point))
+      (setq old-text-properties (text-properties-at (point))))
+    (goto-char start)
+    (while (< (point) end)
+      (setq in-documetation (get-text-property
+                             (point)
+                             'swift-mode:documentation))
+      (when in-documetation
+        (setq start-of-documentation (point)))
+      (goto-char (next-single-property-change
+                  (point)
+                  'swift-mode:documentation nil end))
+      (when in-documetation
+        (swift-mode:fontify-documentation-markups
+         start-of-documentation
+         (point))))))
+
+(defun swift-mode:fontify-syntactically-advice
+    (oldfun start end &optional loudly)
+  "Fontify syntactically if the current major mode is `swift-mode'.
+
+Otherwise, call OLDFUN with START, END, and LOUDLY instead.
+
+Intended for an advice for `font-lock-fontify-syntactically-region' for
+Emacs 24. For newer Emacs, set `font-lock-fontify-syntactically-function' to
+`swift-mode:fontify-syntactically' instead."
+  (if (eq major-mode 'swift-mode)
+      (swift-mode:fontify-syntactically start end loudly)
+    (funcall oldfun start end loudly)))
+
+(defconst swift-mode:documentation-tags
+  ;; https://github.com/swiftlang/swift-docc/blob/2cff0b04bd64d9be5803b0abacdbd4078157cadc/Sources/SwiftDocC/Utility/MarkupExtensions/ListItemExtractor.swift#L341
+  '(("returns" . nil)
+    ("throws" . nil)
+    ("parameter" . t)
+    ("parameters" . nil)
+    ("dictionarykey" . t)
+    ("dictionarykeys" . nil)
+    ("possiblevalue" . t)
+    ("possiblevalues" . nil)
+    ("httpbody" . nil)
+    ("httpresponse" . t)
+    ("httpresponses" . nil)
+    ("httpparameter" . t)
+    ("httpparameters" . nil)
+    ("httpbodyparameter" . t)
+    ("httpbodyparameters" . nil)
+    ("attention" . nil)
+    ("author" . nil)
+    ("authors" . nil)
+    ("bug" . nil)
+    ("complexity" . nil)
+    ("copyright" . nil)
+    ("date" . nil)
+    ("experiment" . nil)
+    ("important" . nil)
+    ("invariant" . nil)
+    ("localizationkey" . nil)
+    ("mutatingvariant" . nil)
+    ("nonmutatingvariant" . nil)
+    ("note" . nil)
+    ("postcondition" . nil)
+    ("precondition" . nil)
+    ("remark" . nil)
+    ("remarks" . nil)
+    ("requires" . nil)
+    ("seealso" . nil)
+    ("since" . nil)
+    ("tag" . nil)
+    ("todo" . nil)
+    ("version" . nil)
+    ("warning" . nil)
+    ("keyword" . nil)
+    ("recommended" . nil)
+    ("recommendedover" . nil))
+  "Tags of documentation markups.
+
+This is a list of cons (TAG . HAVE-ARG).
+
+TAG is lowercased tag name.
+
+If HAVE-ARG is non-nil, the tag must be followed by arguments.
+If HAVE-ARG is nil, the tag must not be followed by arguments.")
+
+(defun swift-mode:fontify-documentation-markups (start end)
+  "Fontify documentation markups in documentation comments.
+
+Fontify the region from START to END."
+  (save-excursion
+    (goto-char start)
+    (while (re-search-forward
+            "-[\s\t]+\\([^\s\t:]*\\)\\(?:[\s\t]+\\([^:]+\\)\\)?:"
+            end
+            t)
+      (let ((tag (downcase (match-string-no-properties 1)))
+            (name (match-string-no-properties 2)))
+        ;; FIXME Use hash table
+        (dolist (tuple swift-mode:documentation-tags)
+          (when (and (equal tag (car tuple))
+                     (eq (cdr tuple) (not (not name))))
+            (put-text-property (match-beginning 1) (match-end 1)
+                               'face 'swift-mode:doc-markup-face)))))))
+
+
 ;;; Keywords and standard identifiers
 
 ;; Keywords
@@ -583,14 +889,16 @@ Excludes true, false, and keywords begin with a number sign.")
 (defconst swift-mode:font-lock-keywords
   `(
     ;; Attributes
-    "@\\(\\sw\\|\\s_\\)*"
+    ("@\\(?:\\sw\\|\\s_\\)*"
+     .
+     'swift-mode:attribute-face)
 
     (,(regexp-opt swift-mode:constant-keywords 'symbols)
      .
      'swift-mode:constant-keyword-face)
 
     ;; Preprocessor keywords
-    (,"#\\(\\sw\\|\\s_\\)*"
+    ("#\\(?:\\sw\\|\\s_\\)*"
      .
      'swift-mode:preprocessor-keyword-face)
 
@@ -602,6 +910,59 @@ Excludes true, false, and keywords begin with a number sign.")
      .
      'swift-mode:keyword-face)
 
+    ;; Numbers
+    (,(concat
+       ;; Optional sign
+       "-?"
+       "\\_<\\(?:"
+       ;; Decimal integer/floating-point
+       "[0-9][0-9_]*"
+       "\\(?:\\.[0-9][0-9_]*\\)?"
+       "\\(?:[eE][+-]?[0-9][0-9_]*\\)?"
+       "\\|"
+       ;; Hexadecimal integer/floating-point
+       "0x[0-9a-fA-F][0-9a-fA-F_]*"
+       "\\(?:\\.[0-9a-fA-F][0-9a-fA-F_]*\\)?"
+       "\\(?:[pP][+-]?[0-9][0-9_]*\\)?"
+       "\\|"
+       ;; Binary interger
+       "0b[01][01_]*"
+       "\\|"
+       ;; Octal interger
+       "0o[0-7][0-7_]*"
+       "\\)\\_>")
+     .
+     'swift-mode:number-face)
+
+    ;; Negation operator
+    (swift-mode:font-lock-match-negation
+     .
+     'swift-mode:negation-char-face)
+
+    ;; Other operators
+    ;; TODO Unicode operators
+    ("[/=+!*%<>&|^?~.-]+"
+     .
+     'swift-mode:operator-face)
+
+    ;; Colon of ternary conditional operator
+    ;; HEURISTICS: if it has spaces on left, treat it as an operator rather
+    ;; than a delimiter.
+    ("\\(?:^\\|[\s\t([{,;:]\\)\\(:\\)"
+     1
+     'swift-mode:operator-face)
+
+    ;; Delimiters
+    ("[,:;]"
+     .
+     'swift-mode:delimiter-face)
+
+    ;; Brackets
+    ("[][(){}]"
+     .
+     'swift-mode:bracket-face)
+
+    ;; Builtin names
     (swift-mode:font-lock-match-builtin-type-names
      .
      'swift-mode:builtin-type-face)
@@ -642,25 +1003,25 @@ Excludes true, false, and keywords begin with a number sign.")
      .
      'swift-mode:builtin-precedence-group-face)
 
-    ;; Function and type declarations
+    ;; Type names
+    (,"\\_<[A-Z]\\(?:\\sw\\|\\s_\\)*\\_>"
+     .
+     'swift-mode:type-face)
+
+    ;; Function declarations
     (swift-mode:font-lock-match-declared-function-names
      .
      'swift-mode:function-name-face)
 
     ;; Method/function calls
-    ("\\_<\\(\\(\\sw\\|\\s_\\)+\\)\\_>\\??\\s-*("
+    ("\\_<\\(\\(?:\\sw\\|\\s_\\)+\\)\\_>\\??\\(?:<\\|\\s-*(\\|\\s-*{\\)"
      1
      'swift-mode:function-call-face)
 
     ;; Property accesses
     (swift-mode:font-lock-match-property-access
      .
-     'swift-mode:property-access-face)
-
-    ;; Make negation chars easier to see
-    ("\\(?:^\\|\\s-\\|\\s(\\|\\s>\\|[,:;]\\)\\(!+\\)[^=]"
-     1
-     'swift-mode:negation-char-face))
+     'swift-mode:property-access-face))
   "Swift mode keywords for Font Lock.")
 
 

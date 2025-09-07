@@ -171,6 +171,12 @@ Signal `scan-error' if it hits opening parentheses."
   :group 'swift
 
   (setq font-lock-defaults '(swift-mode:font-lock-keywords))
+  (if (boundp 'font-lock-fontify-syntactically-function)
+      (setq-local font-lock-fontify-syntactically-function
+                  #'swift-mode:fontify-syntactically)
+    (advice-add 'font-lock-fontify-syntactically-region
+                :around
+                #'swift-mode:fontify-syntactically-advice))
 
   (setq-local comment-start "// ")
   (setq-local comment-end "")

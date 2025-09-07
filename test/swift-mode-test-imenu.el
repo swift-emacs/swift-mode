@@ -51,6 +51,7 @@ PROGRESS-REPORTER is the progress-reporter."
         (switch-to-buffer (current-buffer))
         (insert-file-contents-literally swift-file)
         (swift-mode)
+        (font-lock-mode -1)
         (let* ((actual (swift-mode:scan-declarations))
                (expected-file-name (concat
                                     (file-name-sans-extension swift-file)

@@ -41,64 +41,116 @@ PROGRESS-REPORTER is the progress-reporter."
   (interactive)
   (if (not swift-mode:test:running)
       (swift-mode:run-test '(swift-mode:run-test:font-lock))
-    (let ((current-line 0))
-      (setq default-directory
-            (concat (file-name-as-directory swift-mode:test:basedir)
-                    (file-name-as-directory "swift-files")
-                    "font-lock"))
-
-      (dolist (swift-file (file-expand-wildcards "*.swift"))
-        (redisplay)
-        (with-temp-buffer
-          (switch-to-buffer (current-buffer))
-          (insert-file-contents-literally swift-file)
-          (swift-mode)
+    (setq default-directory
+          (concat (file-name-as-directory swift-mode:test:basedir)
+                  (file-name-as-directory "swift-files")
+                  "font-lock"))
+    (dolist (swift-file (file-expand-wildcards "*.swift"))
+      (redisplay)
+      (with-temp-buffer
+        (switch-to-buffer (current-buffer))
+        (insert-file-contents-literally swift-file)
+        (swift-mode)
+        (let ((tests (swift-mode:parse-font-lock-test))
+              status
+              count-assoc)
           (funcall (if (fboundp 'font-lock-ensure)
                        #'font-lock-ensure
                      #'font-lock-fontify-buffer))
-          (setq current-line 0)
-          (while (not (eobp))
+          (dolist (test tests)
             (when (not noninteractive)
               (progress-reporter-update progress-reporter))
-            (setq current-line (1+ current-line))
-            (cond
-             ((= (line-beginning-position) (line-end-position))
-              ;; Empty line
-              nil)
-             ((looking-at-p "//.*")
-              ;; Ignore comments
-              nil)
-             (t
-              (let*
-                  ((status (swift-mode:test-current-line-font-lock
-                            swift-file current-line error-buffer))
-                   (count-assoc (assq status error-counts)))
-                (setcdr count-assoc (1+ (cdr count-assoc))))))
-            (forward-line)))))))
+            (setq status (swift-mode:test-font-lock-1
+                          swift-file
+                          (nth 0 test)
+                          (nth 1 test)
+                          (nth 2 test)
+                          error-buffer))
+            (setq count-assoc (assq status error-counts))
+            (setcdr count-assoc (1+ (cdr count-assoc)))))))))
 
-(defun swift-mode:test-current-line-font-lock
-    (swift-file current-line error-buffer)
-  "Compute the font-lock properties applied by swift-mode on current line.
+(defun swift-mode:parse-font-lock-test ()
+  (save-excursion
+    (goto-char (point-min))
+    (let ((tests nil)
+          (current-line 0))
+      (while (progn
+               (setq current-line (1+ current-line))
+               (when (looking-at
+                      "\\(.*\\)[\s\t]+//[\s\t]+EXPECTED:[\s\t]+\\(.*\\)$")
+                 (push (list (point)
+                             current-line
+                             (read
+                              (concat
+                               "("
+                               (match-string-no-properties 2)
+                               ")")))
+                       tests)
+                 (delete-region (match-end 1) (line-end-position)))
+               (eq 0 (forward-line)))
+        t)
+      (reverse tests))))
+
+(defun swift-mode:test-font-lock-1
+    (swift-file pos current-line expected error-buffer)
+  "Compute the font-lock properties applied by Swift mode on the line at POS.
 
 SWIFT-FILE is the filename of the current test case.
 CURRENT-LINE is the current line number.
+EXPECTED is expected faces computed by `swift-mode:get-faces-of-current-line'.
 ERROR-BUFFER is the buffer to output errors."
-  (let ((status 'ok))
-    (when (looking-at "\\(.*\\)[ /t]+//[ /t]+\\(.*\\)")
-      (let ((actual-props (format "%S" (buffer-substring (match-beginning 1) (match-end 1))))
-            (expected-props (buffer-substring-no-properties (match-beginning 2)
-                                                            (match-end 2))))
-        (when (not (string-equal expected-props actual-props))
-          (setq status 'error)
-          (swift-mode:show-error
-           error-buffer swift-file current-line
-           "error"
-           (concat
-            "font-lock: expected "
-            (prin1-to-string expected-props)
-            " but "
-            (prin1-to-string actual-props))))))
-    status))
+  (save-excursion
+    (goto-char pos)
+    (let ((actual nil))
+      (dolist (cons (swift-mode:get-faces-of-current-line))
+        (push (car cons) actual)
+        (push (cdr cons) actual))
+      (setq actual (reverse actual))
+      (if (equal expected actual)
+          'ok
+        (swift-mode:show-error
+         error-buffer swift-file current-line
+         "error"
+         (format "font-lock: expected %S but %S" expected actual))
+        'error))))
+
+(defun swift-mode:get-faces-of-current-line ()
+  (save-excursion
+    (let ((faces nil))
+      (beginning-of-line)
+      (while (not (eolp))
+        (let ((face (get-text-property (point) 'face))
+              (start (point))
+              (end (progn
+                     (goto-char (next-single-property-change
+                                 (point)
+                                 'face
+                                 nil
+                                 (line-end-position)))
+                     (point))))
+          (when face
+            (push (cons (buffer-substring-no-properties start end)
+                        face)
+                  faces))))
+      (reverse faces))))
+
+(defun swift-mode:add-expected ()
+  (when (fboundp 'string-replace)
+    (save-excursion
+      (let ((faces (swift-mode:get-faces-of-current-line)))
+        (end-of-line)
+        (insert " // EXPECTED:")
+        (dolist (tuple faces)
+          (insert
+           (format " %s %s"
+                   (string-replace "*" "\\*" (prin1-to-string (car tuple)))
+                   (cdr tuple))))))))
+
+;; (progn
+;;   (goto-char (point-max))
+;;   (while (search-backward " // ★" nil t)
+;;     (replace-match "")
+;;     (swift-mode:add-expected)))
 
 (provide 'swift-mode-test-font-lock)
 

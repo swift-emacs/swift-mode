@@ -220,9 +220,13 @@ Intended for `syntax-propertize-extend-region-functions'."
   (syntax-propertize-multiline start end))
 
 (defun swift-mode:syntax-propertize (start end)
-  "Update text properties for strings.
-Mark the beginning of and the end of single-line/multiline strings and regexes
+  "Put text properties for strings, regexps, and comments.
+
+Mark the beginning of and the end of single-line/multiline strings and regexps
 between the position START and END as general string delimiters.
+
+Puts other text properties on comments and escape sequences for fontification.
+
 Intended for `syntax-propertize-function'."
   (remove-text-properties start end
                           '(syntax-table
@@ -232,39 +236,79 @@ Intended for `syntax-propertize-function'."
                             swift-mode:matching-parenthesis
                             nil
                             swift-mode:comment
+                            nil
+                            swift-mode:documentation
+                            nil
+                            swift-mode:comment-delimiter
+                            nil
+                            swift-mode:string
+                            nil
+                            swift-mode:regexp
+                            nil
+                            swift-mode:escape-sequence
+                            nil
+                            swift-mode:escaped-identifier
                             nil))
   (let* ((chunk (swift-mode:chunk-after (syntax-ppss start)))
          comment-start)
     (cond
      ((swift-mode:chunk:multiline-string-p chunk)
-      (swift-mode:syntax-propertize:end-of-string
-       end "\"\"\"" (swift-mode:chunk:pound-count chunk)))
+      (swift-mode:syntax-propertize:scan-string
+       (swift-mode:chunk:start chunk)
+       end
+       "\"\"\""
+       (swift-mode:chunk:pound-count
+        chunk)))
 
      ((swift-mode:chunk:single-line-string-p chunk)
-      (swift-mode:syntax-propertize:end-of-string
-       end "\"" (swift-mode:chunk:pound-count chunk)))
+      (swift-mode:syntax-propertize:scan-string
+       (swift-mode:chunk:start chunk)
+       end
+       "\""
+       (swift-mode:chunk:pound-count
+        chunk)))
 
-     ((swift-mode:chunk:regex-p chunk)
-      (swift-mode:syntax-propertize:end-of-regex
+     ((swift-mode:chunk:escaped-identifier-p chunk)
+      (swift-mode:syntax-propertize:scan-string
+       (swift-mode:chunk:start chunk)
+       end
+       "`"
+       0
+       'swift-mode:escaped-identifier))
+
+     ((swift-mode:chunk:regexp-p chunk)
+      (swift-mode:syntax-propertize:scan-regexp
        (swift-mode:chunk:start chunk)))
 
      ((swift-mode:chunk:comment-p chunk)
       (goto-char (swift-mode:chunk:start chunk))
       (setq comment-start (point))
-      (swift-mode:forward-comment 1 end)
-      (put-text-property comment-start (point) 'swift-mode:comment t))))
+      (swift-mode:forward-comment 1 end t)
+      (put-text-property comment-start (point) 'swift-mode:comment t)
+      (when (save-excursion
+              (goto-char comment-start)
+              (and (looking-at "///\\|/\\*\\*")
+                   (not (looking-at "/\\*\\*/"))))
+        (put-text-property
+         comment-start
+         (point)
+         'swift-mode:documentation
+         t)))))
   (swift-mode:syntax-propertize:scan end 0))
 
 (defun swift-mode:syntax-propertize:scan (end nesting-level)
-  "Update text properties for strings.
-Mark the beginning of and the end of single-line/multiline strings and regexes
+  "Put text properties for strings, regexps, and comments.
+
+Mark the beginning of and the end of single-line/multiline strings and regexps
 between the current position and END as general string delimiters.
-Assuming the cursor is not on strings, regexes, nor comments.
+Assuming the cursor is not on strings, regexps, nor comments.
 If NESTING-LEVEL is non-zero, nesting of parentheses are tracked and the scan
-stops where the level becomes zero."
+stops where the level becomes zero.
+
+Return non-nil if the matching parenthesis found, or return nil otherwise."
   (let ((found-matching-parenthesis nil)
         (pattern (mapconcat #'regexp-quote
-                            '("\"\"\"" "\"" "/" "(" ")")
+                            '("\"\"\"" "\"" "`" "/" "(" ")")
                             "\\|")))
     (while (and (not found-matching-parenthesis)
                 (< (point) end)
@@ -279,33 +323,30 @@ stops where the level becomes zero."
             (skip-chars-backward "#")
             (setq pound-count (- start (point)))
             (setq start (point)))
-          (put-text-property start (1+ start)
-                             'syntax-table
-                             (string-to-syntax "|"))
-          (swift-mode:syntax-propertize:end-of-string
-           end quotation pound-count)
-          (swift-mode:put-syntax-multiline-property start (point))))
+          (swift-mode:syntax-propertize:scan-string
+           start end quotation pound-count)))
+
+       ((equal (match-string-no-properties 0) "`")
+        (let ((start (match-beginning 0))
+              (quotation (match-string-no-properties 0)))
+          (swift-mode:syntax-propertize:scan-string
+           start end quotation 0 'swift-mode:escaped-identifier)))
 
        ((equal "/" (match-string-no-properties 0))
-        (let ((start (match-beginning 0))
-              regex-start)
-          (save-excursion
-            (goto-char start)
-            (skip-chars-backward "#")
-            (setq regex-start (point)))
+        (let ((start (match-beginning 0)))
           (cond
-           ;; Regexes
-           ((swift-mode:syntax-propertize:end-of-regex regex-start)
-            (put-text-property regex-start (1+ regex-start)
-                               'syntax-table
-                               (string-to-syntax "|"))
-            (swift-mode:put-syntax-multiline-property regex-start (point)))
+           ;; Regexps
+           ((swift-mode:syntax-propertize:scan-regexp
+             (save-excursion
+               (goto-char start)
+               (skip-chars-backward "#")
+               (point)))
+            t)
 
            ;; Comments
            ((memq (char-after) '(?/ ?*))
             (goto-char start)
-            (swift-mode:forward-comment 1 end)
-            (put-text-property start (point) 'swift-mode:comment t))
+            (swift-mode:forward-comment 1 end t))
 
            ;; Operators
            (t nil))))
@@ -323,10 +364,13 @@ stops where the level becomes zero."
       (goto-char end))
     found-matching-parenthesis))
 
-(defun swift-mode:forward-comment (count &optional end)
+(defun swift-mode:forward-comment (count &optional end propertize)
   "Move point after spaces and COUNT comments.
 
 If END is given, do not move beyond END.
+
+If PROPERTIZE is non-nil, put properties `swift-mode:comment',
+`swift-mode:documentation', and `swift-mode:comment-delimiter'.
 
 COUNT must be positive.
 
@@ -339,41 +383,88 @@ This function doesn't depend on the syntax tables, so that it works in
 `swift-mode:syntax-propertize'."
   (while (< 0 count)
     (skip-chars-forward "\s\t\n")
-    (cond
-     ;; Single line comment
-     ((and (eq (char-after) ?/)
-           (eq (char-after (1+ (point))) ?/))
-      (forward-line))
+    (let ((start (point))
+          is-documentation)
+      (cond
+       ;; Single line comment
+       ((and (eq (char-after) ?/)
+             (eq (char-after (1+ (point))) ?/))
+        (setq is-documentation (eq (char-after (+ 2 (point))) ?/))
+        (when propertize
+          (skip-chars-forward "/")
+          (put-text-property start (point) 'swift-mode:comment-delimiter t))
+        (forward-line)
+        (when propertize
+          (put-text-property start (point) 'swift-mode:comment t)
+          (when is-documentation
+            (put-text-property start (point) 'swift-mode:documentation t))))
 
-     ;; Multiline comment
-     ((and (eq (char-after) ?/)
-           (eq (char-after (1+ (point))) ?*))
-      (swift-mode:forward-multiline-comment (or end (point-max))))
+       ;; Multiline comment
+       ((and (eq (char-after) ?/)
+             (eq (char-after (1+ (point))) ?*))
+        (setq is-documentation (and (eq (char-after (+ 2 (point))) ?*)
+                                    (not (eq (char-after (+ 3 (point))) ?/))))
+        (when propertize
+          (save-excursion
+            (forward-char)
+            (skip-chars-forward "*")
+            (put-text-property start (point)
+                               'swift-mode:comment-delimiter t)))
+        (swift-mode:forward-multiline-comment (or end (point-max)) propertize)
+        (when propertize
+          (put-text-property start (point) 'swift-mode:comment t)
+          (swift-mode:put-syntax-multiline-property start (point))
+          (when is-documentation
+            (put-text-property start (point) 'swift-mode:documentation t))))
 
-     ;; Not a comment
-     (t
-      (setq count 1)))
+       ;; Not a comment
+       (t
+        (setq count 1))))
     (setq count (1- count))))
 
-(defun swift-mode:forward-multiline-comment (end)
+(defun swift-mode:forward-multiline-comment (end propertize)
   "Move point after a multiline comment.
 
 Assuming the point is just before a multiline comment.
 
 Do not move beyond END.
 
+If PROPERTIZE is non-nil, put properties `swift-mode:comment-delimiter'.
+
 Multiline comments can be nested.
 
 If the comment is not closed, move to END."
   (forward-char 2)
-  (let ((pattern (mapconcat #'regexp-quote '("/*" "*/") "\\|"))
+  (let ((pattern (concat
+                  (mapconcat #'regexp-quote
+                             '("/*" "*/")
+                             "\\|")
+                  "\\|"
+                  "^[\s\t]*\\(\\*\\)[\s\t]"))
         (nesting-level 1))
     (while (and (< 0 nesting-level)
                 (< (point) end)
                 (search-forward-regexp pattern end t))
-      (if (eq (char-before) ?*)
+      (cond
+       ((and (eq (char-before (1- (point))) ?/) (eq (char-before) ?*))
+        (progn
           (setq nesting-level (1+ nesting-level))
-        (setq nesting-level (1- nesting-level))))
+          (when propertize
+            (save-excursion
+              (skip-chars-forward "*")
+              (put-text-property (match-beginning 0) (point)
+                                 'swift-mode:comment-delimiter t)))))
+       ((and (eq (char-before (1- (point))) ?*) (eq (char-before) ?/))
+        (setq nesting-level (1- nesting-level))
+        (when propertize
+          (save-excursion
+            (backward-char)
+            (skip-chars-backward "*")
+            (put-text-property (point) (match-end 0)
+                               'swift-mode:comment-delimiter t))))
+       (propertize
+        (put-text-property (match-beginning 1) (match-end 1)
+                           'swift-mode:comment-delimiter t))))
     (when (or (and (not (zerop nesting-level))
                    (< (point) end))
               (< end (point)))
@@ -384,100 +475,144 @@ If the comment is not closed, move to END."
 
 Also call `font-lock-flush' with START and END."
   (put-text-property start end 'syntax-multiline t)
-  (if (fboundp 'font-lock-flush)
-      (font-lock-flush start end)
-    (if (eq font-lock-fontify-buffer-function #'jit-lock-refontify)
-        (jit-lock-refontify start end)
-      (font-lock-after-change-function start end (- end start)))))
+  (cond
+   ((not font-lock-mode)
+    t)
 
-(defun swift-mode:syntax-propertize:end-of-string (end quotation pound-count)
-  "Move point to the end of single-line/multiline string.
+   ((fboundp 'font-lock-flush)
+    (font-lock-flush start end))
 
-Assuming the cursor is on a string.
+   ((eq font-lock-fontify-buffer-function #'jit-lock-refontify)
+    (jit-lock-refontify start end))
+
+   (t (font-lock-after-change-function start end (- end start)))))
+
+(defun swift-mode:syntax-propertize:scan-string
+    (start end quotation pound-count &optional property)
+  "Put text properties for single-line/multiline strings.
+
+Put text property PROPERTY to each chunk of the string.
+
+Also put `syntax-table', `swift-mode:matching-parenthesis',
+`swift-mode:escape-sequence', and `syntax-multiline'.
+
+Move point to the end of the string.
+
+START is the position before the open quotation mark.
+
+Assuming the cursor is on a string, somewhere after the open quotation mark.
 If the string go beyond END, stop there.
+
 The string should be terminated with QUOTATION, followed by POUND-COUNT of
 pound signs."
-  (if (and
-       (< (point) end)
-       (search-forward-regexp (concat (regexp-quote quotation) "\\|(") end t))
+  (unless property
+    (setq property 'swift-mode:string))
+  (let ((done nil)
+        (chunk-start start)
+        match-beginning)
+    (put-text-property start (1+ start)
+                       'syntax-table
+                       (string-to-syntax "|"))
+    (while (not done)
       (cond
-       ((and (equal quotation (match-string-no-properties 0))
-             (not (swift-mode:escaped-p (match-beginning 0) pound-count))
-             (progn
+       ;; Incomplete string literal
+       ((or
+         (<= end (point))
+         (not (search-forward-regexp (concat (regexp-quote quotation) "\\|\\\\")
+                                     end
+                                     t)))
+        (setq done t)
+        (goto-char end)
+        (put-text-property chunk-start end property t)
+        (swift-mode:put-syntax-multiline-property start end))
+
+       ;; Pound count not matched.  Just a string content.
+       ((not (progn
+               (setq match-beginning (1- (point)))
                (skip-chars-forward "#" (min end (+ (point) pound-count)))
                (= (- (point) (match-end 0)) pound-count)))
+        nil)
+
+       ;; End of the string
+       ((equal quotation (match-string-no-properties 0))
         (put-text-property (1- (point)) (point)
                            'syntax-table
-                           (string-to-syntax "|")))
+                           (string-to-syntax "|"))
+        (setq done t)
+        (put-text-property chunk-start (point) property t)
+        (swift-mode:put-syntax-multiline-property start (point)))
 
-       ((and (equal "(" (match-string-no-properties 0))
-             (swift-mode:escaped-p (match-beginning 0) pound-count))
-        ;; Found an interpolated expression. Skips the expression.
+       ;; Unicode escape sequence
+       ((looking-at "u{[0-9a-fA-F]\\{1,8\\}}")
+        (goto-char (match-end 0))
+        (put-text-property match-beginning (point)
+                           'swift-mode:escape-sequence t))
+
+       ;; Interpolated expression
+       ((eq (char-after) ?\()
+        ;; Skips the expression.
         ;; We cannot use `scan-sexps' because multiline strings are not yet
         ;; propertized.
-        (let ((pos-after-open-paren (point))
-              (start
-               (save-excursion
-                 (backward-char) ;; (
-                 (skip-chars-backward "#")
-                 (backward-char) ;; \
-                 (point))))
+        (forward-char)
+        (put-text-property chunk-start (point) property t)
+        (let ((pos-after-open-paren (point)))
           ;; Declares the backslash is not a escape-syntax characters.
-          (put-text-property start (1+ start)
+          (put-text-property match-beginning (1+ match-beginning)
                              'syntax-table
                              (string-to-syntax "w"))
           ;; Declares the open parentheses is a generic string delimiter.
           (put-text-property (1- pos-after-open-paren) pos-after-open-paren
                              'syntax-table
                              (string-to-syntax "|"))
-          (when (swift-mode:syntax-propertize:scan end 1)
-            ;; Found the matching parenthesis. Going further.
-            ;; Declares the close parentheses is a generic string delimiter.
-            (put-text-property (1- (point)) (point)
-                               'syntax-table
-                               (string-to-syntax "|"))
-            ;; Records the positions.
-            (put-text-property (1- (point)) (point)
-                               'swift-mode:matching-parenthesis
-                               start)
-            (put-text-property start pos-after-open-paren
-                               'swift-mode:matching-parenthesis
-                               (1- (point)))
-            (swift-mode:syntax-propertize:end-of-string
-             end quotation pound-count))))
+          (if (swift-mode:syntax-propertize:scan end 1)
+              (progn
+                ;; Found the matching parenthesis. Going further.
+                ;; Declares the close parentheses is a generic string delimiter.
+                (put-text-property (1- (point)) (point)
+                                   'syntax-table
+                                   (string-to-syntax "|"))
+                ;; Records the positions.
+                (put-text-property (1- (point)) (point)
+                                   'swift-mode:matching-parenthesis
+                                   match-beginning)
+                (put-text-property match-beginning pos-after-open-paren
+                                   'swift-mode:matching-parenthesis
+                                   (1- (point)))
+                (setq chunk-start (1- (point))))
+            ;; Incomplete interpolated expression.
+            (setq done t)
+            (goto-char end))))
 
+       ;; Other escape sequences
        (t
-        (swift-mode:syntax-propertize:end-of-string end quotation pound-count)))
-    (goto-char end)))
+        (forward-char)
+        (put-text-property match-beginning (point)
+                           'swift-mode:escape-sequence t))))))
 
 
 (defun swift-mode:escaped-p (position pound-count)
   "Return t if the POSITION in a string is escaped.
 
 A position is escaped if it is proceeded by POUND-COUNT or more of pound signs
-and odd number of backslashes.
+and a backslash it is not escaped.
 Return nil otherwise."
-  (let ((p position)
-        (backslash-count 0))
+  (let ((p position))
     (while (eq (char-before p) ?#)
       (setq p (1- p)))
     (and
      ;; While it is a syntax error to have extra pound signs, we allow them
      ;; here to prevent corruption.
      (<= pound-count (- position p))
-     (progn
-       (while (eq (char-before p) ?\\)
-         (setq backslash-count (1+ backslash-count))
-         (setq p (1- p)))
-       (= (mod backslash-count 2) 1)))))
+     (eq (char-before p) ?\\)
+     (not (swift-mode:escaped-p (1- p) pound-count)))))
 
-(defun swift-mode:syntax-propertize:end-of-regex (start)
-  "Move point to the end of regex if any.
+(defun swift-mode:syntax-propertize:scan-regexp (start)
+  "Put text properties for regexps if any.
 
 START is the position of the open delimiter, including pounds if any.
 
-If START is not a start of a regex, keep the point and return nil.  Otherwise,
-return non-nil.
+If START is not a start of a regexp, keep the point and return nil.  Otherwise,
+move point to the end of the regexp and return non-nil.
 
 This function doesn't take end parameter since if the closing delimiter is
 missing, this function must return nil."
@@ -485,33 +620,39 @@ missing, this function must return nil."
                         (goto-char start)
                         (skip-chars-forward "#")
                         (- (point) start)))
-         end-of-regex)
-    (setq end-of-regex
+         end-of-regexp)
+    (setq end-of-regexp
           (if (zerop pound-count)
-              (swift-mode:syntax-propertize:end-of-basic-regex start)
-            (swift-mode:syntax-propertize:end-of-extended-regex
+              (swift-mode:syntax-propertize:scan-basic-regexp start)
+            (swift-mode:syntax-propertize:scan-extended-regexp
              start
              pound-count)))
-    (when end-of-regex
-      (put-text-property (1- end-of-regex) end-of-regex
+    (when end-of-regexp
+      (put-text-property start (1+ start)
                          'syntax-table
-                         (string-to-syntax "|")))
-    end-of-regex))
+                         (string-to-syntax "|"))
+      (put-text-property (1- end-of-regexp) end-of-regexp
+                         'syntax-table
+                         (string-to-syntax "|"))
+      (put-text-property start end-of-regexp 'swift-mode:regexp t)
+      (swift-mode:put-syntax-multiline-property start end-of-regexp))
+    end-of-regexp))
 
-(defun swift-mode:syntax-propertize:end-of-basic-regex (start)
-  "Move point to the end of regex if any.
+(defun swift-mode:syntax-propertize:scan-basic-regexp (start)
+  "Put text properties for basic regexps if any.
 
 START is the position of the open delimiter.
 
-If START is not a start of a regex, keep the point and return nil.  Otherwise,
-return non-nil."
+If START is not a start of a regexp, keep the point and return nil.  Otherwise,
+move point to the end of the regexp and return non-nil."
   (let* ((pos (point))
          (start-of-contents (1+ start))
          after-last-dot
          (square-brackets-count 0)
          (parentheses-count 0)
          (limit (line-end-position))
-         (end-of-regex nil))
+         (end-of-regexp nil)
+         (escape-sequences nil))
     (if (or
          ;; Cannot starts with spaces, tabs, slashes, or asterisks.
          (memq (char-after start-of-contents) '(?\s ?\t ?/ ?*))
@@ -538,11 +679,12 @@ return non-nil."
             (not (text-property-any (point) start 'swift-mode:comment t)))))
         nil
       (goto-char start-of-contents)
-      (while (and (null end-of-regex)
+      (while (and (null end-of-regexp)
                   (search-forward-regexp "[][()\\/]" limit t))
         (cond
          ((eq (char-before) ?\\)
-          (forward-char))
+          (forward-char)
+          (push (cons (- (point) 2) (point)) escape-sequences))
          ((eq (char-before) ?\[)
           (setq square-brackets-count (1+ square-brackets-count)))
          ((eq (char-before) ?\])
@@ -556,7 +698,7 @@ return non-nil."
            ((< 0 square-brackets-count)
             nil)
            ((zerop parentheses-count)
-            ;; Found an unmatching close parenthesis.  This is not a regex
+            ;; Found an unmatching close parenthesis.  This is not a regexp
             ;; literal.
             (goto-char limit))
            (t
@@ -564,54 +706,67 @@ return non-nil."
          ((eq (char-before) ?/)
           (if (memq (char-after) '(?/ ?*))
               (goto-char limit)
-            (setq end-of-regex (point)))))))
-    (when (and end-of-regex
-               (memq (char-before (1- end-of-regex)) '(?\s ?\t))
-               (not (swift-mode:escaped-p (- end-of-regex 2) 0)))
+            (setq end-of-regexp (point)))))))
+    (when (and end-of-regexp
+               (memq (char-before (1- end-of-regexp)) '(?\s ?\t))
+               (not (swift-mode:escaped-p (- end-of-regexp 2) 0)))
       ;; Cannot ends with spaces or tabs unless escaped.
-      (setq end-of-regex nil))
-    (unless end-of-regex
+      (setq end-of-regexp nil))
+    (if end-of-regexp
+        (dolist (range escape-sequences)
+          (put-text-property (car range) (cdr range)
+                             'swift-mode:escape-sequence t))
       (goto-char pos))
-    end-of-regex))
+    end-of-regexp))
 
-(defun swift-mode:syntax-propertize:end-of-extended-regex (start pound-count)
-  "Move point to the end of extended regex if any.
+(defun swift-mode:syntax-propertize:scan-extended-regexp (start pound-count)
+  "Put text properties for extended regexp if any.
 
 START is the position of the open delimiter, including pounds of POUND-COUNT.
 
-If START is not a start of a regex, keep the point and return nil.  Otherwise,
-return non-nil."
+If START is not a start of a regexp, keep the point and return nil.  Otherwise,
+move point to the end of the regexp and return non-nil."
   (let* ((pos (point))
          (start-of-contents (1+ (+ start pound-count)))
          (starts-with-line-break (save-excursion
                                    (goto-char start-of-contents)
                                    (skip-chars-forward "\s\t")
                                    (eolp)))
-         (end-of-regex nil))
+         (end-of-regexp nil)
+         (escape-sequences nil))
     (goto-char start-of-contents)
     (if starts-with-line-break
-        (while (and (null end-of-regex)
+        (while (and (null end-of-regexp)
                     (zerop (forward-line)))
           (skip-chars-forward "\s\t")
-          (when (and (eq (char-after) ?/)
-                     (progn
-                       (forward-char)
-                       (eq (skip-chars-forward "#" (+ (point) pound-count))
-                           pound-count)))
-            (setq end-of-regex (point))))
-      (while (and (null end-of-regex)
-                  (search-forward-regexp "/#" (line-end-position) t))
-        (backward-char)
-        (when (and (eq (skip-chars-forward "#" (+ (point) pound-count))
-                       pound-count)
-                   ;; Inside regex literal, backslashes without pounds are
-                   ;; still special.
-                   (not (swift-mode:escaped-p (match-beginning 0) 0)))
-          (setq end-of-regex (point)))))
-    (unless end-of-regex
+          (if (and (eq (char-after) ?/)
+                   (progn
+                     (forward-char)
+                     (eq (skip-chars-forward "#" (+ (point) pound-count))
+                         pound-count)))
+              (setq end-of-regexp (point))
+            (while (and (search-forward "\\" (line-end-position) t)
+                        (not (eolp)))
+              (forward-char)
+              (push (cons (- (point) 2) (point)) escape-sequences))))
+      (while (and (null end-of-regexp)
+                  (search-forward-regexp "/#\\|\\\\" (line-end-position) t))
+        ;; Inside regexp literal, backslashes without pounds are still special.
+        (if (eq (char-before) ?\\)
+            (progn
+              (forward-char)
+              (push (cons (- (point) 2) (point)) escape-sequences))
+          (backward-char)
+          (when (eq (skip-chars-forward "#" (+ (point) pound-count))
+                    pound-count)
+            (setq end-of-regexp (point))))))
+    (if end-of-regexp
+        (dolist (range escape-sequences)
+          (put-text-property (car range) (cdr range)
+                             'swift-mode:escape-sequence t))
       (swift-mode:put-syntax-multiline-property start (point))
       (goto-char pos))
-    end-of-regex))
+    end-of-regexp))
 
 ;;; Lexers
 
@@ -1213,7 +1368,7 @@ This function does not return `implicit-;' or `type-:'."
     (forward-char)
     (swift-mode:token '> ">" (1- (point)) (point)))
 
-   ;; Regex
+   ;; Regexp
    ((and (looking-at "#*/")
          (equal (get-text-property (match-beginning 0) 'syntax-table)
                 (string-to-syntax "|")))
@@ -1244,7 +1399,7 @@ This function does not return `implicit-;' or `type-:'."
                  (equal (get-text-property (+ start (1- (match-end 0)))
                                            'syntax-table)
                         (string-to-syntax "|")))
-        ;; Regex after prefix operator, e.g. +++/<>/
+        ;; Regexp after prefix operator, e.g. +++/<>/
         (setq end (- end (- (length text) (- (match-end 0) 1))))
         (setq text (substring text 0 (- (match-end 0) 1))))
       (goto-char end)
@@ -1483,7 +1638,7 @@ This function does not return `implicit-;' or `type-:'."
     (backward-char)
     (swift-mode:token '> ">" (point) (1+ (point))))
 
-   ;; Regex
+   ;; Regexp
    ((and (save-excursion
            (skip-chars-backward "#")
            (eq (char-before) ?/))
@@ -1677,7 +1832,7 @@ If this line ends with a single-line comment, goto just before the comment."
 
 ;;; Comment or string chunks
 
-;; A chunk is either a string-chunk, regex, or a comment.
+;; A chunk is either a string-chunk, regexp, comment, or escaped identifier.
 ;; It have the type and the start position.
 
 (defun swift-mode:chunk (type start)
@@ -1725,9 +1880,13 @@ If this line ends with a single-line comment, goto just before the comment."
   "Return non-nil if the CHUNK is a multiline string."
   (eq (swift-mode:chunk:type chunk) 'multiline-string))
 
-(defun swift-mode:chunk:regex-p (chunk)
-  "Return non-nil if the CHUNK is a regex."
-  (eq (swift-mode:chunk:type chunk) 'regex))
+(defun swift-mode:chunk:regexp-p (chunk)
+  "Return non-nil if the CHUNK is a regexp."
+  (eq (swift-mode:chunk:type chunk) 'regexp))
+
+(defun swift-mode:chunk:escaped-identifier-p (chunk)
+  "Return non-nil if the CHUNK is an escaped identifier."
+  (eq (swift-mode:chunk:type chunk) 'escaped-identifier))
 
 (defun swift-mode:chunk:pound-count (chunk)
   "Return the number of pound signs before the start position of the CHUNK."
@@ -1759,7 +1918,10 @@ If PARSER-STATE is given, it is used instead of (syntax-ppss)."
         (swift-mode:chunk 'multiline-string (nth 8 parser-state)))
        ((save-excursion (goto-char (nth 8 parser-state))
                         (looking-at "#*/"))
-        (swift-mode:chunk 'regex (nth 8 parser-state)))
+        (swift-mode:chunk 'regexp (nth 8 parser-state)))
+       ((save-excursion (goto-char (nth 8 parser-state))
+                        (eq (char-after) ?`))
+        (swift-mode:chunk 'escaped-identifier (nth 8 parser-state)))
        (t (swift-mode:chunk 'single-line-string (nth 8 parser-state)))))
 
      ((eq (nth 4 parser-state) t)
