@@ -163,7 +163,7 @@ func f() {
     let x = 1
 
 
-    // Regexes
+    // Regexps
 
     // Simple case.
     let x = /a/
@@ -176,18 +176,18 @@ func f() {
     let x = /[\/ + "]/ + // "
       a()
 
-    // Regexes can contain quotes.
+    // Regexps can contain quotes.
     let x = /"/
     let x = /"""/
 
-    // Regex with extended delimiters can contain slashes.
+    // Regexp with extended delimiters can contain slashes.
     let x = #// /* /#
 
-    // Backslashes are still special in regexes with extended delimiters.
+    // Backslashes are still special in regexps with extended delimiters.
     let x = #/\/# /* /#
     a()
 
-    // Multiline regex.
+    // Multiline regexp.
     let x = #/
       let x = #/
       /#
@@ -204,26 +204,26 @@ func f() {
       let x = #/
       /##
 
-    // Comments are ignored in exended regexes.
+    // Comments are ignored in exended regexps.
     let x = #/
       let x = "a" # /#
       /#
 
-    // Multiline comment cannot contain regexes with */.
+    // Multiline comment cannot contain regexps with */.
     /*
-     let regex = /[0-9]*/
+     let regexp = /[0-9]*/
     let x = "*/ // "
 
 
-    // Regexes without extended delimiters cannot be preceded by infix
+    // Regexps without extended delimiters cannot be preceded by infix
     // operators without whitespaces.
     // `a`, infix operator `+/`, `b`, and infix operator `%/`
     let x = a+/b %/
       c()
 
-    // Regexes without extended delimiters can be preceded by infix operators
+    // Regexps without extended delimiters can be preceded by infix operators
     // with whitespaces.
-    // `a`, infix operator `+`, and regex /b %/
+    // `a`, infix operator `+`, and regexp /b %/
     let x = a + /b %/
     c()
 
@@ -231,20 +231,20 @@ func f() {
     let x = a/**/+/**//b %/
     c()
 
-    // Regexes with extended delimiters can be preceded by infix operators
+    // Regexps with extended delimiters can be preceded by infix operators
     // without whitespaces.
-    // `a`, infix operator `+`, and regex #/b /#
+    // `a`, infix operator `+`, and regexp #/b /#
     let x = a+#/b /#
     c()
 
-    // Regexes without extended delimiters cannot start with spaces.
+    // Regexps without extended delimiters cannot start with spaces.
     let regex = Regex {
         digit
         // infix operator `/`, and `a` with postfix operator `/'
           / a/
         digit
     }
-    // Regexes without extended delimiters cannot end with spaces.
+    // Regexps without extended delimiters cannot end with spaces.
     let regex = Regex {
         digit
         // prefix operator `/`, `a`, and infix operator `/'
@@ -253,7 +253,7 @@ func f() {
     }
     let regex = Regex {
         digit
-        // regex /a/
+        // regexp /a/
         /a/
         digit
     }
@@ -272,7 +272,7 @@ func f() {
         digit
     }
 
-    // Regexes with extended delimiters can start with spaces.
+    // Regexps with extended delimiters can start with spaces.
     let regex = Regex {
         digit
         #/ a /#
@@ -286,18 +286,18 @@ func f() {
     }
 
     foo {
-        // Regex /^/, infix operator /^/, and b().
+        // Regexp /^/, infix operator /^/, and b().
         let a = /^/ /^/
           b() // swift-mode:test:known-bug
     }
 
     foo {
-        // Regex /^/, infix operator /^/, regex /^/, and b()
+        // Regexp /^/, infix operator /^/, regexp /^/, and b()
         let a = /^/ /^/ /^/
         b()
     }
 
-    // Regex without extended delimiters cannot be multiline.
+    // Regexp without extended delimiters cannot be multiline.
     // Also, it cannot end with // or /*
     let a = /0 + // /
       b()
@@ -306,22 +306,22 @@ func f() {
                   */
       c()
 
-    // Regexes can be preceded with prefix operators wihtout spaces.
-    // prefix operator `+` and regex /a %/.
+    // Regexps can be preceded with prefix operators wihtout spaces.
+    // prefix operator `+` and regexp /a %/.
     let x = +/a %/
     b()
 
-    // Regexes without extended delimiters cannot contain unmatching close
+    // Regexps without extended delimiters cannot contain unmatching close
     // parentheses.
     array.reduce(1,/) { otherArray.reduce(1,/)
                         array.reduce(1,/) }; otherArray.reduce(1,/)
 
-    // Regexes without extended delimiters can contain matching close
+    // Regexps without extended delimiters can contain matching close
     // parentheses.
     array.reduce(1,/(a) { otherArray.reduce(1,/)
     array.reduce(1,/(a) }; otherArray.reduce(1,/)
 
-    // Regexes without extended delimiters can contain escaped close
+    // Regexps without extended delimiters can contain escaped close
     // parentheses.
     array.reduce(1,/\) { otherArray.reduce(1,/)
     array.reduce(1,/\) }; otherArray.reduce(1,/)
@@ -330,13 +330,13 @@ func f() {
     array.reduce(1,/[)] { otherArray.reduce(1,/)
     array.reduce(1,/[)] }; otherArray.reduce(1,/)
 
-    // Regexes with extended delimiters can contain unmatching close
+    // Regexps with extended delimiters can contain unmatching close
     // parentheses.
     array.reduce(1,#/) { otherArray.reduce(1,/#)
     array.reduce(1,#/) }; otherArray.reduce(1,/#)
 
 
-    // Regexes can contain unmatching close square brackets.
+    // Regexps can contain unmatching close square brackets.
     let d = a[/] %/
     ]
     let d = a[(/)] %/

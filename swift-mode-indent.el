@@ -227,7 +227,7 @@ declaration and its offset is `swift-mode:basic-offset'."
 (defun swift-mode:calculate-indent-of-multiline-string ()
   "Return the indentation of the current line inside a multiline string.
 
-Also used for regexes."
+Also used for regexps."
   (back-to-indentation)
   (let ((string-beginning-position
          (save-excursion (swift-mode:beginning-of-string))))

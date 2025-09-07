@@ -43,7 +43,7 @@
     (rx-to-string `(seq
                     (* blank)
                     (or ,list-item ,atx-heading))))
-  "Regex to match start of paragraphs in documentation comments.
+  "Regexp to match start of paragraphs in documentation comments.
 
 This is used by `swift-mode:fill-forward-paragraph' to extend
 `paragraph-start' such that the built-in fill functions recognize
@@ -63,7 +63,7 @@ these elements as the beginnings of their own paragraphs.")
                      ,setext-heading-underline)
                     (* blank)
                     eol)))
-  "Regex to match paragraph separators in documentation comments.
+  "Regexp to match paragraph separators in documentation comments.
 
 This is used by `swift-mode:fill-forward-paragraph' to extend
 `paragraph-separate'.")
