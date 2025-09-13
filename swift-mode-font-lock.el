@@ -473,7 +473,15 @@ The predicate MATCH-P is called with two arguments:
 - the limit of search functions."
   (let ((result nil))
     (while (and
-            (< (point) limit)
+            (progn
+              (dolist (key '(swift-mode:comment
+                             swift-mode:string
+                             swift-mode:regexp))
+                (when (get-text-property (point) key)
+                  (goto-char (next-single-property-change
+                              (point)
+                              key nil limit))))
+              (< (point) limit))
             (not result)
             (re-search-forward "\\_<\\(?:\\sw\\|\\s_\\)+\\_>" limit t))
       (when (save-excursion
