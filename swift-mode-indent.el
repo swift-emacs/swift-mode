@@ -174,54 +174,54 @@ declaration and its offset is `swift-mode:basic-offset'."
 (defun swift-mode:calculate-indent-of-multiline-comment ()
   "Return the indentation of the current line inside a multiline comment."
   (back-to-indentation)
-  (let ((comment-beginning-position (nth 8 (syntax-ppss)))
+  (let ((pos (point))
+        (comment-beginning-position (nth 8 (syntax-ppss)))
         (starts-with-asterisk (eq (char-after) ?*)))
-    (forward-line -1)
-    (back-to-indentation)
     (cond
-     ((<= (point) comment-beginning-position)
-      ;; The cursor was on the 2nd line of the comment.
+     ;; Before the closing delimiter.
+     ((and (looking-at "\\*+/")
+           (= pos
+              (save-excursion
+                (goto-char comment-beginning-position)
+                (if (forward-comment 1)
+                    (progn
+                      (backward-char)
+                      (skip-chars-backward "*")
+                      (point))
+                  -1))))
+      ;; Aligns with the first asterisk of the opening delimiter.
       (goto-char comment-beginning-position)
       (forward-char)
-      ;; If there are extra characters or spaces after asterisks, aligns with
-      ;; the first non-space character or end of line.  Otherwise, aligns with
-      ;; the first asterisk.
+      (swift-mode:indentation (point) 0))
+
+     ;; The cursor was on the 2nd line of the comment (excluding empty lines).
+     ((progn
+        (forward-line -1)
+        (while (and (bolp) (eolp) (< comment-beginning-position (point)))
+          (forward-line -1))
+        (back-to-indentation)
+        (<= (point) comment-beginning-position))
+      (goto-char comment-beginning-position)
+      (forward-char)
+      ;; If the line starts with a decoration asterisk, align with the first
+      ;; asterisk of the opening delimiter.
+      ;;
+      ;; Otherwise, if there are extra characters or spaces after asterisks,
+      ;; aligns with the first non-space character or end of line.
+      ;;
+      ;; Otherwise, aligns with the first asterisk of the opening delimiter.
       (when (and
-             (looking-at "\\**[^*\n]+")
              (not (and swift-mode:prepend-asterisk-to-comment-line
-                       starts-with-asterisk)))
+                       starts-with-asterisk))
+             (looking-at "\\**[^*\n]+"))
         (skip-chars-forward "*")
         (skip-syntax-forward " "))
       (swift-mode:indentation (point) 0))
 
-     ;; The cursor was on the 3rd or following lines of the comment.
-
-     ((= (save-excursion
-           (forward-line)
-           (back-to-indentation)
-           (point))
-         (save-excursion
-           (goto-char comment-beginning-position)
-           (if (forward-comment 1)
-               (progn
-                 (backward-char)
-                 (skip-chars-backward "*")
-                 (point))
-             -1)))
-      ;; Before the closing delimiter.  Aligns with the first asterisk of the
-      ;; opening delimiter.
-      (goto-char comment-beginning-position)
-      (forward-char)
-      (swift-mode:indentation (point) 0))
-
-     ;; Otherwise, aligns with a non-empty preceding line.
-
-     ((and (bolp) (eolp))
-      ;; The previous line is empty, so seeks a non-empty-line.
-      (swift-mode:calculate-indent-of-multiline-comment))
-
+     ;; The cursor was on the 3rd or following line of the comment, and found a
+     ;; non-empty preceding line.
      (t
-      ;; The previous line is not empty, so aligns to this line.
+      ;; Aligns to this line.
       (swift-mode:indentation (point) 0)))))
 
 (defun swift-mode:calculate-indent-of-multiline-string ()
