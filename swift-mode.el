@@ -10,7 +10,7 @@
 ;; Maintainer: taku0 <mxxouy6x3m_github@tatapa.org>
 ;;
 ;; Version: 9.4.0
-;; Package-Requires: ((emacs "24.4") (seq "2.3"))
+;; Package-Requires: ((emacs "25.2"))
 ;; Keywords: languages swift
 ;; URL: https://github.com/swift-emacs/swift-mode
 

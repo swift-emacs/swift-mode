@@ -3,7 +3,7 @@
 # Run linter in Docker.  Used in Makefile.
 
 # Indentation rules changed since 29.
-for version in 30 29 # 28 27 26 25 24
+for version in 30 29 # 28 27 26 25
 do
     docker \
         run \
