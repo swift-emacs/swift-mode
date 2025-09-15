@@ -306,9 +306,9 @@ Return a JSON object."
 The manifest file is searched from the PROJECT-DIRECTORY, defaults to
 `default-directory', or its ancestors."
   (let* ((description (swift-mode:describe-package project-directory))
-         (modules (cdr (assoc 'targets description))))
+         (modules (assoc-default 'targets description)))
     (seq-find
-     (lambda (module) (not (equal "test" (cdr (assoc 'type module)))))
+     (lambda (module) (not (equal "test" (assoc-default 'type module))))
      modules)))
 
 (defun swift-mode:read-package-name (project-directory)
@@ -316,21 +316,21 @@ The manifest file is searched from the PROJECT-DIRECTORY, defaults to
 
 The manifest file is searched from the PROJECT-DIRECTORY, defaults to
 `default-directory', or its ancestors."
-  (cdr (assoc 'name (swift-mode:read-main-module project-directory))))
+  (assoc-default 'name (swift-mode:read-main-module project-directory)))
 
 (defun swift-mode:read-c99-name (project-directory)
   "Read the C99 name from the manifest file Package.swift.
 
 The manifest file is searched from the PROJECT-DIRECTORY, defaults to
 `default-directory', or its ancestors."
-  (cdr (assoc 'c99name (swift-mode:read-main-module project-directory))))
+  (assoc-default 'c99name (swift-mode:read-main-module project-directory)))
 
 (defun swift-mode:read-module-type (project-directory)
   "Read the module type from the manifest file Package.swift.
 
 The manifest file is searched from the PROJECT-DIRECTORY, defaults to
 `default-directory', or its ancestors."
-  (cdr (assoc 'type (swift-mode:read-main-module project-directory))))
+  (assoc-default 'type (swift-mode:read-main-module project-directory)))
 
 (defun swift-mode:join-path (directory &rest components)
   "Make path string for DIRECTORY followed by COMPONENTS."
@@ -440,11 +440,11 @@ or its ancestors."
 (defun swift-mode:list-ios-simulator-devices ()
   "List available iOS simulator devices."
   (let* ((json (swift-mode:list-ios-simulators))
-         (devices (cdr (assoc 'devices json)))
+         (devices (assoc-default 'devices json))
          (flattened (apply #'seq-concatenate 'list (seq-map #'cdr devices)))
          (available-devices
           (seq-filter
-           (lambda (device) (cdr (assoc 'isAvailable device)))
+           (lambda (device) (assoc-default 'isAvailable device))
            flattened)))
     available-devices))
 
@@ -455,8 +455,8 @@ or its ancestors."
                                     swift-mode:ios-local-device-identifier))
                         (seq-map
                          (lambda (device)
-                           (cons (cdr (assoc 'name device))
-                                 (cdr (assoc 'udid device))))
+                           (cons (assoc-default 'name device)
+                                 (assoc-default 'udid device)))
                          devices))))
     (widget-choose "Choose a device" items)))
 
@@ -511,9 +511,9 @@ passed as a destination to xcodebuild."
 
 xcodebuild is executed in PROJECT-DIRECTORY."
   (let* ((json (swift-mode:xcodebuild-list project-directory))
-         (project (or (cdr (assoc 'project json))
-                      (cdr (assoc 'workspace json))))
-         (schemes (cdr (assoc 'schemes project)))
+         (project (or (assoc-default 'project json)
+                      (assoc-default 'workspace json)))
+         (schemes (assoc-default 'schemes project))
          (choices (seq-map
                    (lambda (scheme) (cons scheme scheme))
                    schemes)))
@@ -768,8 +768,8 @@ Return nil otherwise."
   (while (null (seq-find
                 (lambda (device)
                   (and
-                   (string-equal (cdr (assoc 'udid device)) device-identifier)
-                   (string-equal (cdr (assoc 'state device)) "Booted")))
+                   (string-equal (assoc-default 'udid device) device-identifier)
+                   (string-equal (assoc-default 'state device) "Booted")))
                 (swift-mode:list-ios-simulator-devices)))
     (sit-for 0.5)))
 
@@ -854,15 +854,15 @@ in Xcode build settings."
          (target-device
           (seq-find
            (lambda (device)
-             (string-equal (cdr (assoc 'udid device)) device-identifier))
+             (string-equal (assoc-default 'udid device) device-identifier))
            devices))
          (active-devices
           (seq-filter
            (lambda (device)
-             (string-equal (cdr (assoc 'state device)) "Booted"))
+             (string-equal (assoc-default 'state device) "Booted"))
            devices))
          (target-booted
-          (string-equal (cdr (assoc 'state target-device)) "Booted"))
+          (string-equal (assoc-default 'state target-device) "Booted"))
          (simulator-running (consp active-devices))
          (progress-reporter
           (make-progress-reporter "Waiting for simulator...")))
@@ -959,9 +959,9 @@ the value of `swift-mode:ios-project-scheme' is used."
            sdk
            device-identifier))
          (codesigning-folder-path
-          (cdr (assoc "CODESIGNING_FOLDER_PATH" build-settings)))
+          (assoc-default "CODESIGNING_FOLDER_PATH" build-settings))
          (product-bundle-identifier
-          (cdr (assoc "PRODUCT_BUNDLE_IDENTIFIER" build-settings))))
+          (assoc-default "PRODUCT_BUNDLE_IDENTIFIER" build-settings)))
     (unless codesigning-folder-path
       (error "Cannot get codesigning folder path"))
     (unless product-bundle-identifier
@@ -1019,22 +1019,23 @@ The manifest file is searched from the PROJECT-DIRECTORY, defaults to
 
 If TARGET is non-nil, return only sources of that target."
   (let* ((description (swift-mode:describe-package project-directory))
-         (targets (cdr (assoc 'targets description)))
+         (targets (assoc-default 'targets description))
          (test-targets (seq-filter
                         (lambda (module)
-                          (and (equal "test" (cdr (assoc 'type module)))
+                          (and (equal "test" (assoc-default 'type module))
                                (or (null target)
-                                   (equal target (cdr (assoc 'name module))))))
+                                   (equal target
+                                          (assoc-default 'name module)))))
                         targets))
-         (project-path (cdr (assoc 'path description)))
+         (project-path (assoc-default 'path description))
          target-path)
     (seq-mapcat
      (lambda (target)
        (setq target-path
-             (expand-file-name (cdr (assoc 'path target)) project-path))
+             (expand-file-name (assoc-default 'path target) project-path))
        (mapcar (lambda (source)
                  (expand-file-name source target-path))
-               (cdr (assoc 'sources target))))
+               (assoc-default 'sources target)))
      test-targets)))
 
 (defun swift-mode:resolve-swift-test-file (file)
