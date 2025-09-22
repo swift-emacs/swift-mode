@@ -835,6 +835,14 @@ class Foo {
     public
       deinit {
     }
+
+    consuming
+      func foo() {
+    }
+
+    borrowing
+      func foo() {
+    }
 }
 
 // async let

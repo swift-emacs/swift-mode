@@ -821,10 +821,10 @@ move point to the end of the regexp and return non-nil."
        ;; Suppress implicit semicolon around keywords that cannot start or end
        ;; statements.
        (member (swift-mode:token:text previous-token)
-               '("any" "some" "inout" "borrowing" "consuming" "sending" "in"
+               '("any" "some" "inout" "sending" "in"
                  "where" "each"))
        (member (swift-mode:token:text next-token)
-               '("any" "some" "inout" "borrowing" "consuming" "sending" "throws"
+               '("any" "some" "inout" "sending" "throws"
                  "rethrows" "in" "where" "each"))
 
        ;; Suppress implicit semicolon between throws and open parenthesis.
@@ -893,7 +893,7 @@ move point to the end of the regexp and return non-nil."
                 "mutating" "nonmutating" "optional" "override" "postfix"
                 "prefix" "required" "static" "unowned" "weak" "internal"
                 "package" "private" "public" "open" "fileprivate" "nonisolated"
-                "distributed" "isolated"))
+                "distributed" "isolated" "borrowing" "consuming"))
       nil)
 
      ;; internal(set) private(set) public(set) open(set) fileprivate(set)
