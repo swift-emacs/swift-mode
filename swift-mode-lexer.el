@@ -257,16 +257,14 @@ Intended for `syntax-propertize-function'."
        (swift-mode:chunk:start chunk)
        end
        "\"\"\""
-       (swift-mode:chunk:pound-count
-        chunk)))
+       (swift-mode:chunk:pound-count chunk)))
 
      ((swift-mode:chunk:single-line-string-p chunk)
       (swift-mode:syntax-propertize:scan-string
        (swift-mode:chunk:start chunk)
        end
        "\""
-       (swift-mode:chunk:pound-count
-        chunk)))
+       (swift-mode:chunk:pound-count chunk)))
 
      ((swift-mode:chunk:escaped-identifier-p chunk)
       (swift-mode:syntax-propertize:scan-string
