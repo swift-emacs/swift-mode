@@ -206,7 +206,7 @@ comment particularly well)."
     (save-match-data
       (skip-syntax-backward " ")
       (let ((chunk (or (swift-mode:chunk-after)
-                       (and (looking-at "\\s *\\(/[/*]\\|#*\"\"\"\\)")
+                       (and (looking-at "\\s *\\(/[/*]\\|#*\"\"\"$\\)")
                             (swift-mode:chunk-after (match-end 0)))
                        (save-excursion
                          (skip-chars-backward "#")
@@ -292,7 +292,7 @@ Fix up multiline comments.
                       (save-match-data
                         (goto-char from)
                         (or (swift-mode:chunk-after)
-                            (and (looking-at "\\s *\\(/[/*]\\|#*\"\"\"\\)")
+                            (and (looking-at "\\s *\\(/[/*]\\|#*\"\"\"$\\)")
                                  (swift-mode:chunk-after (match-end 0)))))))
              comment-start-pos
              comment-end-pos
@@ -408,7 +408,7 @@ Use `comment-fill-column' as `fill-column' when filling inside a comment."
       (let* ((chunk (save-excursion
                       (save-match-data
                         (or (swift-mode:chunk-after)
-                            (and (looking-at "\\s *\\(/[/*]\\|#*\"\"\"\\)")
+                            (and (looking-at "\\s *\\(/[/*]\\|#*\"\"\"$\\)")
                                  (swift-mode:chunk-after (match-end 0)))))))
              (fill-column
               (if (swift-mode:chunk:comment-p chunk)
@@ -461,7 +461,7 @@ Return non-nil if skipped a paragraph.  Return nil otherwise."
         (skip-syntax-backward " >")
       (skip-syntax-forward " >"))
     (let ((chunk (or (swift-mode:chunk-after)
-                     (and (looking-at "/[/*]\\|#*\"\"\"")
+                     (and (looking-at "/[/*]\\|#*\"\"\"$")
                           (swift-mode:chunk-after (match-end 0))))))
       (cond
        ((swift-mode:chunk:single-line-comment-p chunk)
@@ -637,7 +637,7 @@ Return non-nil if skipped a paragraph.  Return nil otherwise."
             (when (eq direction 'backward)
               (goto-char pos)))
         (back-to-indentation)
-        (when (or (looking-at "/[/*]\\|#*\"\"\"")
+        (when (or (looking-at "/[/*]\\|#*\"\"\"$")
                   (swift-mode:chunk-after))
           (setq done t)
           (when (eq direction 'backward)

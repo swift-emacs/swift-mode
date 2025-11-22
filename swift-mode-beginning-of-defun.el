@@ -1225,7 +1225,7 @@ of lines.  Empty lines split blocks.  Example:
         (progn
           (goto-char string-beginning-position)
           (cond
-           ((and (looking-at "\"\"\"")
+           ((and (looking-at "\"\"\"$")
                  (save-excursion
                    (skip-chars-forward "\"")
                    (skip-syntax-forward " >")
