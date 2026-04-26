@@ -14,6 +14,8 @@ import func Foo.foo // EXPECTED: "import" swift-mode:keyword-face "func" swift-m
 @available(macOS 256, *) // EXPECTED: "@available" swift-mode:attribute-face "(" swift-mode:bracket-face "macOS" swift-mode:build-config-keyword-face "256" swift-mode:number-face "," swift-mode:delimiter-face "\*" swift-mode:operator-face ")" swift-mode:bracket-face
 @inline(always) // EXPECTED: "@inline" swift-mode:attribute-face "(" swift-mode:bracket-face "always" swift-mode:build-config-keyword-face ")" swift-mode:bracket-face
 @inline(never) // EXPECTED: "@inline" swift-mode:attribute-face "(" swift-mode:bracket-face "never" swift-mode:build-config-keyword-face ")" swift-mode:bracket-face
+@export(implementation) // EXPECTED: "@export" swift-mode:attribute-face "(" swift-mode:bracket-face "implementation" swift-mode:build-config-keyword-face ")" swift-mode:bracket-face
+@export(interface) // EXPECTED: "@export" swift-mode:attribute-face "(" swift-mode:bracket-face "interface" swift-mode:build-config-keyword-face ")" swift-mode:bracket-face
 
 
 // Precedence groups
