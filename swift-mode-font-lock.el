@@ -873,7 +873,7 @@ Excludes true, false, and keywords begin with a number sign.")
     "Linux" "Windows"
     "simulator" "unavailable" "noasync"
     "hasFeature" "hasAttribute" "before" "introduced" "deprecated" "obsoleted"
-    "message" "renamed")
+    "message" "renamed" "always" "never")
   "Keywords for build configuration statements.")
 
 (defconst swift-mode:standard-precedence-groups
