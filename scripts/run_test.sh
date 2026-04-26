@@ -10,4 +10,5 @@
   --eval "(setq debug-on-error t)" \
   --eval "(setq max-lisp-eval-depth 1600)" \
   -l test/swift-mode-test.el \
-  -f swift-mode:run-test
+  -f swift-mode:run-test \
+  | grep -v '^Indenting region\.\.\.'
