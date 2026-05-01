@@ -584,9 +584,8 @@ Also used for regexps."
              (previous-of-parent (save-excursion
                                    (goto-char (swift-mode:token:start parent))
                                    (swift-mode:backward-token))))
-        (when (and
-               (equal (swift-mode:token:text parent) "case")
-               (equal (swift-mode:token:text previous-of-parent) "for"))
+        (when (and (equal (swift-mode:token:text parent) "case")
+                   (equal (swift-mode:token:text previous-of-parent) "for"))
           (setq parent previous-of-parent))
         (cond
          ((member (swift-mode:token:text parent) '("case" "catch"))
@@ -876,14 +875,12 @@ the expression."
 
 (defun swift-mode:forward-attributes ()
   "Skip forward comments, whitespaces, and attributes."
-  (while
-      (not
-       (eq (point)
-           (progn
-             (forward-comment (point-max))
-             (when (eq (char-after) ?@)
-               (swift-mode:forward-token-simple))
-             (point))))))
+  (while (not (eq (point)
+                  (progn
+                    (forward-comment (point-max))
+                    (when (eq (char-after) ?@)
+                      (swift-mode:forward-token-simple))
+                    (point))))))
 
 (defun swift-mode:calculate-indent-before-else (&optional offset)
   "Return indentation before \"else\" token.
@@ -1337,12 +1334,11 @@ comma at eol."
         (goto-char (swift-mode:token:start parent))
         (swift-mode:backward-token-or-list)))
 
-     ((or
-       (memq (swift-mode:token:type parent)
-             swift-mode:statement-parent-tokens)
-       (member (swift-mode:token:text parent)
-               swift-mode:statement-parent-tokens)
-       (eq (swift-mode:token:type parent) 'outside-of-buffer))
+     ((or (memq (swift-mode:token:type parent)
+                swift-mode:statement-parent-tokens)
+          (member (swift-mode:token:text parent)
+                  swift-mode:statement-parent-tokens)
+          (eq (swift-mode:token:type parent) 'outside-of-buffer))
       (goto-char (swift-mode:token:end parent))
       (let ((next-token (swift-mode:forward-token-or-list))
             result)
@@ -1351,8 +1347,7 @@ comma at eol."
            ((equal (swift-mode:token:text next-token) "case")
             (setq result next-token))
 
-           ((member (swift-mode:token:text next-token)
-                    '("let" "var"))
+           ((member (swift-mode:token:text next-token) '("let" "var"))
             ;; Special handling for "let" and "var".
             ;;
             ;; Declaring multiple variables with single let statement doesn't
@@ -1427,10 +1422,9 @@ the beginning of a line just before a token with one of given token types,
 the function returns.  Typically, this is a list of token types that starts
 list element (e.g. `case' of switch statement body).  If STOP-AT-BOL-TOKEN-TYPES
 is the symbol `any', it matches all tokens."
-  (let*
-      ((parent (swift-mode:backward-token-or-list))
-       (type (swift-mode:token:type parent))
-       (text (swift-mode:token:text parent)))
+  (let* ((parent (swift-mode:backward-token-or-list))
+         (type (swift-mode:token:type parent))
+         (text (swift-mode:token:text parent)))
     (while (not
             ;; Stops loop when...
             (or
@@ -1468,10 +1462,9 @@ is the symbol `any', it matches all tokens."
              ;; }
              (and stop-at-bol-token-types
                   (and
-                   (or
-                    (eq stop-at-bol-token-types 'any)
-                    (member type stop-at-bol-token-types)
-                    (member text stop-at-bol-token-types))
+                   (or (eq stop-at-bol-token-types 'any)
+                       (member type stop-at-bol-token-types)
+                       (member text stop-at-bol-token-types))
                    (swift-mode:bol-other-than-comments-p)))))
       (setq parent (swift-mode:backward-token-or-list))
       (setq type (swift-mode:token:type parent))
@@ -1883,11 +1876,10 @@ See `indent-new-comment-line' for SOFT."
      ;; the comment.
      ;; Uses the prefix of the previous line.
 
-     ((and
-       swift-mode:prepend-asterisk-to-comment-line
-       (save-excursion
-         (forward-line -1)
-         (looking-at "\\s *\\(\\*+\\s *\\)")))
+     ((and swift-mode:prepend-asterisk-to-comment-line
+           (save-excursion
+             (forward-line -1)
+             (looking-at "\\s *\\(\\*+\\s *\\)")))
       ;; The previous line has a prefix.  Uses it.
       (insert-and-inherit (match-string-no-properties 1))
       (indent-according-to-mode))
@@ -1921,48 +1913,42 @@ See `indent-new-comment-line' for SOFT."
   (cond
    ;; Indents electrically and insert a space when "*" is inserted at the
    ;; beginning of a line inside a multiline comment.
-   ((and
-     swift-mode:prepend-asterisk-to-comment-line
-     (= last-command-event ?*)
-     (swift-mode:chunk:comment-p (swift-mode:chunk-after))
-     (save-excursion (backward-char) (skip-syntax-backward " ") (bolp)))
+   ((and swift-mode:prepend-asterisk-to-comment-line
+         (= last-command-event ?*)
+         (swift-mode:chunk:comment-p (swift-mode:chunk-after))
+         (save-excursion (backward-char) (skip-syntax-backward " ") (bolp)))
     (when swift-mode:insert-space-after-asterisk-in-comment
       (insert-and-inherit " "))
     (when electric-indent-mode
       (indent-according-to-mode)))
 
    ;; Fixes "* /" at the end of a multiline comment to "*/".
-   ((and
-     swift-mode:fix-comment-close
-     (= last-command-event ?/)
-     (let ((chunk (swift-mode:chunk-after))
-           (pos (point)))
-       (and
-        (swift-mode:chunk:comment-p chunk)
-        (save-excursion
-          (forward-line 0)
-          (and
-           (looking-at "^\\s *\\*\\s +/")
-           (eq (match-end 0) pos)
-           (swift-mode:incomplete-comment-p chunk))))))
+   ((and swift-mode:fix-comment-close
+         (= last-command-event ?/)
+         (let ((chunk (swift-mode:chunk-after))
+               (pos (point)))
+           (and (swift-mode:chunk:comment-p chunk)
+                (save-excursion
+                  (forward-line 0)
+                  (and (looking-at "^\\s *\\*\\s +/")
+                       (eq (match-end 0) pos)
+                       (swift-mode:incomplete-comment-p chunk))))))
     (backward-char)
     (delete-horizontal-space)
     (forward-char))
 
    ;; Indents electrically when ")" is inserted at bol as the end of a string
    ;; interpolation.
-   ((and
-     electric-indent-mode
-     (= last-command-event ?\))
-     (save-excursion (backward-char) (skip-syntax-backward " ") (bolp))
-     (eq (swift-mode:chunk:start (swift-mode:chunk-after)) (1- (point))))
+   ((and electric-indent-mode
+         (= last-command-event ?\))
+         (save-excursion (backward-char) (skip-syntax-backward " ") (bolp))
+         (eq (swift-mode:chunk:start (swift-mode:chunk-after)) (1- (point))))
     (indent-according-to-mode))
 
    ;; Indents electrically after newline inside strings and comments.
    ;; Unlike `electric-indent-mode', the previous line is not indented.
-   ((and
-     electric-indent-mode
-     (= last-command-event ?\n))
+   ((and electric-indent-mode
+         (= last-command-event ?\n))
     (let ((chunk (swift-mode:chunk-after)))
       (if (swift-mode:chunk:multiline-comment-p chunk)
           (progn

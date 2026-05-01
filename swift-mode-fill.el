@@ -40,9 +40,8 @@
   (let* ((list-marker '(or (any ?- ?+ ?*) (seq (* (any "0-9")) (any ".)"))))
          (list-item `(seq ,list-marker (or blank eol)))
          (atx-heading '(seq (+ "#") blank)))
-    (rx-to-string `(seq
-                    (* blank)
-                    (or ,list-item ,atx-heading))))
+    (rx-to-string `(seq (* blank)
+                        (or ,list-item ,atx-heading))))
   "Regexp to match start of paragraphs in documentation comments.
 
 This is used by `swift-mode:fill-forward-paragraph' to extend
@@ -55,14 +54,12 @@ these elements as the beginnings of their own paragraphs.")
                               (>= 3 "_" (* blank))
                               (>= 3 "*" (* blank))))
          (setext-heading-underline '(or (* "=") (* "-"))))
-    (rx-to-string `(seq
-                    (* blank)
-                    (or
-                     ,code-fence
-                     ,thematic-break
-                     ,setext-heading-underline)
-                    (* blank)
-                    eol)))
+    (rx-to-string `(seq (* blank)
+                        (or ,code-fence
+                            ,thematic-break
+                            ,setext-heading-underline)
+                        (* blank)
+                        eol)))
   "Regexp to match paragraph separators in documentation comments.
 
 This is used by `swift-mode:fill-forward-paragraph' to extend
@@ -361,9 +358,9 @@ Fix up multiline comments.
                         (forward-char)
                         (skip-chars-forward "*")
                         (skip-syntax-forward " ")
-                        (when (and
-                               (or one-line have-break-after-open-delimiter)
-                               (not (eolp)))
+                        (when (and (or one-line
+                                       have-break-after-open-delimiter)
+                                   (not (eolp)))
                           (delete-horizontal-space)
                           (insert-and-inherit "\n")
                           (indent-according-to-mode))
@@ -374,9 +371,9 @@ Fix up multiline comments.
                         (skip-chars-backward "*")
                         (skip-syntax-backward " ")
                         (setq contents-end (point))
-                        (when (and
-                               (or one-line have-break-before-close-delimiter)
-                               (not (bolp)))
+                        (when (and (or one-line
+                                       have-break-before-close-delimiter)
+                                   (not (bolp)))
                           (delete-horizontal-space)
                           (insert-and-inherit "\n")
                           (indent-according-to-mode)))
@@ -410,10 +407,9 @@ Use `comment-fill-column' as `fill-column' when filling inside a comment."
                         (or (swift-mode:chunk-after)
                             (and (looking-at "\\s *\\(/[/*]\\|#*\"\"\"$\\)")
                                  (swift-mode:chunk-after (match-end 0)))))))
-             (fill-column
-              (if (swift-mode:chunk:comment-p chunk)
-                  comment-fill-column
-                fill-column)))
+             (fill-column (if (swift-mode:chunk:comment-p chunk)
+                              comment-fill-column
+                            fill-column)))
         (funcall current-fill-column))
     (funcall current-fill-column)))
 
@@ -468,14 +464,17 @@ Return non-nil if skipped a paragraph.  Return nil otherwise."
         (swift-mode:fill-skip-paragraph-in-single-line-comment
          chunk
          direction))
+
        ((swift-mode:chunk:multiline-comment-p chunk)
         (swift-mode:fill-skip-paragraph-in-multiline-comment
          chunk
          direction))
+
        ((swift-mode:chunk:string-p chunk)
         (swift-mode:fill-skip-paragraph-in-string
          chunk
          direction))
+
        (t
         (swift-mode:fill-skip-paragraph-in-code direction))))))
 

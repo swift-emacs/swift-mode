@@ -308,17 +308,15 @@ TYPE is one of `case', `let', or `var'."
   ;; let (x, y) = (1, 2) // not supported yet
   (let (next-token
         (items '()))
-    (while
-        (progn
-          (setq next-token (swift-mode:forward-token-or-list))
-          (when (eq (swift-mode:token:type next-token) 'identifier)
-            (push (swift-mode:declaration type next-token nil) items))
-          (while
-              (progn
-                (setq next-token (swift-mode:forward-token-or-list))
-                (not (memq (swift-mode:token:type next-token)
-                           '(\, \; implicit-\; } outside-of-buffer)))))
-          (eq (swift-mode:token:type next-token) '\,)))
+    (while (progn
+             (setq next-token (swift-mode:forward-token-or-list))
+             (when (eq (swift-mode:token:type next-token) 'identifier)
+               (push (swift-mode:declaration type next-token nil) items))
+             (while (progn
+                      (setq next-token (swift-mode:forward-token-or-list))
+                      (not (memq (swift-mode:token:type next-token)
+                                 '(\, \; implicit-\; } outside-of-buffer)))))
+             (eq (swift-mode:token:type next-token) '\,)))
     (when (eq (swift-mode:token:type next-token) '})
       (goto-char (swift-mode:token:start next-token)))
     items))
@@ -334,18 +332,16 @@ For example, given the following code, this return tokens \"foo\", \"a\",
 and \"c\".
 
   func foo(a b: Int, c: Int)"
-  (let* ((name-token
-          (swift-mode:forward-token-or-list-except-curly-bracket))
+  (let* ((name-token (swift-mode:forward-token-or-list-except-curly-bracket))
          next-token
          parameter-end
          (parameter-names '())
          (seq-contains-p (if (fboundp 'seq-contains-p)
                              'seq-contains-p
                            'seq-contains))
-         (is-operator
-          (funcall seq-contains-p
-                   "/=-+!*%<>&|^~?."
-                   (elt (swift-mode:token:text name-token) 0))))
+         (is-operator (funcall seq-contains-p
+                               "/=-+!*%<>&|^~?."
+                               (elt (swift-mode:token:text name-token) 0))))
     (cond
      ((eq (swift-mode:token:type name-token) 'identifier)
       (while (progn

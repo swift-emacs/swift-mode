@@ -150,12 +150,14 @@ The cursor must be at the beginning of a statement."
       (cond
        ((member (swift-mode:token:text token) '("var" "let"))
         (when (swift-mode:class-like-member-p) token))
+
        ((equal (swift-mode:token:text token) "case")
         (swift-mode:backward-sexps-until-open-curly-bracket)
         (swift-mode:beginning-of-statement)
         (let ((parent-token (swift-mode:find-defun-keyword-simple)))
           (when (equal (swift-mode:token:text parent-token) "enum")
             token)))
+
        (t token)))))
 
 (defun swift-mode:find-defun-keyword-simple ()
@@ -177,9 +179,8 @@ The cursor must be at the beginning of a statement."
         (stop-tokens '(\; implicit-\; {} { } \( \) \[ \]
                        anonymous-function-parameter-in outside-of-buffer))
         (class-token nil))
-    (while (not (or
-                 (memq (swift-mode:token:type token) stop-tokens)
-                 (member (swift-mode:token:text token) defun-keywords)))
+    (while (not (or (memq (swift-mode:token:type token) stop-tokens)
+                    (member (swift-mode:token:text token) defun-keywords)))
       ;; "class" token may be either a class declaration keyword or a modifier:
       ;;
       ;; // Nested class named "final"
@@ -201,14 +202,13 @@ The cursor must be at the beginning of a statement."
   "Return t if the cursor is on a member of a class-like declaration.
 Also return t if the cursor is on a global declaration.
 Return nil otherwise."
-  (or
-   (let ((parent (swift-mode:backward-sexps-until-open-curly-bracket)))
-     (eq (swift-mode:token:type parent) 'outside-of-buffer))
-   (progn
-     (swift-mode:beginning-of-statement)
-     (member
-      (swift-mode:token:text (swift-mode:find-defun-keyword-simple))
-      '("enum" "struct" "actor" "class" "protocol" "extension")))))
+  (or (let ((parent (swift-mode:backward-sexps-until-open-curly-bracket)))
+        (eq (swift-mode:token:type parent) 'outside-of-buffer))
+      (progn
+        (swift-mode:beginning-of-statement)
+        (member
+         (swift-mode:token:text (swift-mode:find-defun-keyword-simple))
+         '("enum" "struct" "actor" "class" "protocol" "extension")))))
 
 (defun swift-mode:beginning-of-statement ()
   "Move backward to the beginning of a statement.
@@ -257,10 +257,12 @@ Intended for internal use."
       (when (< pos (point))
         ;; no statements found
         (goto-char (point-min))))
+
      ((< (point) (swift-mode:token:end previous-token))
       ;; The pos is at C.
       (goto-char (swift-mode:token:end previous-token))
       (swift-mode:do-beginning-of-statement))
+
      (t
       ;; The pos is at B.
       (forward-comment (point-max))
@@ -304,6 +306,7 @@ Intended for internal use."
 When called at the end of a sentence, keep the position.
 
 Return the next token.
+
 Intended for internal use."
   (let ((chunk (swift-mode:chunk-after)))
     (when chunk
@@ -314,10 +317,9 @@ Intended for internal use."
         next-token)
     (cond
      ;; Already at the end of statement.  Returns next token.
-     ((and
-       (memq (swift-mode:token:type previous-token)
-             '(\; anonymous-function-parameter-in))
-       (eq (swift-mode:token:end previous-token) pos))
+     ((and (memq (swift-mode:token:type previous-token)
+                 '(\; anonymous-function-parameter-in))
+           (eq (swift-mode:token:end previous-token) pos))
       (save-excursion (swift-mode:forward-token)))
 
      ;; Between statements, or before the first statement.
@@ -353,11 +355,10 @@ Intended for internal use."
         token)
     (while (progn
              (setq token (swift-mode:forward-token-or-list))
-             (or
-              (not (memq (swift-mode:token:type token)
-                         '(\; implicit-\; } anonymous-function-parameter-in
-                           outside-of-buffer)))
-              (swift-mode:pseudo-implicit-semicolon-p token))))
+             (or (not (memq (swift-mode:token:type token)
+                            '(\; implicit-\; } anonymous-function-parameter-in
+                              outside-of-buffer)))
+                 (swift-mode:pseudo-implicit-semicolon-p token))))
     (if (memq (swift-mode:token:type token)
               '(\; anonymous-function-parameter-in))
         (goto-char (swift-mode:token:end token))
@@ -441,23 +442,21 @@ Intended for internal use."
   (when (save-excursion
           (let ((pos (point))
                 (token (swift-mode:backward-token-or-list)))
-            (and
-             (memq (swift-mode:token:type token)
-                   '(\; anonymous-function-parameter-in))
-             (eq (swift-mode:token:end token) pos))))
+            (and (memq (swift-mode:token:type token)
+                       '(\; anonymous-function-parameter-in))
+                 (eq (swift-mode:token:end token) pos))))
     (swift-mode:backward-token))
   (or
    ;; last statement in non-empty block
-   (and
-    (let ((next-token (save-excursion (swift-mode:forward-token))))
-      (memq (swift-mode:token:type next-token) '(} outside-of-buffer)))
-    (let ((previous-token (save-excursion
-                            (forward-comment (- (point)))
-                            (swift-mode:backward-token))))
-      (not (eq (swift-mode:token:type previous-token) '{)))
-    (let ((pos (point)))
-      (forward-comment (- (point)))
-      (< (point) pos)))
+   (and (let ((next-token (save-excursion (swift-mode:forward-token))))
+          (memq (swift-mode:token:type next-token) '(} outside-of-buffer)))
+        (let ((previous-token (save-excursion
+                                (forward-comment (- (point)))
+                                (swift-mode:backward-token))))
+          (not (eq (swift-mode:token:type previous-token) '{)))
+        (let ((pos (point)))
+          (forward-comment (- (point)))
+          (< (point) pos)))
    ;; other cases
    (let (token)
      (while (progn
@@ -486,14 +485,13 @@ Return nil otherwise."
   ;; } // implicit semicolon here
   ;; catch {
   ;; }
-  (and
-   (eq (swift-mode:token:type token) 'implicit-\;)
-   (save-excursion
-     (goto-char (swift-mode:token:end token))
-     (let ((next-token (swift-mode:forward-token)))
-       (or
-        (eq (swift-mode:token:type next-token) '{)
-        (member (swift-mode:token:text next-token) '("catch" "else")))))))
+  (and (eq (swift-mode:token:type token) 'implicit-\;)
+       (save-excursion
+         (goto-char (swift-mode:token:end token))
+         (let ((next-token (swift-mode:forward-token)))
+           (or (eq (swift-mode:token:type next-token) '{)
+               (member (swift-mode:token:text next-token)
+                       '("catch" "else")))))))
 
 (defun swift-mode:mark-defun (&optional arg allow-extend)
   "Put mark at the end of defun, point at the beginning of defun.
@@ -514,8 +512,11 @@ or preceding (if the point is after the mark) defun."
                  allow-extend
                  #'swift-mode:end-of-defun
                  #'swift-mode:beginning-of-defun)))
-    (if (and  (not region) (called-interactively-p 'interactive))
-        (progn (message "No defun found") nil)
+    (if (and (not region)
+             (called-interactively-p 'interactive))
+        (progn
+          (message "No defun found")
+          nil)
       region)))
 
 (defun swift-mode:narrow-to-defun (&optional include-comments)
@@ -532,8 +533,11 @@ Interactively, the behavior depends on ‘narrow-to-defun-include-comments’."
                  include-comments
                  #'swift-mode:end-of-defun
                  #'swift-mode:beginning-of-defun)))
-    (if (and  (not region) (called-interactively-p 'interactive))
-        (progn (message "No defun found") nil)
+    (if (and (not region)
+             (called-interactively-p 'interactive))
+        (progn
+          (message "No defun found")
+          nil)
       region)))
 
 (defun swift-mode:forward-sentence (&optional arg)
@@ -576,22 +580,19 @@ Both functions return t if succeeded, return nil otherwise."
   (setq arg (or arg 1))
   (let ((reversed (< arg 0))
         (count (abs arg))
-        (direction
-         (if (and allow-extend
-                  (and (eq last-command this-command) (mark t)))
-             swift-mode:last-mark-direction
-           swift-mode:mark-defun-preference))
-        (original-region
-         (if (and allow-extend
-                  (or
-                   (and (eq last-command this-command) (mark t))
-                   (region-active-p)))
-             (cons (min (point) (mark t))
-                   (max (point) (mark t)))
-           (cons (point) (point))))
-        (point-was-after-mark
-         (and (mark t)
-              (< (mark t) (point))))
+        (direction (if (and allow-extend
+                            (eq last-command this-command)
+                            (mark t))
+                       swift-mode:last-mark-direction
+                     swift-mode:mark-defun-preference))
+        (original-region (if (and allow-extend
+                                  (or (and (eq last-command this-command)
+                                           (mark t))
+                                      (region-active-p)))
+                             (cons (min (point) (mark t))
+                                   (max (point) (mark t)))
+                           (cons (point) (point))))
+        (point-was-after-mark (and (mark t) (< (mark t) (point))))
         new-region
         new-direction
         last-successful-region)
@@ -618,17 +619,15 @@ Both functions return t if succeeded, return nil otherwise."
       (setq count (1- count)))
     (setq new-region (or new-region last-successful-region))
     (setq swift-mode:last-mark-direction new-direction)
-    (and
-     new-region
-     (progn
-       (goto-char (car new-region))
-       (push-mark (cdr new-region) nil t)
-       (if (eq (car original-region) (cdr original-region))
-           (when (eq new-direction 'preceding)
-             (exchange-point-and-mark))
-         (when point-was-after-mark
-           (exchange-point-and-mark)))
-       new-region))))
+    (when new-region
+      (goto-char (car new-region))
+      (push-mark (cdr new-region) nil t)
+      (if (eq (car original-region) (cdr original-region))
+          (when (eq new-direction 'preceding)
+            (exchange-point-and-mark))
+        (when point-was-after-mark
+          (exchange-point-and-mark)))
+      new-region)))
 
 (defun swift-mode:extend-region-to-be-marked (original-region
                                               direction
@@ -652,6 +651,7 @@ PREFERRED-DIRECTION is the preferred direction of extension when DIRECTION is
              original-region
              move-forward move-backward
              preferred-direction))
+
            ((eq direction 'preceding)
             (list
              (save-excursion
@@ -659,6 +659,7 @@ PREFERRED-DIRECTION is the preferred direction of extension when DIRECTION is
                (swift-mode:preceding-generic-block-region
                 move-forward move-backward))
              'preceding))
+
            ((eq direction 'following)
             (list
              (save-excursion
@@ -732,7 +733,6 @@ Otherwise, try to mark the following one."
          (end-pos (max (car original-region) (cdr original-region)))
          region extended)
     (cond
-
      ;; /* original-region is here */ func foo() {
      ;;                               }
      ((progn
@@ -1322,9 +1322,8 @@ already at the beginning of a sentence, keep the position."
 With ARG, kill to the end of the ARG-th sentence.  If ARG is negative, kill
 backwards."
   (interactive "p")
-  (kill-region
-   (point)
-   (save-excursion (swift-mode:forward-sentence arg) (point))))
+  (kill-region (point)
+               (save-excursion (swift-mode:forward-sentence arg) (point))))
 
 (defun swift-mode:backward-kill-sentence (&optional arg)
   "Kill from the point to the beginning of sentences.
@@ -1332,9 +1331,8 @@ backwards."
 With ARG, kill to the beginning of the ARG-th sentence.  If ARG is negative,
 kill forwards."
   (interactive "p")
-  (kill-region
-   (point)
-   (save-excursion (swift-mode:backward-sentence arg) (point))))
+  (kill-region (point)
+               (save-excursion (swift-mode:backward-sentence arg) (point))))
 
 (defun swift-mode:mark-sentence (&optional arg allow-extend)
   "Put mark at the end of sentence, point at the beginning of sentence.
@@ -1354,8 +1352,11 @@ or preceding (if the point is after the mark) sentence."
                                                allow-extend
                                                #'swift-mode:forward-sentence
                                                #'swift-mode:backward-sentence)))
-    (if (and (not region)  (called-interactively-p 'interactive))
-        (progn (message "No sentence found") nil)
+    (if (and (not region)
+             (called-interactively-p 'interactive))
+        (progn
+          (message "No sentence found")
+          nil)
       region)))
 
 (defun swift-mode:narrow-to-sentence (&optional include-comments)
@@ -1372,8 +1373,11 @@ Interactively, the behavior depends on ‘narrow-to-defun-include-comments’."
                  include-comments
                  #'swift-mode:forward-sentence
                  #'swift-mode:backward-sentence)))
-    (if (and  (not region) (called-interactively-p 'interactive))
-        (progn (message "No sentence found") nil)
+    (if (and (not region)
+             (called-interactively-p 'interactive))
+        (progn
+          (message "No sentence found")
+          nil)
       region)))
 
 (defun swift-mode:current-defun-name ()
@@ -1470,6 +1474,21 @@ of ancestors."
          ;;
          ;;   let (x, y) = (1, 1) // not supported yet
          ;; }
+         ;;
+         ;; We must exclude case patterns.  Example:
+         ;;
+         ;; case A // case declaration
+         ;; case A, B(x: (int, Int)), C // case declaration
+         ;; case A.B // case pattern
+         ;; case _ // case pattern (not supported for now)
+         ;; case foo: Int // case pattern (not supported for now)
+         ;; case let x // case pattern (not supported for now)
+         ;; case (x, y) // case pattern
+         ;; case x? // case pattern (not supported for now)
+         ;; case is Foo // case pattern
+         ;; case foo as Foo // case pattern (not supported for now)
+         ;;
+         ;; Other complex expression pattern is not supported for now.
          (while (< (point) pos)
            (setq next-token (swift-mode:forward-token-or-list)))
          (when next-token
@@ -1477,10 +1496,10 @@ of ancestors."
          (goto-char (swift-mode:token:end
                      (swift-mode:backward-sexps-until (list keyword-text '\,))))
          (setq next-token (swift-mode:forward-token))
-         (if (and
-              (eq (swift-mode:token:type next-token) 'identifier)
-              (not
-               (equal (swift-mode:token:text (swift-mode:forward-token)) ".")))
+         (if (and (eq (swift-mode:token:type next-token) 'identifier)
+                  (not (equal
+                        (swift-mode:token:text (swift-mode:forward-token))
+                        ".")))
              next-token
            ;; FIXME: Complex patterns.
            nil))

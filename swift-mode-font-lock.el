@@ -301,9 +301,8 @@ This function does not search beyond LIMIT."
                 (swift-mode:skip-identifier-backward))))
   (forward-comment (- (point)))
   (skip-syntax-backward "w_")
-  (and
-   (< (point) limit)
-   (looking-at "\\_<func\\_>")))
+  (and (< (point) limit)
+       (looking-at "\\_<func\\_>")))
 
 (defun swift-mode:property-access-pos-p (pos limit)
   "Return t if POS is just before the property name of a member expression.
@@ -348,13 +347,12 @@ This function does not search beyond LIMIT."
      (goto-char pos)
      (skip-syntax-forward "w_" limit)
      (skip-chars-forward "?")
-     (and
-      (not (eq (char-after) ?<))
-      (progn
-        ;; I don't sure we can use `forward-comment' beyond limit, so assuming
-        ;; no comments here.
-        (skip-syntax-forward " " limit)
-        (not (eq (char-after) ?\()))))))
+     (and (not (eq (char-after) ?<))
+          (progn
+            ;; I don't sure we can use `forward-comment' beyond limit, so
+            ;; assuming no comments here.
+            (skip-syntax-forward " " limit)
+            (not (eq (char-after) ?\()))))))
 
 (defun swift-mode:builtin-name-pos-p (names pos limit)
   "Return t if an identifier in the hash NAMES appears at POS.
@@ -374,47 +372,43 @@ This function does not search beyond LIMIT."
   "Return t if POS is just before a builtin enum case name in NAMES.
 
 This function does not search beyond LIMIT."
-  (and
-   (progn
-     (forward-comment (- (point)))
-     (eq (char-before pos) ?.))
-   (swift-mode:builtin-name-pos-p names pos limit)))
+  (and (progn
+         (forward-comment (- (point)))
+         (eq (char-before pos) ?.))
+       (swift-mode:builtin-name-pos-p names pos limit)))
 
 (defun swift-mode:builtin-method-trailing-closure-name-pos-p (names pos limit)
   "Return t if POS is just before a builtin method name in NAMES.
 
 It must followed by open curly bracket.
 This function does not search beyond LIMIT."
-  (and
-   (progn
-     (forward-comment (- (point)))
-     (eq (char-before pos) ?.))
-   (progn
-     (goto-char pos)
-     (skip-syntax-forward "w_" limit)
-     (skip-chars-forward "?")
-     (skip-syntax-forward " " limit)
-     (eq (char-after) ?{))
-   (swift-mode:builtin-name-pos-p names pos limit)))
+  (and (progn
+         (forward-comment (- (point)))
+         (eq (char-before pos) ?.))
+       (progn
+         (goto-char pos)
+         (skip-syntax-forward "w_" limit)
+         (skip-chars-forward "?")
+         (skip-syntax-forward " " limit)
+         (eq (char-after) ?{))
+       (swift-mode:builtin-name-pos-p names pos limit)))
 
 (defun swift-mode:builtin-method-name-pos-p (names pos limit)
   "Return t if POS is just before a builtin method name in NAMES.
 
 This function does not search beyond LIMIT."
-  (and
-   (progn
-     (forward-comment (- (point)))
-     (eq (char-before pos) ?.))
-   (progn
-     (goto-char pos)
-     (skip-syntax-forward "w_" limit)
-     (skip-chars-forward "?")
-     (or
-      (eq (char-after) ?<)
-      (progn
-        (skip-syntax-forward " " limit)
-        (eq (char-after) ?\())))
-   (swift-mode:builtin-name-pos-p names pos limit)))
+  (and (progn
+         (forward-comment (- (point)))
+         (eq (char-before pos) ?.))
+       (progn
+         (goto-char pos)
+         (skip-syntax-forward "w_" limit)
+         (skip-chars-forward "?")
+         (or (eq (char-after) ?<)
+             (progn
+               (skip-syntax-forward " " limit)
+               (eq (char-after) ?\())))
+       (swift-mode:builtin-name-pos-p names pos limit)))
 
 (defun swift-mode:builtin-property-name-pos-p (names pos limit)
   "Return t if POS is just before a builtin property name in NAMES.
@@ -429,30 +423,27 @@ This function does not search beyond LIMIT."
 
 It must followed by open curly bracket.
 This function does not search beyond LIMIT."
-  (and
-   (progn
-     (goto-char pos)
-     (skip-syntax-forward "w_" limit)
-     (skip-chars-forward "?")
-     (skip-syntax-forward " " limit)
-     (eq (char-after) ?{))
-   (swift-mode:builtin-name-pos-p names pos limit)))
+  (and (progn
+         (goto-char pos)
+         (skip-syntax-forward "w_" limit)
+         (skip-chars-forward "?")
+         (skip-syntax-forward " " limit)
+         (eq (char-after) ?{))
+       (swift-mode:builtin-name-pos-p names pos limit)))
 
 (defun swift-mode:builtin-function-name-pos-p (names pos limit)
   "Return t if POS is just before a builtin function name in NAMES.
 
 This function does not search beyond LIMIT."
-  (and
-   (progn
-     (goto-char pos)
-     (skip-syntax-forward "w_" limit)
-     (skip-chars-forward "?")
-     (or
-      (eq (char-after) ?<)
-      (progn
-        (skip-syntax-forward " " limit)
-        (eq (char-after) ?\())))
-   (swift-mode:builtin-name-pos-p names pos limit)))
+  (and (progn
+         (goto-char pos)
+         (skip-syntax-forward "w_" limit)
+         (skip-chars-forward "?")
+         (or (eq (char-after) ?<)
+             (progn
+               (skip-syntax-forward " " limit)
+               (eq (char-after) ?\())))
+       (swift-mode:builtin-name-pos-p names pos limit)))
 
 (defun swift-mode:builtin-constant-name-pos-p (names pos limit)
   "Return t if POS is just before a builtin constant name in NAMES.
