@@ -1297,16 +1297,26 @@ comma at eol."
   ;;         Bar(let a) {
   ;;   foo(a)
   ;; }
+  ;;
+  ;; https://github.com/swiftlang/swift-evolution/blob/main/proposals/0477-default-interpolation-values.md
+  ;; print(
+  ;;   "Your age: \(
+  ;;     age,
+  ;;     default: "missing"
+  ;;   )"
+  ;; )
   (let ((pos (point))
         (parent (swift-mode:backward-sexps-until
                  ;; Includes "if" to stop at the last else-if.
                  ;; Includes "catch" to stop at the last catch.
                  (append swift-mode:statement-parent-tokens
-                         '("if" "catch" \( \[ <))
+                         '("if" "catch" \( \[ <
+                           string-chunk-before-interpolated-expression))
                  (if utrecht-style nil '(\,))
                  (if utrecht-style '(\,) nil))))
     (cond
-     ((memq (swift-mode:token:type parent) '(\( \[ \,))
+     ((memq (swift-mode:token:type parent)
+            '(\( \[ \, string-chunk-before-interpolated-expression))
       (goto-char (swift-mode:token:end parent))
       (let ((next-token (swift-mode:forward-token)))
         (if (equal (swift-mode:token:text next-token) "where")

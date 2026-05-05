@@ -1139,25 +1139,32 @@ Return nil otherwise."
       nil
     (save-excursion
       (let ((swift-mode:in-recursive-call-of-case-colon-p t))
-        (member
-         ;; FIXME:
-         ;; This function can be confused by conditional operator.
-         ;;
-         ;; switch foo {
-         ;; case let x where x is Foo ?
-         ;;                    a : // This function should return nil but it
-         ;;                        // actually returns t.
-         ;;                    b: // This function should return t but it
-         ;;                       // actually return nil.
-         ;;   let y = a ? b : c // This function returns nil correctly for
-         ;;                     // this.
-         ;; }
+        (and (member
+              ;; FIXME:
+              ;; This function can be confused by conditional operator.
+              ;;
+              ;; switch foo {
+              ;; case let x where x is Foo ?
+              ;;                    a : // This function should return nil but
+              ;;                        // it actually returns t.
+              ;;                    b: // This function should return t but it
+              ;;                       // actually return nil.
+              ;;   let y = a ? b : c // This function returns nil correctly for
+              ;;                     // this.
+              ;; }
 
-         ;; FIXME: mutual dependency
-         (swift-mode:token:text
-          (swift-mode:backward-sexps-until
-           '(implicit-\; \; { \( \[ "case" "default" ":")))
-         '("case" "default"))))))
+              ;; FIXME: mutual dependency
+              (swift-mode:token:text
+               (swift-mode:backward-sexps-until
+                '(implicit-\; \; { \( \[ "case" "default" ":")))
+              '("case" "default"))
+             ;; https://github.com/swiftlang/swift-evolution/blob/main/proposals/0477-default-interpolation-values.md
+             ;; "aaa \(
+             ;;   123
+             ;;   default: 1
+             ;; ) aaa"
+             (not (memq (swift-mode:token:type (swift-mode:backward-token))
+                        '(\( \,))))))))
 
 (defun swift-mode:anonymous-parameter-in-p ()
   "Return t if a `in' token at the cursor is for anonymous function parameters."

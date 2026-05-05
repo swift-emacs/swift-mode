@@ -164,6 +164,13 @@ func f() {
     let x = ##"""abc"##
     let x = 1
 
+    // https://github.com/swiftlang/swift-evolution/blob/main/proposals/0477-default-interpolation-values.md
+    let x = "abc \(
+      def,
+      default:
+        ghi
+    ) aaa"
+
 
     // Regexps
 
