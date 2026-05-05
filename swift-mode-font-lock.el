@@ -264,40 +264,55 @@ All values are t."
 
 ;;; Supporting functions
 
-(defun swift-mode:skip-identifier-backward ()
-  "Move point before the preceding identifier if any.
+(defun swift-mode:qualified-attribute-name-pos-p (pos _limit)
+  "Return non-nil if POS is just before the name of a qualified attribute name.
 
-Skip also comments and spaces between point and the identifier.
-
-Keep point if point is not after an identifier."
-  (let ((pos (point)))
-    (forward-comment (- (point)))
-    (cond
-     ((eq (char-before) ?`)
-      (backward-char)
-      (swift-mode:beginning-of-string)
-      t)
-
-     ((and (char-before) (memq (char-syntax (char-before)) '(?w ?_)))
-      (skip-syntax-backward "w_")
-      (when (eq (char-before) ?$)
-        (backward-char))
-      t)
-
-     (t
-      (goto-char pos)
-      nil))))
-
-(defun swift-mode:declared-function-name-pos-p (pos limit)
-  "Return t if POS is just before the name of a function declaration.
+Matches attribute names preceded by :: and a module name.
 
 This function does not search beyond LIMIT."
   (goto-char pos)
+  (forward-comment (- (point)))
+  (and (eq (char-before) ?:)
+       (eq (char-before (1- (point))) ?:)
+       (progn
+         (backward-char 2)
+         (forward-comment (- (point)))
+         (swift-mode:skip-identifier-backward)
+         (eq (char-after) ?@))))
+
+(defun swift-mode:qualified-macro-name-pos-p (pos _limit)
+  "Return non-nil if POS is just before the name of a qualified macro name.
+
+Matches macro names preceded by :: and a module name.
+
+This function does not search beyond LIMIT."
+  (goto-char pos)
+  (forward-comment (- (point)))
+  (and (eq (char-before) ?:)
+       (eq (char-before (1- (point))) ?:)
+       (progn
+         (backward-char 2)
+         (forward-comment (- (point)))
+         (swift-mode:skip-identifier-backward)
+         (eq (char-after) ?#))))
+
+(defun swift-mode:declared-function-name-pos-p (pos limit)
+  "Return non-nil if POS is just before the name of a function declaration.
+
+This function does not search beyond LIMIT."
+  (goto-char pos)
+  ;; Skip qualifier for import statement. Example:
+  ;;
+  ;; import func Foo.Bar::baz
   (while (and (progn
                 (forward-comment (- (point)))
-                (eq (char-before) ?.))
+                (or (eq (char-before) ?.)
+                    (and (eq (char-before) ?:)
+                         (eq (char-before (1- (point))) ?:))))
               (progn
-                (backward-char)
+                (if (eq (char-before) ?.)
+                    (backward-char)
+                  (backward-char 2))
                 (swift-mode:skip-identifier-backward))))
   (forward-comment (- (point)))
   (skip-syntax-backward "w_")
@@ -305,7 +320,7 @@ This function does not search beyond LIMIT."
        (looking-at "\\_<func\\_>")))
 
 (defun swift-mode:property-access-pos-p (pos limit)
-  "Return t if POS is just before the property name of a member expression.
+  "Return non-nil if POS is just before the property name of property access.
 
 This function does not search beyond LIMIT."
   ;; foo.bar    // property access
@@ -326,36 +341,53 @@ This function does not search beyond LIMIT."
   ;; .x         // property access
   ;; foo.x<A>   // property access, but highlight as a method call for now
   ;; foo.x < A, B > (1) // property access
-  (and
-   ;; After dot
-   (progn
-     (goto-char pos)
-     (forward-comment (- (point)))
-     (eq (char-before) ?.))
-
-   ;; Not floating-point literal
-   (progn
-     (backward-char)
-     (let ((pos-before-dot (point)))
+  (let ((module-selector-start
+         (save-excursion
+           (goto-char pos)
+           (forward-comment (- (point)))
+           (when (and (eq (char-before) ?:)
+                      (eq (char-before (1- (point))) ?:)
+                      (progn
+                        (backward-char 2)
+                        (forward-comment (- (point)))
+                        (/= (point)
+                            (progn
+                              (swift-mode:skip-identifier-backward)
+                              (point)))))
+             (point)))))
+    (and
+     ;; After dot
+     (progn
+       (goto-char (or module-selector-start pos))
        (forward-comment (- (point)))
-       (when (zerop (skip-syntax-backward "w_"))
-         (goto-char pos-before-dot))
-       (not (looking-at "[0-9]*\\.[0-9]+\\>"))))
+       (eq (char-before) ?.))
 
-   ;; Not method/function call
-   (progn
-     (goto-char pos)
-     (skip-syntax-forward "w_" limit)
-     (skip-chars-forward "?")
-     (and (not (eq (char-after) ?<))
-          (progn
-            ;; I don't sure we can use `forward-comment' beyond limit, so
-            ;; assuming no comments here.
-            (skip-syntax-forward " " limit)
-            (not (eq (char-after) ?\()))))))
+     ;; Not floating-point literal
+     (progn
+       (backward-char)
+       (let ((pos-before-dot (point)))
+         (forward-comment (- (point)))
+         (when (= (point)
+                  (progn
+                    (swift-mode:skip-identifier-backward)
+                    (point)))
+           (goto-char pos-before-dot))
+         (not (looking-at "[0-9]*\\.[0-9]+\\>"))))
+
+     ;; Not method/function call
+     (progn
+       (goto-char pos)
+       (skip-syntax-forward "w_" limit)
+       (skip-chars-forward "?")
+       (and (not (eq (char-after) ?<))
+            (progn
+              ;; I don't sure we can use `forward-comment' beyond limit, so
+              ;; assuming no comments here.
+              (skip-syntax-forward " " limit)
+              (not (eq (char-after) ?\())))))))
 
 (defun swift-mode:builtin-name-pos-p (names pos limit)
-  "Return t if an identifier in the hash NAMES appears at POS.
+  "Return non-nil if an identifier in the hash NAMES appears at POS.
 
 This function does not search beyond LIMIT."
   (goto-char pos)
@@ -363,13 +395,13 @@ This function does not search beyond LIMIT."
   (gethash (buffer-substring-no-properties pos (point)) names))
 
 (defun swift-mode:builtin-type-name-pos-p (names pos limit)
-  "Return t if POS is just before a builtin type name in NAMES.
+  "Return non-nil if POS is just before a builtin type name in NAMES.
 
 This function does not search beyond LIMIT."
   (swift-mode:builtin-name-pos-p names pos limit))
 
 (defun swift-mode:builtin-enum-case-name-pos-p (names pos limit)
-  "Return t if POS is just before a builtin enum case name in NAMES.
+  "Return non-nil if POS is just before a builtin enum case name in NAMES.
 
 This function does not search beyond LIMIT."
   (and (progn
@@ -378,7 +410,7 @@ This function does not search beyond LIMIT."
        (swift-mode:builtin-name-pos-p names pos limit)))
 
 (defun swift-mode:builtin-method-trailing-closure-name-pos-p (names pos limit)
-  "Return t if POS is just before a builtin method name in NAMES.
+  "Return non-nil if POS is just before a builtin method name in NAMES.
 
 It must followed by open curly bracket.
 This function does not search beyond LIMIT."
@@ -394,7 +426,7 @@ This function does not search beyond LIMIT."
        (swift-mode:builtin-name-pos-p names pos limit)))
 
 (defun swift-mode:builtin-method-name-pos-p (names pos limit)
-  "Return t if POS is just before a builtin method name in NAMES.
+  "Return non-nil if POS is just before a builtin method name in NAMES.
 
 This function does not search beyond LIMIT."
   (and (progn
@@ -411,7 +443,7 @@ This function does not search beyond LIMIT."
        (swift-mode:builtin-name-pos-p names pos limit)))
 
 (defun swift-mode:builtin-property-name-pos-p (names pos limit)
-  "Return t if POS is just before a builtin property name in NAMES.
+  "Return non-nil if POS is just before a builtin property name in NAMES.
 
 This function does not search beyond LIMIT."
   (and
@@ -419,7 +451,7 @@ This function does not search beyond LIMIT."
    (swift-mode:builtin-name-pos-p names pos limit)))
 
 (defun swift-mode:builtin-function-trailing-closure-name-pos-p (names pos limit)
-  "Return t if POS is just before a builtin function name in NAMES.
+  "Return non-nil if POS is just before a builtin function name in NAMES.
 
 It must followed by open curly bracket.
 This function does not search beyond LIMIT."
@@ -432,7 +464,7 @@ This function does not search beyond LIMIT."
        (swift-mode:builtin-name-pos-p names pos limit)))
 
 (defun swift-mode:builtin-function-name-pos-p (names pos limit)
-  "Return t if POS is just before a builtin function name in NAMES.
+  "Return non-nil if POS is just before a builtin function name in NAMES.
 
 This function does not search beyond LIMIT."
   (and (progn
@@ -446,7 +478,7 @@ This function does not search beyond LIMIT."
        (swift-mode:builtin-name-pos-p names pos limit)))
 
 (defun swift-mode:builtin-constant-name-pos-p (names pos limit)
-  "Return t if POS is just before a builtin constant name in NAMES.
+  "Return non-nil if POS is just before a builtin constant name in NAMES.
 
 This function does not search beyond LIMIT."
   (swift-mode:builtin-name-pos-p names pos limit))
@@ -454,7 +486,8 @@ This function does not search beyond LIMIT."
 (defun swift-mode:font-lock-match-expr (limit match-p)
   "Move the cursor just after an identifier that satisfy given predicate.
 
-Set `match-data', and return t if the identifier found before position LIMIT.
+Set `match-data', and return non-nil if the identifier found before position
+LIMIT.
 Return nil otherwise.
 
 Don't match escapes/raw identifiers.
@@ -475,23 +508,42 @@ The predicate MATCH-P is called with two arguments:
               (< (point) limit))
             (not result)
             (re-search-forward "\\_<\\(?:\\sw\\|\\s_\\)+\\_>" limit t))
-      (when (save-excursion
-              (save-match-data
-                (funcall match-p (match-beginning 0) limit)))
-        (setq result t)))
+      (setq result (save-excursion
+                     (save-match-data
+                       (funcall match-p (match-beginning 0) limit)))))
     result))
+
+(defun swift-mode:font-lock-match-module-qualified-attribute-name (limit)
+  "Move the cursor just after an attribute name with module name.
+
+Set `match-data', and return non-nil if a function name found before position
+LIMIT.
+Return nil otherwise."
+  (swift-mode:font-lock-match-expr
+   limit #'swift-mode:qualified-attribute-name-pos-p))
+
+(defun swift-mode:font-lock-match-module-qualified-macro-name (limit)
+  "Move the cursor just after a macro name with module name.
+
+Set `match-data', and return non-nil if a function name found before position
+LIMIT.
+Return nil otherwise."
+  (swift-mode:font-lock-match-expr
+   limit #'swift-mode:qualified-macro-name-pos-p))
 
 (defun swift-mode:font-lock-match-declared-function-names (limit)
   "Move the cursor just after a function name of a function declaration.
 
-Set `match-data', and return t if a function name found before position LIMIT.
+Set `match-data', and return non-nil if a function name found before position
+LIMIT.
 Return nil otherwise."
   (swift-mode:font-lock-match-expr
    limit #'swift-mode:declared-function-name-pos-p))
 
 (defun swift-mode:font-lock-match-property-access (limit)
   "Move the cursor just after a property access.
-Set `match-data', and return t if a property access found before position LIMIT.
+Set `match-data', and return non-nil if a property access found before position
+LIMIT.
 Return nil otherwise."
   (swift-mode:font-lock-match-expr limit #'swift-mode:property-access-pos-p))
 
@@ -500,7 +552,8 @@ Return nil otherwise."
 
 Predicate F takes set of names, position, and limit.
 
-Set `match-data', and return t if a builtin name found before position LIMIT.
+Set `match-data', and return non-nil if a builtin name found before position
+LIMIT.
 Return nil otherwise.
 
 LIST-OF-SETS is a list of set of names."
@@ -522,8 +575,8 @@ LIST-OF-SETS is a list of set of names."
 (defun swift-mode:font-lock-match-builtin-type-names (limit)
   "Move the cursor just after a builtin type name.
 
-Set `match-data', and return t if a builtin type name found before position
-LIMIT.
+Set `match-data', and return non-nil if a builtin type name found before
+position LIMIT.
 Return nil otherwise."
   (swift-mode:font-lock-match-builtin-names
    #'swift-mode:builtin-type-name-pos-p
@@ -536,7 +589,7 @@ Return nil otherwise."
 (defun swift-mode:font-lock-match-builtin-enum-case-names (limit)
   "Move the cursor just after a builtin enum case name.
 
-Set `match-data', and return t if a builtin enum case name found before
+Set `match-data', and return non-nil if a builtin enum case name found before
 position LIMIT.
 Return nil otherwise."
   (swift-mode:font-lock-match-builtin-names
@@ -550,8 +603,8 @@ Return nil otherwise."
 (defun swift-mode:font-lock-match-builtin-method-trailing-closure-names (limit)
   "Move the cursor just after a builtin method name with trailing closure.
 
-Set `match-data', and return t if a builtin method name found before position
-LIMIT.
+Set `match-data', and return non-nil if a builtin method name found before
+position LIMIT.
 Return nil otherwise."
   (swift-mode:font-lock-match-builtin-names
    #'swift-mode:builtin-method-trailing-closure-name-pos-p
@@ -564,7 +617,7 @@ Return nil otherwise."
 (defun swift-mode:font-lock-match-builtin-method-names (limit)
   "Move the cursor just after a builtin method name.
 
-Set `match-data', and return t if a builtin method name found before
+Set `match-data', and return non-nil if a builtin method name found before
 position LIMIT.
 Return nil otherwise."
   (swift-mode:font-lock-match-builtin-names
@@ -578,7 +631,7 @@ Return nil otherwise."
 (defun swift-mode:font-lock-match-builtin-property-names (limit)
   "Move the cursor just after a builtin property name.
 
-Set `match-data', and return t if a builtin property name found before
+Set `match-data', and return non-nil if a builtin property name found before
 position LIMIT.
 Return nil otherwise."
   (swift-mode:font-lock-match-builtin-names
@@ -593,7 +646,7 @@ Return nil otherwise."
     (limit)
   "Move the cursor just after a builtin function name with trailing closure.
 
-Set `match-data', and return t if a builtin function name found before
+Set `match-data', and return non-nil if a builtin function name found before
 position LIMIT.
 Return nil otherwise."
   (swift-mode:font-lock-match-builtin-names
@@ -607,7 +660,7 @@ Return nil otherwise."
 (defun swift-mode:font-lock-match-builtin-function-names (limit)
   "Move the cursor just after a builtin function name.
 
-Set `match-data', and return t if a builtin function name found before
+Set `match-data', and return non-nil if a builtin function name found before
 position LIMIT.
 Return nil otherwise."
   (swift-mode:font-lock-match-builtin-names
@@ -621,7 +674,7 @@ Return nil otherwise."
 (defun swift-mode:font-lock-match-builtin-constant-names (limit)
   "Move the cursor just after a builtin constant name.
 
-Set `match-data', and return t if a builtin constant name found before
+Set `match-data', and return non-nil if a builtin constant name found before
 position LIMIT.
 Return nil otherwise."
   (swift-mode:font-lock-match-builtin-names
@@ -892,12 +945,20 @@ Excludes true, false, and keywords begin with a number sign.")
      .
      'swift-mode:attribute-face)
 
+    (swift-mode:font-lock-match-module-qualified-attribute-name
+     .
+     'swift-mode:attribute-face)
+
     (,(regexp-opt swift-mode:constant-keywords 'symbols)
      .
      'swift-mode:constant-keyword-face)
 
     ;; Preprocessor keywords
     ("#\\(?:\\sw\\|\\s_\\)*"
+     .
+     'swift-mode:preprocessor-keyword-face)
+
+    (swift-mode:font-lock-match-module-qualified-macro-name
      .
      'swift-mode:preprocessor-keyword-face)
 
@@ -941,6 +1002,11 @@ Excludes true, false, and keywords begin with a number sign.")
     ;; Other operators
     ;; TODO Unicode operators
     ("[/=+!*%<>&|^?~.-]+"
+     .
+     'swift-mode:operator-face)
+
+    ;; Colon colon
+    ("::"
      .
      'swift-mode:operator-face)
 

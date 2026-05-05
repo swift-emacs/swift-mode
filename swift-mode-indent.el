@@ -751,6 +751,16 @@ Also used for regexps."
        swift-mode:statement-parent-tokens
        swift-mode:multiline-statement-offset))
 
+     ;; Before :: on the current line for attributes:
+     ;;
+     ;; @Foo
+     ;;   ::Bar
+     ((and next-is-on-current-line
+           (eq previous-type 'attribute)
+           (equal next-text "::"))
+      (goto-char (swift-mode:token:start previous-token))
+      (swift-mode:indentation (point) swift-mode:multiline-statement-offset))
+
      ;; After attributes
      ((eq previous-type 'attribute)
       (goto-char (swift-mode:token:end previous-token))

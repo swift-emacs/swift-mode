@@ -592,6 +592,41 @@ let x = foo
 foo
 (bar) // this is not a function call
 
+// Macro expansion expression
+
+let x =
+  #foo(
+    a,
+    b,
+    c
+  )
+
+let x =
+  #Foo
+  :: Bar(
+    a,
+    b,
+    c
+  )
+
+let x = #Foo::Bar<A>(
+  a,
+  b,
+  c
+)    { aaa in
+    aaa
+}
+
+let x = #Foo
+  ::Bar<A>(
+    a,
+    b,
+    c
+  )    { aaa in
+      aaa
+  }
+
+
 // Subscript expression
 
 foo[

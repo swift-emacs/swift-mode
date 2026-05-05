@@ -13,6 +13,11 @@ import
   Foo
   .Bar
 
+import
+  class
+  Foo
+  ::Bar
+
 import class
   Foo
 
@@ -68,7 +73,8 @@ class Foo {
       fileprivate
       let
       Foo
-      .Bar(x)
+      .Bar
+      ::Baz(x)
       :
       Foo
       .Bar
@@ -149,6 +155,7 @@ class Foo {
     internal var x
       : (Int, Int) {
         @A
+          ::B
         mutating
           get
           async
@@ -159,6 +166,9 @@ class Foo {
         }
 
         @A
+          ::B(
+          aaa
+        )
         mutating
           set
           (it) {

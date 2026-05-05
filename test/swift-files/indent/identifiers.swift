@@ -33,6 +33,18 @@ let foo = foo.var
 let x = foo.where +
   a
 
+
+// Colon colon too
+// https://github.com/swiftlang/swift-evolution/blob/main/proposals/0491-module-selectors.md
+
+let foo = Foo::var
+  .then {
+  }
+
+let x = Foo::where +
+  a
+
+
 // keywords as parameter names
 
 func foo() {

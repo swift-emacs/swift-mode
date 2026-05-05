@@ -1083,6 +1083,9 @@ Return nil otherwise."
              (progn (swift-mode:try-backward-generic-parameters) (point)))
          (swift-mode:function-parameter-clause-p)))
        ((eq previous-type 'identifier)
+        ;; Note that the identifier of a declaration cannot be preceded by a
+        ;; module selector.  So we don't need to skip it here.
+        ;; https://github.com/swiftlang/swift-evolution/blob/main/proposals/0491-module-selectors.md
         (member (swift-mode:token:text (swift-mode:backward-token-simple))
                 '("func" "macro")))
        (t nil)))))
@@ -1172,6 +1175,9 @@ Return nil otherwise."
   (save-excursion
     (or (member (swift-mode:token:text (swift-mode:backward-token-simple))
                 '("init" "subscript"))
+        ;; Note that the identifier of a declaration cannot be preceded by a
+        ;; module selector.  So we don't need to skip it here.
+        ;; https://github.com/swiftlang/swift-evolution/blob/main/proposals/0491-module-selectors.md
         (member (swift-mode:token:text (swift-mode:backward-token-simple))
                 '("typealias" "func" "enum" "struct" "actor" "class" "init"
                   "macro")))))
@@ -1220,7 +1226,7 @@ Other properties are the same as the TOKEN."
            ((member text '("try" "try?" "try!" "await" "consume" "copy"
                            "discard" "each"))
             'prefix-operator)
-           ((equal text ".") 'binary-operator)
+           ((member text '("." "::")) 'binary-operator)
            ((and has-preceding-space has-following-space) 'binary-operator)
            (has-preceding-space 'prefix-operator)
            ((or has-following-space has-following-dot) 'postfix-operator)
@@ -1231,18 +1237,67 @@ Other properties are the same as the TOKEN."
   "Backquote identifier TOKEN, including keywords, if it is after a dot.
 
 See SE-0071:
-https://github.com/apple/swift-evolution/blob/master/proposals/0071-member-keywords.md"
+https://github.com/apple/swift-evolution/blob/master/proposals\
+/0071-member-keywords.md
+
+Colon-colon is treated as a dot."
   (if (and (string-match "^[a-z]" (swift-mode:token:text token))
            (save-excursion
              (goto-char (swift-mode:token:start token))
-             (equal (swift-mode:token:text (swift-mode:backward-token-simple))
-                    ".")))
+             (member (swift-mode:token:text (swift-mode:backward-token-simple))
+                     '("." "::"))))
       (swift-mode:token
        'identifier
        (concat "`" (swift-mode:token:text token) "`")
        (swift-mode:token:start token)
        (swift-mode:token:end token))
     token))
+
+(defun swift-mode:skip-identifier-backward ()
+  "Move point before the preceding identifier if any.
+
+Skip also comments and spaces between point and the identifier.
+
+Keep point if point is not after an identifier."
+  (let ((pos (point)))
+    (forward-comment (- (point)))
+    (cond
+     ((eq (char-before) ?`)
+      (swift-mode:backward-string-chunk)
+      (when (memq (char-before) '(?$ ?@ ?#))
+        (backward-char))
+      t)
+
+     ((and (char-before) (memq (char-syntax (char-before)) '(?w ?_)))
+      (skip-syntax-backward "w_")
+      t)
+
+     (t
+      (goto-char pos)
+      nil))))
+
+(defun swift-mode:skip-identifier-forward ()
+  "Move point after the following identifier if any.
+
+Skip also comments and spaces between point and the identifier.
+
+Keep point if point is not before an identifier."
+  (let ((pos (point)))
+    (forward-comment (point-max))
+    (when (memq (char-after) '(?$ ?@ ?#))
+      (forward-char))
+    (cond
+     ((eq (char-after) ?`)
+      (swift-mode:forward-string-chunk)
+      t)
+
+     ((and (char-after) (memq (char-syntax (char-after)) '(?w ?_)))
+      (skip-syntax-forward "w_")
+      t)
+
+     (t
+      (goto-char pos)
+      nil))))
 
 (defun swift-mode:forward-token ()
   "Move point forward to the next position of the end of a token.
@@ -1271,8 +1326,9 @@ type `outside-of-buffer'."
                         pos
                         (point)))
 
-     ;; Colon
-     ((eq (char-after) ?:)
+     ;; Colon (except ::)
+     ((and (eq (char-after) ?:)
+           (not (eq (char-after (1+ (point))) ?:)))
       (swift-mode:token (cond
                          ((swift-mode:supertype-colon-p) 'supertype-:)
                          ((swift-mode:case-colon-p) 'case-:)
@@ -1328,8 +1384,23 @@ This function does not return `implicit-;' or `type-:'."
        pos-after-comment
        (point))))
 
+   ;; Colon
+   ((eq (char-after) ?:)
+    (if (eq (char-after (1+ (point))) ?:)
+        (progn
+          (forward-char 2)
+          (swift-mode:token 'binary-operator
+                            "::"
+                            (- (point) 2)
+                            (point)))
+      (forward-char)
+      (swift-mode:token ':
+                        ":"
+                        (1- (point))
+                        (point))))
+
    ;; Separators and parentheses
-   ((memq (char-after) '(?, ?\; ?\{ ?\} ?\[ ?\] ?\( ?\) ?:))
+   ((memq (char-after) '(?, ?\; ?\{ ?\} ?\[ ?\] ?\( ?\)))
     (forward-char)
     (swift-mode:token (intern (string (char-before)))
                       (string (char-before))
@@ -1428,9 +1499,15 @@ This function does not return `implicit-;' or `type-:'."
    ;; Attribute
    ((eq (char-after) ?@)
     (let ((pos-after-comment (point)))
-      (forward-symbol 1)
+      (swift-mode:skip-identifier-forward)
       (let ((pos (point)))
         (forward-comment (point-max))
+        (when (and (eq (char-after) ?:)
+                   (eq (char-after (1+ (point))) ?:))
+          (forward-char 2)
+          (swift-mode:skip-identifier-forward)
+          (setq pos (point))
+          (forward-comment (point-max)))
         (if (eq (char-after) ?\()
             (condition-case nil
                 (forward-list 1)
@@ -1452,9 +1529,8 @@ This function does not return `implicit-;' or `type-:'."
              ;;
              ;; Note: syntax class _ includes #, @, and $.
              ((memq (char-syntax (char-after)) '(?w ?_))
-              (progn (forward-symbol 1)
-                     (buffer-substring-no-properties pos-after-comment
-                                                     (point))))
+              (swift-mode:skip-identifier-forward)
+              (buffer-substring-no-properties pos-after-comment (point)))
              ;; Unknown character type. Treats as a single-letter token.
              (t (forward-char) (string (char-before))))))
       (cond
@@ -1512,8 +1588,9 @@ type `outside-of-buffer'."
                         (point)
                         pos))
 
-     ;; Colon
-     ((eq (char-before) ?:)
+     ;; Colon (except ::)
+     ((and (eq (char-before) ?:)
+           (not (eq (char-before (1- (point))) ?:)))
       (backward-char)
       (swift-mode:token (cond
                          ((swift-mode:supertype-colon-p) 'supertype-:)
@@ -1579,8 +1656,15 @@ This function does not return `implicit-;' or `type-:'."
       (condition-case nil
           (progn
             (backward-list)
-            (forward-comment (- (point)))
-            (forward-symbol -1)
+            (swift-mode:skip-identifier-backward)
+            (when (and (not (eq (char-after) ?@))
+                       (save-excursion
+                         (forward-comment (- (point)))
+                         (and (eq (char-before) ?:)
+                              (eq (char-before (1- (point))) ?:))))
+              (forward-comment (- (point)))
+              (backward-char 2)
+              (swift-mode:skip-identifier-backward))
             (unless (eq (char-after) ?@)
               (goto-char (1- pos-before-comment))))
         (scan-error (goto-char (1- pos-before-comment))))
@@ -1590,8 +1674,23 @@ This function does not return `implicit-;' or `type-:'."
        (point)
        pos-before-comment)))
 
+   ;; Colon
+   ((eq (char-before) ?:)
+    (if (eq (char-before (1- (point))) ?:)
+        (progn
+          (backward-char 2)
+          (swift-mode:token 'binary-operator
+                            "::"
+                            (point)
+                            (+ (point) 2)))
+      (backward-char)
+      (swift-mode:token ':
+                        ":"
+                        (point)
+                        (1+ (point)))))
+
    ;; Separators and parentheses
-   ((memq (char-before) '(?, ?\; ?\{ ?\} ?\[ ?\] ?\( ?\) ?:))
+   ((memq (char-before) '(?, ?\; ?\{ ?\} ?\[ ?\] ?\( ?\)))
     (backward-char)
     (swift-mode:token (intern (string (char-after)))
                       (string (char-after))
@@ -1685,9 +1784,21 @@ This function does not return `implicit-;' or `type-:'."
    ;; Backquoted identifier
    ((eq (char-before) ?`)
     (let ((pos-before-comment (point)))
-      (swift-mode:backward-string-chunk)
+      (swift-mode:skip-identifier-backward)
+      (when (and (not (eq (char-after) ?@))
+                 (save-excursion
+                   (forward-comment (- (point)))
+                   (and (eq (char-before) ?:)
+                        (eq (char-before (1- (point))) ?:)
+                        (progn
+                          (backward-char 2)
+                          (swift-mode:skip-identifier-backward)
+                          (eq (char-after) ?@)))))
+        (forward-comment (- (point)))
+        (backward-char 2)
+        (swift-mode:skip-identifier-backward))
       (swift-mode:token
-       'identifier
+       (if (eq (char-after) ?@) 'attribute 'identifier)
        (buffer-substring-no-properties (point) pos-before-comment)
        (point)
        pos-before-comment)))
@@ -1716,9 +1827,20 @@ This function does not return `implicit-;' or `type-:'."
              ;;
              ;; Note: syntax class _ includes #, @, and $.
              ((memq (char-syntax (char-before)) '(?w ?_))
-              (progn (forward-symbol -1)
-                     (buffer-substring-no-properties (point)
-                                                     pos-before-comment)))
+              (swift-mode:skip-identifier-backward)
+              (when (and (not (eq (char-after) ?@))
+                         (save-excursion
+                           (forward-comment (- (point)))
+                           (and (eq (char-before) ?:)
+                                (eq (char-before (1- (point))) ?:)
+                                (progn
+                                  (backward-char 2)
+                                  (swift-mode:skip-identifier-backward)
+                                  (eq (char-after) ?@)))))
+                (forward-comment (- (point)))
+                (backward-char 2)
+                (swift-mode:skip-identifier-backward))
+              (buffer-substring-no-properties (point) pos-before-comment))
              ;; Unknown character type. Treats as a single-letter token.
              (t (backward-char) (string (char-after))))))
       (cond

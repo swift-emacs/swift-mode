@@ -18,6 +18,19 @@ import func Foo.foo // EXPECTED: "import" swift-mode:keyword-face "func" swift-m
 @export(interface) // EXPECTED: "@export" swift-mode:attribute-face "(" swift-mode:bracket-face "interface" swift-mode:build-config-keyword-face ")" swift-mode:bracket-face
 
 
+// Attributes
+@Foo // EXPECTED: "@Foo" swift-mode:attribute-face
+@Foo::Bar // EXPECTED: "@Foo" swift-mode:attribute-face "::" swift-mode:operator-face "Bar" swift-mode:attribute-face
+@`Foo`::Bar // EXPECTED: "@" swift-mode:attribute-face "`Foo`" swift-mode:escaped-identifier-face "::" swift-mode:operator-face "Bar" swift-mode:attribute-face
+@Foo::`Bar` // EXPECTED: "@Foo" swift-mode:attribute-face "::" swift-mode:operator-face "`Bar`" swift-mode:escaped-identifier-face
+@`Foo`::`Bar` // EXPECTED: "@" swift-mode:attribute-face "`Foo`" swift-mode:escaped-identifier-face "::" swift-mode:operator-face "`Bar`" swift-mode:escaped-identifier-face
+@Foo(aaa) // EXPECTED: "@Foo" swift-mode:attribute-face "(" swift-mode:bracket-face ")" swift-mode:bracket-face
+@Foo::Bar(aaa) // EXPECTED: "@Foo" swift-mode:attribute-face "::" swift-mode:operator-face "Bar" swift-mode:attribute-face "(" swift-mode:bracket-face ")" swift-mode:bracket-face
+@`Foo`::Bar(aaa) // EXPECTED: "@" swift-mode:attribute-face "`Foo`" swift-mode:escaped-identifier-face "::" swift-mode:operator-face "Bar" swift-mode:attribute-face "(" swift-mode:bracket-face ")" swift-mode:bracket-face
+@Foo::`Bar`(aaa) // EXPECTED: "@Foo" swift-mode:attribute-face "::" swift-mode:operator-face "`Bar`" swift-mode:escaped-identifier-face "(" swift-mode:bracket-face ")" swift-mode:bracket-face
+@`Foo`::`Bar`(aaa) // EXPECTED: "@" swift-mode:attribute-face "`Foo`" swift-mode:escaped-identifier-face "::" swift-mode:operator-face "`Bar`" swift-mode:escaped-identifier-face "(" swift-mode:bracket-face ")" swift-mode:bracket-face
+
+
 // Precedence groups
 infix operator +++: AdditionPrecedence // EXPECTED: "infix" swift-mode:keyword-face "operator" swift-mode:keyword-face "+++" swift-mode:operator-face ":" swift-mode:delimiter-face "AdditionPrecedence" swift-mode:builtin-precedence-group-face
 
@@ -55,6 +68,14 @@ let x = foo +!+!+!+ 1 // EXPECTED: "let" swift-mode:keyword-face "=" swift-mode:
 // Preprocessor keywords
 #if available(macOS 256, *) // EXPECTED: "#if" swift-mode:preprocessor-keyword-face "available" swift-mode:function-call-face "(" swift-mode:bracket-face "macOS" swift-mode:build-config-keyword-face "256" swift-mode:number-face "," swift-mode:delimiter-face "\*" swift-mode:operator-face ")" swift-mode:bracket-face
 #endif // EXPECTED: "#endif" swift-mode:preprocessor-keyword-face
+
+
+// macros
+#Foo // EXPECTED: "#Foo" swift-mode:preprocessor-keyword-face
+#Foo::Bar // EXPECTED: "#Foo" swift-mode:preprocessor-keyword-face "::" swift-mode:operator-face "Bar" swift-mode:preprocessor-keyword-face
+#`Foo`::Bar // EXPECTED: "#" swift-mode:preprocessor-keyword-face "`Foo`" swift-mode:escaped-identifier-face "::" swift-mode:operator-face "Bar" swift-mode:preprocessor-keyword-face
+#Foo::`Bar` // EXPECTED: "#Foo" swift-mode:preprocessor-keyword-face "::" swift-mode:operator-face "`Bar`" swift-mode:escaped-identifier-face
+#`Foo`::`Bar` // EXPECTED: "#" swift-mode:preprocessor-keyword-face "`Foo`" swift-mode:escaped-identifier-face "::" swift-mode:operator-face "`Bar`" swift-mode:escaped-identifier-face
 
 
 // Property accesses
