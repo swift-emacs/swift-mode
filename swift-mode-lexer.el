@@ -968,12 +968,14 @@ move point to the end of the regexp and return non-nil."
      ((equal (swift-mode:token:text next-token) "while")
       (save-excursion
         (not (and (eq (swift-mode:token:type previous-token) '\})
-                  (progn
-                    (backward-list)
-                    (equal (swift-mode:token:text
-                            (swift-mode:backquote-identifier-if-after-dot
-                             (swift-mode:backward-token-simple)))
-                           "repeat"))))))
+                  (condition-case nil
+                      (progn
+                        (backward-list)
+                        (equal (swift-mode:token:text
+                                (swift-mode:backquote-identifier-if-after-dot
+                                 (swift-mode:backward-token-simple)))
+                               "repeat"))
+                    (scan-error nil))))))
 
      ;; Inserts implicit semicolon before keywords that behave like method
      ;; names.

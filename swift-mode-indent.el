@@ -307,14 +307,22 @@ Also used for regexps."
      ;; Before } on the current line
      ((and next-is-on-current-line (eq next-type '}))
       (goto-char (swift-mode:token:end next-token))
-      (backward-list)
-      (swift-mode:calculate-indent-for-curly-bracket 0))
+      (condition-case nil
+          (progn
+            (backward-list)
+            (swift-mode:calculate-indent-for-curly-bracket 0))
+        (scan-error
+         (swift-mode:indentation (point-min) 0))))
 
      ;; Before ) or ] on the current line
      ((and next-is-on-current-line (memq next-type '(\) \])))
       (goto-char (swift-mode:token:end next-token))
-      (backward-list)
-      (swift-mode:calculate-indent-of-expression 0))
+      (condition-case nil
+          (progn
+            (backward-list)
+            (swift-mode:calculate-indent-of-expression 0))
+        (scan-error
+         (swift-mode:indentation (point-min) 0))))
 
      ;; Before > as a close angle bracket on the current line
      ((and next-is-on-current-line
