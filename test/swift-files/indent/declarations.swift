@@ -937,3 +937,22 @@ macro
   where
     T: AAA,
     T == Foo
+
+
+// @specialized attribute
+// https://github.com/swiftlang/swift-evolution/blob/main/proposals/0460-specialized.md
+extension Dictionary {
+    @specialized(
+      where
+        Key == Int,
+        Value == Int
+    )
+    @specialized(
+      where Key == Int,
+            Value == Int
+    )
+    @specialized(where Key == Int,
+                       Value == Int)
+    func foo() {
+    }
+}

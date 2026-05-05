@@ -473,6 +473,169 @@ Also used for regexps."
        swift-mode:statement-parent-tokens
        swift-mode:multiline-statement-offset))
 
+     ;; Before "where" on the current line
+     ((and next-is-on-current-line (equal next-text "where"))
+      ;; switch {
+      ;; case let P(x)
+      ;;        where // Aligns with the pattern.
+      ;;          a
+      ;;   aaa
+      ;; }
+      ;; case let A
+      ;;        .P(x)
+      ;;          where // Aligns with the last line of the pattern.
+      ;;            a
+      ;;   aaa
+      ;; }
+      ;;
+      ;; for case (x, y) in xys
+      ;;     where // Aligns with the next token of the "for" token.
+      ;;       aaa {
+      ;; }
+      ;;
+      ;; for (x, y)
+      ;;     in
+      ;;     xys
+      ;;     where // Aligns with the next token of the "for" token.
+      ;;       aaa {
+      ;; }
+      ;;
+      ;; do {
+      ;; } catch let P(x)
+      ;;           where // Aligns with the pattern.
+      ;;             aaa
+      ;;
+      ;; func foo<A: AAA,
+      ;;          B: BBB
+      ;;            where // Aligns with the start of the type parameters.
+      ;;              ABC>() {
+      ;; }
+      ;;
+      ;; class Foo<A,
+      ;;           B,
+      ;;           C>: AAA,
+      ;;               BBB,
+      ;;               CCC
+      ;;   where // Aligns with the "class" token.
+      ;;     ABC {
+      ;; }
+      ;;
+      ;; https://github.com/swiftlang/swift-evolution/blob/main/proposals/0460-specialized.md
+      ;; @specialized(
+      ;;   where // Aligns with the start of the annotation
+      ;;     Key == Int,
+      ;;     Value == Int
+      ;; )
+      (let* ((parent (save-excursion
+                       (swift-mode:backward-sexps-until
+                        (append swift-mode:statement-parent-tokens
+                                '("case" "catch" "for" "@specialized")))))
+             (previous-of-parent (save-excursion
+                                   (goto-char (swift-mode:token:start parent))
+                                   (swift-mode:backward-token))))
+        (when (and (equal (swift-mode:token:text parent) "case")
+                   (equal (swift-mode:token:text previous-of-parent) "for"))
+          (setq parent previous-of-parent))
+        (cond
+         ((member (swift-mode:token:text parent) '("case" "catch"))
+          (goto-char (swift-mode:token:end previous-token))
+          (swift-mode:backward-token-or-list)
+          (swift-mode:calculate-indent-of-expression
+           swift-mode:multiline-statement-offset
+           swift-mode:multiline-statement-offset))
+         ((equal (swift-mode:token:text parent) "for")
+          (swift-mode:find-parent-and-align-with-next '("for")))
+         ((equal (swift-mode:token:text parent) "@specialized")
+          (goto-char (swift-mode:token:start parent))
+          (swift-mode:indentation (point)
+                                  swift-mode:parenthesized-expression-offset))
+         (t
+          (swift-mode:find-parent-and-align-with-next
+           (append swift-mode:statement-parent-tokens '(<))
+           swift-mode:multiline-statement-offset)))))
+
+     ;; After "where"
+     ((equal previous-text "where")
+      ;; switch {
+      ;; case let .P(x) where
+      ;;        A, // Aligns with the pattern.
+      ;;      let A
+      ;;        .Q(x) where // Aligns with the last line of the pattern.
+      ;;          A:
+      ;;   aaa
+      ;; case let .P(x)
+      ;;        where
+      ;;          A, // Aligns with the "where" token.
+      ;;      let .Q(x)
+      ;;        where // Aligns with the "where" token.
+      ;;          A:
+      ;;   aaa
+      ;; case let .P(x), let .Q(x) where // Aligns with the pattern.
+      ;;                   a
+      ;; }
+      ;;
+      ;; for case let (x, y) in xys where
+      ;;       aaa { // Aligns with the next token of the "for" token.
+      ;; }
+      ;;
+      ;; for case let (x, y) in xys
+      ;;     where
+      ;;       aaa { // Aligns with the "where" token
+      ;; }
+      ;;
+      ;; do {
+      ;; } catch let .P(x) where
+      ;;           aaa // Aligns with the pattern.
+      ;; do {
+      ;; } catch let .P(x)
+      ;;           where
+      ;;             aaa // Aligns with the "where" token.
+      ;;
+      ;; func foo<A: AAA,
+      ;;          B: BBB where
+      ;;            ABC>() { // Aligns with the start of the type parameters.
+      ;; }
+      ;;
+      ;; func foo<A: AAA,
+      ;;          B: BBB
+      ;;            where
+      ;;              ABC>() { // Aligns with the "where" token.
+      ;; }
+      ;;
+      ;; class Foo<A,
+      ;;           B,
+      ;;           C> A,
+      ;;              B,
+      ;;              C where
+      ;;   ABC { // Aligns with the "class" token"
+      ;; }
+      ;;
+      ;; class Foo<A,
+      ;;           B,
+      ;;           C>: A,
+      ;;               B,
+      ;;               C
+      ;;   where
+      ;;     ABC { // Aligns with the "where" token"
+      ;; }
+      (goto-char (swift-mode:token:start previous-token))
+      (if (swift-mode:bol-other-than-comments-p)
+          (swift-mode:align-with-current-line
+           swift-mode:multiline-statement-offset)
+        (let ((parent (save-excursion
+                        (swift-mode:backward-sexps-until
+                         (append swift-mode:statement-parent-tokens
+                                 '("case" "catch"))))))
+          (if (member (swift-mode:token:text parent) '("case" "catch"))
+              (progn
+                (swift-mode:backward-token-or-list)
+                (swift-mode:calculate-indent-of-expression
+                 swift-mode:multiline-statement-offset
+                 swift-mode:multiline-statement-offset))
+            (swift-mode:find-parent-and-align-with-next
+             (append swift-mode:statement-parent-tokens '(< "for"))
+             swift-mode:multiline-statement-offset)))))
+
      ;; After {
      ((eq previous-type '{)
       (goto-char (swift-mode:token:start previous-token))
@@ -531,159 +694,6 @@ Also used for regexps."
       ;;   a
       ;; }
       (swift-mode:find-parent-and-align-with-next '("for" {)))
-
-     ;; Before "where" on the current line
-     ((and next-is-on-current-line (equal next-text "where"))
-      ;; switch {
-      ;; case let P(x)
-      ;;        where // Aligns with the pattern.
-      ;;          a
-      ;;   aaa
-      ;; }
-      ;; case let A
-      ;;        .P(x)
-      ;;          where // Aligns with the last line of the pattern.
-      ;;            a
-      ;;   aaa
-      ;; }
-      ;;
-      ;; for case (x, y) in xys
-      ;;     where // Aligns with the next token of the "for" token.
-      ;;       aaa {
-      ;; }
-      ;;
-      ;; for (x, y)
-      ;;     in
-      ;;     xys
-      ;;     where // Aligns with the next token of the "for" token.
-      ;;       aaa {
-      ;; }
-      ;;
-      ;; do {
-      ;; } catch let P(x)
-      ;;           where // Aligns with the pattern.
-      ;;             aaa
-      ;;
-      ;; func foo<A: AAA,
-      ;;          B: BBB
-      ;;            where // Aligns with the start of the type parameters.
-      ;;              ABC>() {
-      ;; }
-      ;;
-      ;; class Foo<A,
-      ;;           B,
-      ;;           C>: AAA,
-      ;;               BBB,
-      ;;               CCC
-      ;;   where // Aligns with the "class" token.
-      ;;     ABC {
-      ;; }
-      (let* ((parent (save-excursion (swift-mode:backward-sexps-until
-                                      (append swift-mode:statement-parent-tokens
-                                              '("case" "catch" "for")))))
-             (previous-of-parent (save-excursion
-                                   (goto-char (swift-mode:token:start parent))
-                                   (swift-mode:backward-token))))
-        (when (and (equal (swift-mode:token:text parent) "case")
-                   (equal (swift-mode:token:text previous-of-parent) "for"))
-          (setq parent previous-of-parent))
-        (cond
-         ((member (swift-mode:token:text parent) '("case" "catch"))
-          (goto-char (swift-mode:token:end previous-token))
-          (swift-mode:backward-token-or-list)
-          (swift-mode:calculate-indent-of-expression
-           swift-mode:multiline-statement-offset
-           swift-mode:multiline-statement-offset))
-         ((equal (swift-mode:token:text parent) "for")
-          (swift-mode:find-parent-and-align-with-next '("for")))
-         (t
-          (swift-mode:find-parent-and-align-with-next
-           (append swift-mode:statement-parent-tokens '(<))
-           swift-mode:multiline-statement-offset)))))
-
-     ;; After "where"
-     ((equal previous-text "where")
-      ;; switch {
-      ;; case let .P(x) where
-      ;;        A, // Aligns with the pattern.
-      ;;      let A
-      ;;        .Q(x) where // Aligns with the last line of the pattern.
-      ;;          A:
-      ;;   aaa
-      ;; case let .P(x)
-      ;;        where
-      ;;          A, // Aligns with the "where" token.
-      ;;      let .Q(x)
-      ;;        where // Aligns with the "where" token.
-      ;;          A:
-      ;;   aaa
-      ;; case let .P(x), let .Q(x) where // Aligns with the pattern.
-      ;;                   a
-      ;; }
-      ;;
-      ;; for case let (x, y) in xys where
-      ;;       aaa { // Aligns with the next token of the "for" token.
-      ;; }
-      ;;
-      ;; for case let (x, y) in xys
-      ;;     where
-      ;;       aaa { // Aligns with the "where" token
-      ;; }
-      ;;
-      ;; do {
-      ;; } catch let .P(x) where
-      ;;           aaa // Aligns with the pattern.
-      ;; do {
-      ;; } catch let .P(x)
-      ;;           where
-      ;;             aaa // Aligns with the "where" token.
-      ;;
-      ;;
-      ;;
-      ;; func foo<A: AAA,
-      ;;          B: BBB where
-      ;;            ABC>() { // Aligns with the start of the type parameters.
-      ;; }
-      ;;
-      ;; func foo<A: AAA,
-      ;;          B: BBB
-      ;;            where
-      ;;              ABC>() { // Aligns with the "where" token.
-      ;; }
-      ;;
-      ;; class Foo<A,
-      ;;           B,
-      ;;           C> A,
-      ;;              B,
-      ;;              C where
-      ;;   ABC { // Aligns with the "class" token"
-      ;; }
-      ;;
-      ;; class Foo<A,
-      ;;           B,
-      ;;           C>: A,
-      ;;               B,
-      ;;               C
-      ;;   where
-      ;;     ABC { // Aligns with the "where" token"
-      ;; }
-      (goto-char (swift-mode:token:start previous-token))
-      (if (swift-mode:bol-other-than-comments-p)
-          (swift-mode:align-with-current-line
-           swift-mode:multiline-statement-offset)
-        (let ((parent (save-excursion
-                        (swift-mode:backward-sexps-until
-                         (append swift-mode:statement-parent-tokens
-                                 '("case" "catch"))))))
-          (if (member (swift-mode:token:text parent) '("case" "catch"))
-              (progn
-                (swift-mode:backward-token-or-list)
-                (swift-mode:calculate-indent-of-expression
-                 swift-mode:multiline-statement-offset
-                 swift-mode:multiline-statement-offset))
-            (swift-mode:find-parent-and-align-with-next
-             (append swift-mode:statement-parent-tokens '(< "for"))
-             swift-mode:multiline-statement-offset)))))
 
      ;; After implicit-\; or ;
      ((memq previous-type '(implicit-\; \;))
@@ -1256,6 +1266,13 @@ comma at eol."
   ;;     T: C {
   ;; }
   ;;
+  ;; https://github.com/swiftlang/swift-evolution/blob/main/proposals/0460-specialized.md
+  ;; @specialized(
+  ;;   where
+  ;;     Key == Int,
+  ;;     Value == Int
+  ;; )
+  ;;
   ;; enum Foo {
   ;;   case A(x: Int),
   ;;        B(y: Int),
@@ -1290,7 +1307,11 @@ comma at eol."
                  (if utrecht-style '(\,) nil))))
     (cond
      ((memq (swift-mode:token:type parent) '(\( \[ \,))
-      parent)
+      (goto-char (swift-mode:token:end parent))
+      (let ((next-token (swift-mode:forward-token)))
+        (if (equal (swift-mode:token:text next-token) "where")
+            next-token
+          parent)))
 
      ((eq (swift-mode:token:type parent) '<)
       (goto-char pos)
