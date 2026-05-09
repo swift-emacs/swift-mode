@@ -39,13 +39,13 @@
   :group 'swift
   :safe #'integerp)
 
-(defcustom swift-mode:parenthesized-expression-offset 2
+(defcustom swift-mode:parenthesized-expression-offset 4
   "Amount of indentation inside parentheses and square brackets."
   :type 'integer
   :group 'swift
   :safe #'integerp)
 
-(defcustom swift-mode:multiline-statement-offset 2
+(defcustom swift-mode:multiline-statement-offset 4
   "Amount of indentation for continuations of expressions."
   :type 'integer
   :group 'swift
