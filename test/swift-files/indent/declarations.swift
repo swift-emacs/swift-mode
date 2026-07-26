@@ -190,6 +190,17 @@ class Foo {
           set
     }
 
+    var x: Foo {
+        mutating
+          borrow {
+            return x
+        }
+        nonmutating
+          mutate {
+            return &x
+        }
+    }
+
     internal var x
       :
       (Int, Int)
@@ -739,6 +750,10 @@ protocol Foo {
           async
           throws
         set
+    }
+    var foo: Int {
+        borrow
+        mutate
     }
 }
 

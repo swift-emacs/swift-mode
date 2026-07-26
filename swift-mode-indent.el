@@ -1080,6 +1080,7 @@ OFFSET is the offset of the contents."
              '("for" "while" "repeat" "guard" "switch" "if" "else"
                "defer" "do" "catch"
                "get" "set" "willSet" "didSet" "func" "init" "deinit" "subscript"
+               "borrow" "mutate"
                "enum" "struct" "actor" "class" "extension"
                "prefix" "postfix" "infix" "precedencegroup"))
             (setq is-declaration-or-control-statement-body t)
@@ -1705,7 +1706,7 @@ It is a Generic parameter list if:
     "await"
     "consume" "copy" "discard"
     "in"
-    "init" "deinit" "get" "set" "willSet" "didSet" "subscript"
+    "init" "deinit" "get" "set" "willSet" "didSet" "subscript" "borrow" "mutate"
     "for" "case" "default" "while" "var" "repeat" "if" "else"
     "guard" "break" "continue" "fallthrough" "return" "throw" "defer"
     "do" "catch" "import" "typealias" "associatedtype"))

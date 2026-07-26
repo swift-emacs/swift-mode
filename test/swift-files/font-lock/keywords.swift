@@ -37,6 +37,15 @@ class Foo: Foo { // EXPECTED: "class" swift-mode:keyword-face "Foo" swift-mode:t
             x = x
         }
     }
+    var x: Int { // EXPECTED: "var" swift-mode:keyword-face ":" swift-mode:delimiter-face "Int" swift-mode:builtin-type-face "{" swift-mode:bracket-face
+        borrow { // EXPECTED: "borrow" swift-mode:keyword-face "{" swift-mode:bracket-face
+            x
+        }
+
+        mutate { // EXPECTED: "mutate" swift-mode:keyword-face "{" swift-mode:bracket-face
+            &x
+        }
+    }
     var x: Int = 1 { // EXPECTED: "var" swift-mode:keyword-face ":" swift-mode:delimiter-face "Int" swift-mode:builtin-type-face "=" swift-mode:operator-face "1" swift-mode:number-face "{" swift-mode:bracket-face
         willSet { // EXPECTED: "willSet" swift-mode:keyword-face "{" swift-mode:bracket-face
         }
@@ -54,6 +63,17 @@ class Foo: Foo { // EXPECTED: "class" swift-mode:keyword-face "Foo" swift-mode:t
             x = x
         }
     }
+
+    subscript(x: Int) { // EXPECTED: "subscript" swift-mode:keyword-face "(" swift-mode:bracket-face ":" swift-mode:delimiter-face "Int" swift-mode:builtin-type-face ")" swift-mode:bracket-face "{" swift-mode:bracket-face
+        borrow { // EXPECTED: "borrow" swift-mode:keyword-face "{" swift-mode:bracket-face
+            x
+        }
+
+        mutate { // EXPECTED: "mutate" swift-mode:keyword-face "{" swift-mode:bracket-face
+            &x
+        }
+    }
+
 
     func foo(a: borrowing Int, b: consuming Int, c: inout Int) { // EXPECTED: "func" swift-mode:keyword-face "foo" swift-mode:function-name-face "(" swift-mode:bracket-face ":" swift-mode:delimiter-face "borrowing" swift-mode:keyword-face "Int" swift-mode:builtin-type-face "," swift-mode:delimiter-face ":" swift-mode:delimiter-face "consuming" swift-mode:keyword-face "Int" swift-mode:builtin-type-face "," swift-mode:delimiter-face ":" swift-mode:delimiter-face "inout" swift-mode:keyword-face "Int" swift-mode:builtin-type-face ")" swift-mode:bracket-face "{" swift-mode:bracket-face
         do { // EXPECTED: "do" swift-mode:keyword-face "{" swift-mode:bracket-face

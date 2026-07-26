@@ -172,7 +172,7 @@ The cursor must be at the beginning of a statement."
          '("import" "typealias" "associatedtype"
            "enum" "struct" "actor" "protocol" "extension"
            "func" "init" "deinit" "subscript" "macro"
-           "get" "set" "willSet" "didSet"
+           "get" "set" "willSet" "didSet" "borrow" "mutate"
            "prefix" "postfix" "infix" "precedencegroup"
            "var" "let"
            "case"))
@@ -1509,7 +1509,7 @@ of ancestors."
                      "operator")
               (swift-mode:forward-token)))
 
-        ;; Ignored: "import" "get" "set" "willSet" "didSet"
+        ;; Ignored: "import" "get" "set" "willSet" "didSet" "borrow" "mutate"
         (t nil))))
     (if (eq (swift-mode:token:type name-token) 'identifier)
         name-token

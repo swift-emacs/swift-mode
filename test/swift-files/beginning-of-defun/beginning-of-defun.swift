@@ -46,6 +46,18 @@ let
         }/*}*/
      }/*}*/
 
+    /*{*/var a: Int {
+        /*{*/@Foo
+        borrow {
+            /*[*/return x/*]*/
+        }/*}*/
+
+        /*{*/@Foo
+        mutate {
+            /*[*/return &x/*]*/
+        }/*}*/
+     }/*}*/
+
     /*{*/var a = 0 {
         /*{*/@Foo
         willSet {
@@ -240,6 +252,10 @@ public
     /*{*/var x: Int {
         /*{*/get/*}*/
         /*{*/set/*}*/
+    }/*}*/
+    /*{*/var x: Int {
+        /*{*/borrow/*}*/
+        /*{*/mutate/*}*/
     }/*}*/
     /*{*/func foo()/*}*/
 

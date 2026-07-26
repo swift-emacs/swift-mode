@@ -32,6 +32,16 @@ import func FooModule3.importedFunction
         }
     }
 
+    @AAA var borrowableProperty: Int {
+        borrow {
+            return x
+        }
+
+        mutate {
+            return &x
+        }
+    }
+
     @AAA var observedProperty Int {
         willSet(a) {
             let a = 1

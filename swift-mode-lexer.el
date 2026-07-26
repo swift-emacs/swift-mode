@@ -980,7 +980,8 @@ move point to the end of the regexp and return non-nil."
      ;; Inserts implicit semicolon before keywords that behave like method
      ;; names.
      ((member (swift-mode:token:text next-token)
-              '("get" "set" "willSet" "didSet" "subscript" "init" "deinit"))
+              '("get" "set" "willSet" "didSet" "subscript" "init" "deinit"
+                "borrow" "mutate"))
       t)
 
      ;; Inserts implicit semicolon before declaration starters.

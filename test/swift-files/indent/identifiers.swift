@@ -269,6 +269,9 @@ func foo() {
       associativity: 1
     )
     foo(
+      borrow: 1
+    )
+    foo(
       convenience: 1
     )
     foo(
@@ -300,6 +303,9 @@ func foo() {
     )
     foo(
       lowerThan: 1
+    )
+    foo(
+      mutate: 1
     )
     foo(
       mutating: 1
