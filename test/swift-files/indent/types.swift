@@ -156,6 +156,28 @@ let foo
     A
   ] = abc
 
+// Inline array types
+
+let foo: [
+  5
+    of
+    Int
+] = abc
+
+let foo:
+  [
+    5
+      of
+      Int
+  ] = abc
+
+let foo
+  :[
+    5
+      of
+      Int
+  ] = abc
+
 // Tuple types
 
 let foo: (

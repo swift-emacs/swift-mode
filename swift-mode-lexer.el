@@ -1555,7 +1555,7 @@ This function does not return `implicit-;' or `type-:'."
                           text
                           (- (point) (length text))
                           (point)))
-       ((equal text "is")
+       ((member text '("is" "of"))
         (swift-mode:token 'binary-operator
                           text
                           (- (point) (length text))
@@ -1854,7 +1854,7 @@ This function does not return `implicit-;' or `type-:'."
              ;; Unknown character type. Treats as a single-letter token.
              (t (backward-char) (string (char-after))))))
       (cond
-       ((member text '("is" "as"))
+       ((member text '("is" "as" "of"))
         (swift-mode:token 'binary-operator
                           text
                           (point)

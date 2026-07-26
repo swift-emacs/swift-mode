@@ -200,3 +200,5 @@ distributed actor Foo { // EXPECTED: "distributed" swift-mode:keyword-face "acto
 }
 
 macro Foo() = #externalMacro(module: "Foo", type: "Foo") // EXPECTED: "macro" swift-mode:keyword-face "Foo" swift-mode:type-face "()" swift-mode:bracket-face "=" swift-mode:operator-face "#externalMacro" swift-mode:preprocessor-keyword-face "(" swift-mode:bracket-face ":" swift-mode:delimiter-face "\"Foo\"" swift-mode:string-face "," swift-mode:delimiter-face ":" swift-mode:delimiter-face "\"Foo\"" swift-mode:string-face ")" swift-mode:bracket-face
+
+let x: [5 of Int] = .init(repeating: 1) // EXPECTED: "let" swift-mode:keyword-face ":" swift-mode:delimiter-face "[" swift-mode:bracket-face "5" swift-mode:number-face "of" swift-mode:keyword-face "Int" swift-mode:builtin-type-face "]" swift-mode:bracket-face "=" swift-mode:operator-face "." swift-mode:operator-face "init" swift-mode:keyword-face "(" swift-mode:bracket-face ":" swift-mode:delimiter-face "1" swift-mode:number-face ")" swift-mode:bracket-face

@@ -902,7 +902,7 @@ Excludes true, false, and keywords begin with a number sign.")
     "didSet" "dynamic" "final" "get" "higherThan" "indirect" "infix" "lazy"
     "left" "lowerThan" "mutate" "mutating" "none" "nonmutating" "optional"
     "override" "postfix" "precedence" "precedencegroup" "prefix" "required"
-    "right" "set" "unowned" "weak" "willSet")
+    "right" "set" "unowned" "weak" "willSet" "of")
   "Keywords reserved in particular contexts.")
 
 (defconst swift-mode:build-config-keywords
