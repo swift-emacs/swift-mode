@@ -36,6 +36,8 @@
 
 ;;; Code:
 
+(require 'seq)
+
 ;; Terminology:
 ;; (See also docs/string.png)
 ;;
@@ -136,6 +138,247 @@ END is the point after the token."
 ;; - {}
 ;; - <>
 
+;;; Operator characters
+
+;; Swift operators consist of Unicode characters as well as ASCII ones.
+;;
+;; https://docs.swift.org/swift-book/documentation/the-swift-programming-language/lexicalstructure/#Operators
+;;
+;; The character sets below are defined as lists of ranges, then converted to
+;; char-tables (for testing a single character), strings for
+;; `skip-chars-forward' and `skip-chars-backward', and regexps.
+
+(defconst swift-mode:operator-head-ranges
+  '((?/ . ?/) (?= . ?=) (?- . ?-) (?+ . ?+) (?! . ?!) (?* . ?*) (?% . ?%)
+    (?< . ?<) (?> . ?>) (?& . ?&) (?| . ?|) (?^ . ?^) (?~ . ?~) (?? . ??)
+    (#x00A1 . #x00A7) (#x00A9 . #x00A9) (#x00AB . #x00AB) (#x00AC . #x00AC)
+    (#x00AE . #x00AE) (#x00B0 . #x00B1) (#x00B6 . #x00B6) (#x00BB . #x00BB)
+    (#x00BF . #x00BF) (#x00D7 . #x00D7) (#x00F7 . #x00F7)
+    (#x2016 . #x2017) (#x2020 . #x2027) (#x2030 . #x203E) (#x2041 . #x2053)
+    (#x2055 . #x205E) (#x2190 . #x23FF) (#x2500 . #x2775) (#x2794 . #x2BFF)
+    (#x2E00 . #x2E7F) (#x3001 . #x3003) (#x3008 . #x3020) (#x3030 . #x3030))
+  "Ranges of characters that can start an operator.
+
+Each element is a cons cell of the first and the last characters, inclusive.
+
+This is `operator-head' of the Swift grammar.  Note that `dot-operator-head',
+that is a period, is not included.")
+
+(defconst swift-mode:operator-combining-character-ranges
+  '((#x0300 . #x036F)    ; Combining Diacritical Marks
+    (#x1DC0 . #x1DFF)    ; Combining Diacritical Marks Supplement
+    (#x20D0 . #x20FF)    ; Combining Diacritical Marks for Symbols
+    (#xFE00 . #xFE0F)    ; Variation Selectors
+    (#xFE20 . #xFE2F)    ; Combining Half Marks
+    (#xE0100 . #xE01EF)) ; Variation Selectors Supplement
+  "Ranges of combining characters that can be a part of an operator.
+
+Each element is a cons cell of the first and the last characters, inclusive.
+
+These characters cannot start an operator.  They are also valid as a part of
+an identifier, so they are left as word constituents in
+`swift-mode:syntax-table'.")
+
+(defconst swift-mode:operator-character-ranges
+  (append swift-mode:operator-head-ranges
+          swift-mode:operator-combining-character-ranges)
+  "Ranges of characters that can be a part of an operator.
+
+Each element is a cons cell of the first and the last characters, inclusive.
+
+This is `operator-character' of the Swift grammar.")
+
+(defconst swift-mode:dot-operator-character-ranges
+  (cons '(?. . ?.) swift-mode:operator-character-ranges)
+  "Ranges of characters that can be a part of an operator starting with a dot.
+
+Each element is a cons cell of the first and the last characters, inclusive.
+
+This is `dot-operator-character' of the Swift grammar.")
+
+;; These functions are used by the `defconst' forms below.  They are wrapped
+;; with `eval-and-compile' so that they are defined whenever those forms are
+;; evaluated, at compile time as well as at load time.
+(eval-and-compile
+  (defun swift-mode:ranges-to-char-table (ranges)
+    "Return a char-table converted from RANGES.
+
+RANGES is a list of cons cells of the first and the last characters, inclusive.
+
+The resulting char-table maps characters in the RANGES to t and others to nil."
+    (let ((table (make-char-table 'swift-mode:operator-characters nil)))
+      (dolist (range ranges)
+        (set-char-table-range table range t))
+      table))
+
+  (defun swift-mode:ranges-contain-char-p (char ranges)
+    "Return non-nil if RANGES contain CHAR.
+
+RANGES is a list of cons cells of the first and the last characters,
+inclusive."
+    (seq-some (lambda (range) (<= (car range) char (cdr range))) ranges))
+
+  (defun swift-mode:remove-char-from-ranges (char ranges)
+    "Return RANGES without CHAR.
+
+RANGES is a list of cons cells of the first and the last characters,
+inclusive.  The result covers the same characters as RANGES except CHAR."
+    (seq-mapcat
+     (lambda (range)
+       (let ((start (car range))
+             (end (cdr range)))
+         (if (<= start char end)
+             (append
+              (when (< start char) (list (cons start (1- char))))
+              (when (< char end) (list (cons (1+ char) end))))
+           (list range))))
+     ranges))
+
+  (defun swift-mode:ranges-to-char-set-string (ranges)
+    "Return a string representing a character set converted from RANGES.
+
+RANGES is a list of cons cells of the first and the last characters, inclusive.
+
+The resulting string can be used as the argument of `skip-chars-forward' and
+`skip-chars-backward', or the contents of a bracket expression of a regexp.
+
+A hyphen, if any, is placed at the beginning of the string so that it is not
+interpreted as a range separator.  A caret, if any, is placed at the end so
+that it does not negate the set; RANGES must therefore not consist of a caret
+alone."
+    (let ((has-hyphen (swift-mode:ranges-contain-char-p ?- ranges))
+          (has-caret (swift-mode:ranges-contain-char-p ?^ ranges))
+          (rest (swift-mode:remove-char-from-ranges
+                 ?^
+                 (swift-mode:remove-char-from-ranges ?- ranges))))
+      (concat
+       (if has-hyphen "-" "")
+       (mapconcat
+        (lambda (range)
+          (let ((start (car range))
+                (end (cdr range)))
+            (cond
+             ((eq start end) (string start))
+             ((eq (1+ start) end) (string start end))
+             (t (string start ?- end)))))
+        rest
+        "")
+       (if has-caret "^" "")))))
+
+(defconst swift-mode:operator-head-char-table
+  (swift-mode:ranges-to-char-table swift-mode:operator-head-ranges)
+  "Char-table mapping characters that can start an operator to t.")
+
+(defconst swift-mode:operator-character-char-table
+  (swift-mode:ranges-to-char-table swift-mode:operator-character-ranges)
+  "Char-table mapping characters that can be a part of an operator to t.")
+
+(defconst swift-mode:operator-character-skip-chars
+  (swift-mode:ranges-to-char-set-string swift-mode:operator-character-ranges)
+  "Characters that can be a part of an operator, for `skip-chars-forward'.")
+
+(defconst swift-mode:dot-operator-character-skip-chars
+  (swift-mode:ranges-to-char-set-string
+   swift-mode:dot-operator-character-ranges)
+  "Characters of an operator starting with a dot, for `skip-chars-forward'.")
+
+(defconst swift-mode:operator-combining-character-skip-chars
+  (swift-mode:ranges-to-char-set-string
+   swift-mode:operator-combining-character-ranges)
+  "Combining characters of an operator, for `skip-chars-forward'.")
+
+(defconst swift-mode:operator-regexp
+  (concat
+   "["
+   (swift-mode:ranges-to-char-set-string swift-mode:operator-head-ranges)
+   "]"
+   "["
+   swift-mode:operator-character-skip-chars
+   "]*")
+  "Regexp matching an operator not starting with a dot.
+
+Anchored at an `operator-head' so that a combining character following an
+identifier is not matched.")
+
+(defconst swift-mode:dot-operator-regexp
+  (concat "[.][" swift-mode:dot-operator-character-skip-chars "]*")
+  "Regexp matching an operator starting with a dot.
+
+Unlike the Swift grammar, this also matches a bare period.")
+
+(defconst swift-mode:operator-or-dot-operator-regexp
+  (concat swift-mode:operator-regexp "\\|" swift-mode:dot-operator-regexp)
+  "Regexp matching an operator, with or without a leading dot.")
+
+(defun swift-mode:operator-head-p (char)
+  "Return non-nil if CHAR can start an operator.
+
+CHAR may be nil, meaning the beginning or the end of the buffer.
+Note that a period is not an `operator-head' in the Swift grammar."
+  (and char (aref swift-mode:operator-head-char-table char)))
+
+(defun swift-mode:operator-character-p (char)
+  "Return non-nil if CHAR can be a part of an operator.
+
+CHAR may be nil, meaning the beginning or the end of the buffer.
+Note that a period is not an `operator-character' in the Swift grammar."
+  (and char (aref swift-mode:operator-character-char-table char)))
+
+(defun swift-mode:beginning-of-operator ()
+  "Move point to the beginning of the operator just before the point.
+
+Keep the point if it is not just after an operator.  Unlike
+`swift-mode:skip-identifier-backward', spaces and comments before the
+point are not skipped.
+
+Comments take precedence over operators, so an operator cannot contain
+comments.  For example, the following is parsed as 1 + /*-*/ +1 rather
+than 1 +/*-*/+1:
+
+  1 +/*-*/+1
+
+An operator starting with a dot can contain dots while other operators
+cannot.  So the following is parsed as (1+++++) ...++++ 1:
+
+  1+++++...++++1
+
+Combining characters cannot start an operator while they are valid as a
+part of an identifier.  So, given \"e\" followed by U+0301 COMBINING ACUTE
+ACCENT and then \"+1\", the operator is the plus sign alone; the combining
+character belongs to the identifier.
+
+This function depends on the text property `swift-mode:comment' rather than
+the syntax tables, so that it works in `swift-mode:syntax-propertize'.
+
+Return the new point."
+  (let ((end (point))
+        comment-position)
+    ;; Skips characters that may be a part of an operator.  This may go too
+    ;; far; the skipped region may contain comments, and may start with
+    ;; combining characters at the end of an identifier.
+    (skip-chars-backward swift-mode:dot-operator-character-skip-chars)
+    ;; The operator, if any, is after the last comment in the skipped region.
+    (while (setq comment-position
+                 (text-property-any (point) end 'swift-mode:comment t))
+      (goto-char (or (text-property-not-all comment-position
+                                            end
+                                            'swift-mode:comment
+                                            t)
+                     end)))
+    (when (< end (point))
+      (goto-char end))
+    (let ((dot-position (save-excursion
+                          (and (search-forward "." end t)
+                               (match-beginning 0)))))
+      (if dot-position
+          ;; The operator starts with the first dot; it can contain dots.
+          (goto-char dot-position)
+        ;; The operator cannot contain dots.  Leading combining characters, if
+        ;; any, belong to the preceding identifier.
+        (skip-chars-forward swift-mode:operator-combining-character-skip-chars
+                            end)))
+    (point)))
+
 ;;; Syntax table
 
 (defconst swift-mode:syntax-table
@@ -153,10 +396,24 @@ END is the point after the token."
     ;;
     ;; Operators
     ;; https://developer.apple.com/library/ios/documentation/Swift/Conceptual/Swift_Programming_Language/LexicalStructure.html#//apple_ref/doc/uid/TP40014097-CH30-ID410
-    ;; TODO Unicode operators
     ;;
     ;; / and * will be overridden below as comment delimiters
-    (mapc (lambda (c) (modify-syntax-entry c "." table)) "/=-+!*%<>&|^~?.")
+    ;;
+    ;; Note that combining characters are not modified here; they are also
+    ;; identifier characters, so they are left as word constituents.  The lexer
+    ;; handles them with `swift-mode:operator-combining-character-skip-chars'.
+    (with-syntax-table table
+      (dolist (range swift-mode:operator-head-ranges)
+        (let ((char (car range)))
+          (while (<= char (cdr range))
+            ;; Although characters like 〈, 「, or ⟦ are operator heads in
+            ;; the Swift grammar, they are often used as parentheses in
+            ;; comments and strings.  Keep their parenthesis syntax so that
+            ;; `show-paren-mode' and `forward-sexp' work on them.
+            (unless (memq (char-syntax char) '(?\( ?\)))
+              (modify-syntax-entry char "." table))
+            (setq char (1+ char))))))
+    (modify-syntax-entry ?. "." table)
     ;; Separators
     (mapc (lambda (c) (modify-syntax-entry c "." table)) ",;")
 
@@ -650,37 +907,29 @@ If START is not a start of a regexp, keep the point and return nil.  Otherwise,
 move point to the end of the regexp and return non-nil."
   (let* ((pos (point))
          (start-of-contents (1+ start))
-         after-last-dot
          (square-brackets-count 0)
          (parentheses-count 0)
          (limit (line-end-position))
          (end-of-regexp nil)
          (escape-sequences nil))
-    (if (or
-         ;; Cannot starts with spaces, tabs, slashes, or asterisks.
-         (memq (char-after start-of-contents) '(?\s ?\t ?/ ?*))
-         ;; Cannot be a comment closer: /**/+++/.
-         (get-text-property start 'swift-mode:comment)
-         ;; Cannot be preceded with infix operators while it can be preceded
-         ;; with prefix operators.
-         (save-excursion
-           (goto-char start)
-           ;; TODO Unicode operators
-           (skip-chars-backward "-/=+!*%<>&|^~?")
-           (when (eq (char-before) ?.)
-             (setq after-last-dot (point))
-             (skip-chars-backward "-/=+!*%<>&|^~?.")
-             (unless (eq (char-after) ?.)
-               (goto-char (1- after-last-dot))))
-           (and
-            ;; preceded with an operator
-            (/= start (point))
-            ;; it is not a prefix operator
-            (not (memq (char-before)
-                       '(nil ?\s ?\t ?\[ ?\( ?{ ?, ?\; ?:)))
-            ;; it does't contain comments: a/**/+/**//b /
-            (not (text-property-any (point) start 'swift-mode:comment t)))))
-        nil
+    (unless (or
+             ;; Cannot starts with spaces, tabs, slashes, or asterisks.
+             (memq (char-after start-of-contents) '(?\s ?\t ?/ ?*))
+             ;; Cannot be a comment closer: /**/+++/.
+             (get-text-property start 'swift-mode:comment)
+             ;; Cannot be preceded with infix operators while it can be preceded
+             ;; with prefix operators.
+             (save-excursion
+               (goto-char start)
+               ;; Note that this stops after the last comment, if any, so that
+               ;; a/**/+/**//b / is not rejected.
+               (swift-mode:beginning-of-operator)
+               (and
+                ;; preceded with an operator
+                (/= start (point))
+                ;; it is not a prefix operator
+                (not (memq (char-before)
+                           '(nil ?\s ?\t ?\[ ?\( ?{ ?, ?\; ?:))))))
       (goto-char start-of-contents)
       (while (and (null end-of-regexp)
                   (search-forward-regexp "[][()\\/]" limit t))
@@ -1279,8 +1528,17 @@ Keep point if point is not after an identifier."
       t)
 
      ((and (char-before) (memq (char-syntax (char-before)) '(?w ?_)))
-      (skip-syntax-backward "w_")
-      t)
+      (let ((pos-after-comment (point)))
+        (skip-syntax-backward "w_")
+        ;; Combining characters are word constituents, but an identifier
+        ;; cannot start with them.  If any are left at the beginning, they
+        ;; belong to the preceding token, that is an operator.
+        (skip-chars-forward swift-mode:operator-combining-character-skip-chars
+                            pos-after-comment)
+        (if (< (point) pos-after-comment)
+            t
+          (goto-char pos)
+          nil)))
 
      (t
       (goto-char pos)
@@ -1442,6 +1700,9 @@ This function does not return `implicit-;' or `type-:'."
            ;; `skip-syntax-backward', and `looking-at' here.
            (skip-chars-backward "])>")
            (skip-syntax-backward "w_")
+           ;; An identifier cannot start with combining characters.
+           (skip-chars-forward
+            swift-mode:operator-combining-character-skip-chars)
            (looking-at "[[:upper:]_]")))
     (forward-char)
     (swift-mode:token '> ">" (1- (point)) (point)))
@@ -1459,13 +1720,7 @@ This function does not return `implicit-;' or `type-:'."
        (point))))
 
    ;; Operator (other than as, try, is, await, consume, copy, discard, or each)
-   ;;
-   ;; Operators starts with a dot can contains dots. Other operators cannot
-   ;; contain dots.
-   ;;
-   ;; https://developer.apple.com/library/ios/documentation/Swift/Conceptual/Swift_Programming_Language/LexicalStructure.html#//apple_ref/swift/grammar/dot-operator-head
-   ;; TODO Unicode operators
-   ((looking-at "[-/=+!*%<>&|^~?]+\\|[.][-./=+!*%<>&|^~?]*")
+   ((looking-at swift-mode:operator-or-dot-operator-regexp)
     (let* ((text (match-string-no-properties 0))
            (start (match-beginning 0))
            (end (match-end 0)))
@@ -1738,6 +1993,9 @@ This function does not return `implicit-;' or `type-:'."
          (save-excursion
            (skip-chars-backward "])>")
            (skip-syntax-backward "w_")
+           ;; An identifier cannot start with combining characters.
+           (skip-chars-forward
+            swift-mode:operator-combining-character-skip-chars)
            (looking-at "[[:upper:]_]")))
     (backward-char)
     (swift-mode:token '> ">" (point) (1+ (point))))
@@ -1757,39 +2015,21 @@ This function does not return `implicit-;' or `type-:'."
        pos-before-comment)))
 
    ;; Operator (other than as, try, is, await, consume, copy, discard, or each)
-   ;;
-   ;; Operators which starts with a dot can contain other dots. Other
-   ;; operators cannot contain dots.
-   ;;
-   ;; https://developer.apple.com/library/ios/documentation/Swift/Conceptual/Swift_Programming_Language/LexicalStructure.html#//apple_ref/swift/grammar/dot-operator-head
-   ;; TODO Unicode operators
-   ((memq (char-before) '(?. ?- ?/ ?= ?+ ?! ?* ?% ?< ?> ?& ?| ?^ ?~ ??))
-    (let ((point-before-comments (point)))
-      (skip-chars-backward "-./=+!*%<>&|^~?")
-      (cond
-       ((save-excursion
-          (forward-symbol -1)
-          (and (looking-at "\\(as\\|try\\)[?!]")
-               (= point-before-comments (match-end 0))))
-        ;; as?, as!, try?, try!
-        t)
-       ((looking-at "[.][-./=+!*%<>&|^~?]*")
-        ;; e.g. 1 .++++.++++...+. 1
-        t)
-       ((and (looking-at "[-/=+!*%<>&|^~?]+")
-             (<= point-before-comments (match-end 0)))
-        ;; e.g. 1 +++++++++ 1
-        t)
-       (t
-        ;; e.g. 1+++++...++++1, that is (1+++++) ...++++ 1
-        (skip-chars-forward "-/=+!*%<>&|^~?")
-        (looking-at "[.][-./=+!*%<>&|^~?]*")))
-      (let* ((start (match-beginning 0))
-             (end (min point-before-comments (match-end 0)))
-             (text (substring (match-string-no-properties 0) 0 (- end start))))
-        (goto-char start)
-        (swift-mode:fix-operator-type
-         (swift-mode:token nil text start end)))))
+   ((/= (point) (save-excursion (swift-mode:beginning-of-operator)))
+    (let ((end (point))
+          (start (swift-mode:beginning-of-operator)))
+      (when (save-excursion
+              ;; as?, as!, try?, try!
+              (forward-symbol -1)
+              (and (looking-at "\\(as\\|try\\)[?!]")
+                   (= end (match-end 0))))
+        (setq start (match-beginning 0))
+        (goto-char start))
+      (swift-mode:fix-operator-type
+       (swift-mode:token nil
+                         (buffer-substring-no-properties start end)
+                         start
+                         end))))
 
    ;; Backquoted identifier
    ((eq (char-before) ?`)

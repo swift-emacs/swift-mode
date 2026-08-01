@@ -186,7 +186,19 @@ let x = 1 + 1 // EXPECTED: "let" swift-mode:keyword-face "=" swift-mode:operator
 let x = 1 +++ 1 // EXPECTED: "let" swift-mode:keyword-face "=" swift-mode:operator-face "1" swift-mode:number-face "+++" swift-mode:operator-face "1" swift-mode:number-face
 let x = 1 ..< 1 // EXPECTED: "let" swift-mode:keyword-face "=" swift-mode:operator-face "1" swift-mode:number-face "..<" swift-mode:operator-face "1" swift-mode:number-face
 let x = true ? 1 : 1 // EXPECTED: "let" swift-mode:keyword-face "=" swift-mode:operator-face "true" swift-mode:constant-keyword-face "?" swift-mode:operator-face "1" swift-mode:number-face ":" swift-mode:operator-face "1" swift-mode:number-face
-let x = 1 ⊕ 1 // known-bug: Unicode operators are operators
+let x = 1 ⊕ 1 // EXPECTED: "let" swift-mode:keyword-face "=" swift-mode:operator-face "1" swift-mode:number-face "⊕" swift-mode:operator-face "1" swift-mode:number-face
+let x = 1 × 1 // EXPECTED: "let" swift-mode:keyword-face "=" swift-mode:operator-face "1" swift-mode:number-face "×" swift-mode:operator-face "1" swift-mode:number-face
+let x = 1 ⇒⇒ 1 // EXPECTED: "let" swift-mode:keyword-face "=" swift-mode:operator-face "1" swift-mode:number-face "⇒⇒" swift-mode:operator-face "1" swift-mode:number-face
+let x = 1 <× 1 // EXPECTED: "let" swift-mode:keyword-face "=" swift-mode:operator-face "1" swift-mode:number-face "<×" swift-mode:operator-face "1" swift-mode:number-face
+let x = 1 .×. 1 // EXPECTED: "let" swift-mode:keyword-face "=" swift-mode:operator-face "1" swift-mode:number-face ".×." swift-mode:operator-face "1" swift-mode:number-face
+let x = ¬a // EXPECTED: "let" swift-mode:keyword-face "=" swift-mode:operator-face "¬" swift-mode:operator-face
+// The operator below is a plus sign followed by U+0301 COMBINING ACUTE ACCENT.
+let x = 1 +́ 1 // EXPECTED: "let" swift-mode:keyword-face "=" swift-mode:operator-face "1" swift-mode:number-face "+́" swift-mode:operator-face "1" swift-mode:number-face
+// The identifier below is "e" followed by U+0301 COMBINING ACUTE ACCENT; the
+// combining character must not be fontified as an operator.
+let é=1 // EXPECTED: "let" swift-mode:keyword-face "=" swift-mode:operator-face "1" swift-mode:number-face
+// Unicode identifiers must not be fontified as operators.
+let 😊 = 1 // EXPECTED: "let" swift-mode:keyword-face "=" swift-mode:operator-face "1" swift-mode:number-face
 foo<A>() // known-bug: <> should be brackets.
 
 

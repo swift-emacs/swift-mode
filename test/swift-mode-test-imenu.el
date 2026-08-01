@@ -49,7 +49,7 @@ PROGRESS-REPORTER is the progress-reporter."
       (redisplay)
       (with-temp-buffer
         (switch-to-buffer (current-buffer))
-        (insert-file-contents-literally swift-file)
+        (swift-mode:test:insert-file-contents swift-file)
         (swift-mode)
         (font-lock-mode -1)
         (let* ((actual (swift-mode:scan-declarations))
@@ -58,7 +58,7 @@ PROGRESS-REPORTER is the progress-reporter."
                                     "-expected.eld"))
                (expected
                 (with-temp-buffer
-                  (insert-file-contents-literally expected-file-name)
+                  (swift-mode:test:insert-file-contents expected-file-name)
                   (read (current-buffer))))
                (status (if (equal actual expected) 'ok 'error))
                (count-assoc (assq status error-counts)))

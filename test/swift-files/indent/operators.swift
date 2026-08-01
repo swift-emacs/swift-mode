@@ -64,7 +64,66 @@ b
 let x = a++.
   a
 
+// Comments are whitespaces, so they split operators.
+
+// This must be equal to let x = a+ /*-*/ + a
+let x = a+/*-*/+
+  a
+
+// This must be equal to let x = a /**/ + /**/ a
+let x = a/**/+/**/
+  a
+
+// This must be equal to let x = (a+).+ /*-*/ .+ a
+let x = a+.+/*-*/.+
+  a
+
 // Unicode operators
 
 let x = a ×
-  a  // swift-mode:test:known-bug
+  a
+
+let x = a ÷
+  a
+
+let x = a ⊕
+  a
+
+// Multi-character Unicode operators
+
+let x = a ⇒⇒
+  a
+
+// Mixture of ASCII and Unicode operator characters
+
+let x = a <×
+  a
+
+let x = a ×<
+  a
+
+// Prefix and postfix Unicode operators
+
+let x = ¬a +
+  a
+
+let x = a° +
+  a
+
+// Unicode operators starting with a dot
+
+let x = a .×.
+  a
+
+// Operators with combining characters
+//
+// The operator below is a plus sign followed by U+0301 COMBINING ACUTE ACCENT.
+
+let x = a +́
+  a
+
+// The operator below is U+2764 HEAVY BLACK HEART followed by U+FE0F VARIATION
+// SELECTOR-16.
+
+let x = a ❤️
+  a

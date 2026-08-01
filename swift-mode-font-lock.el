@@ -694,10 +694,9 @@ Assuming POS is just before ! character."
   (goto-char pos)
   (and (or (memq (char-before) '(nil ?\s ?\t ?\n ?\( ?\[ ?{ ?, ?\; ?:))
            (forward-comment -1))
-       (not (memq (char-after (1+ (point)))
-                  ;; TODO Unicode operators
-                  '(nil ?\s ?\t ?\n ?\) ?\] ?} ?, ?\; ?: ?/ ?= ?- ?+ ?! ?* ?%
-                        ?< ?> ?& ?| ?^ ?? ?~)))))
+       (let ((char (char-after (1+ (point)))))
+         (not (or (memq char '(nil ?\s ?\t ?\n ?\) ?\] ?} ?, ?\; ?:))
+                  (swift-mode:operator-character-p char))))))
 
 (defun swift-mode:font-lock-match-negation (limit)
   "Search a negation operator and return non-nil if found.
@@ -1000,8 +999,7 @@ Excludes true, false, and keywords begin with a number sign.")
      'swift-mode:negation-char-face)
 
     ;; Other operators
-    ;; TODO Unicode operators
-    ("[/=+!*%<>&|^?~.-]+"
+    (,swift-mode:operator-or-dot-operator-regexp
      .
      'swift-mode:operator-face)
 

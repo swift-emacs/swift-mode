@@ -88,6 +88,19 @@ Return the error-buffer"
         (kill-emacs (min 63 (assoc-default 'error error-counts)))
       (compilation-mode))))
 
+(defun swift-mode:test:insert-file-contents (file-name)
+  "Insert the contents of FILE-NAME into the current buffer.
+
+The contents are decoded as UTF-8 so that test cases can contain Unicode
+characters such as Unicode operators.  End-of-line conversion is disabled,
+like `insert-file-contents-literally'.
+
+FILE-NAME is the name of the file to be inserted."
+  (let ((coding-system-for-read 'utf-8-unix)
+        (format-alist nil)
+        (after-insert-file-functions nil))
+    (insert-file-contents file-name)))
+
 (defun swift-mode:show-error (error-buffer file line level message)
   "Show an error message to the ERROR-BUFFER or stdout.
 

@@ -136,3 +136,8 @@ precedencegroup precedenceGroup {
 }
 
 macro fooMacro<T>(x: Foo) = #bar
+
+// Argument labels of Unicode operators are also "_"
+func ×(lhs: Int, rhs: Int) -> Int {
+    return lhs * rhs
+}

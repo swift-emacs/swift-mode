@@ -56,7 +56,7 @@ PROGRESS-REPORTER is the progress-reporter."
         (redisplay)
         (with-temp-buffer
           (switch-to-buffer (current-buffer))
-          (insert-file-contents-literally swift-file)
+          (swift-mode:test:insert-file-contents swift-file)
           (swift-mode)
           (setq expected-positions
                 (swift-mode:parse-beginning-of-defun-test-file))

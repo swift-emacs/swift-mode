@@ -1,4 +1,5 @@
-((macro (identifier "fooMacro(x:)" 3010 3018) nil)
+((func (identifier "×(_:_:)" 3096 3097) nil)
+ (macro (identifier "fooMacro(x:)" 3010 3018) nil)
  (precedencegroup (identifier "precedenceGroup" 2903 2918) nil)
  (operator (identifier "*****" 2863 2868) nil)
  (operator (identifier "-----" 2823 2828) nil)
