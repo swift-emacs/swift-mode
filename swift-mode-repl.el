@@ -114,6 +114,15 @@ process printing nothing does not freeze Emacs."
   :type 'number
   :safe #'numberp)
 
+(defcustom swift-mode:ios-simulator-boot-timeout 60.0
+  "Seconds to wait for an iOS simulator to boot.
+
+`swift-mode:wait-for-ios-simulator' gives up waiting after this seconds
+so that a simulator failing to boot does not freeze Emacs."
+  :tag "Swift Mode iOS Simulator Boot Timeout"
+  :type 'number
+  :safe #'numberp)
+
 (defcustom swift-mode:swift-testing-command-regexp
   "\\<swift \\(?:test\\|package\\|build\\)\\>"
   "Regexp to of command line of Swift Testing.
@@ -782,14 +791,20 @@ Return nil otherwise."
    "-CurrentDeviceUDID" device-identifier))
 
 (defun swift-mode:wait-for-ios-simulator (device-identifier)
-  "Wait until an iOS simulator with DEVICE-IDENTIFIER booted."
-  (while (null (seq-find
-                (lambda (device)
-                  (and
-                   (string-equal (assoc-default 'udid device) device-identifier)
-                   (string-equal (assoc-default 'state device) "Booted")))
-                (swift-mode:list-ios-simulator-devices)))
-    (sit-for 0.5)))
+  "Wait until an iOS simulator with DEVICE-IDENTIFIER booted.
+
+Signal an error if it is not booted within
+`swift-mode:ios-simulator-boot-timeout' seconds."
+  (let ((deadline (+ (float-time) swift-mode:ios-simulator-boot-timeout)))
+    (while (null (seq-find
+                  (lambda (device)
+                    (and (string-equal (assoc-default 'udid device)
+                                       device-identifier)
+                         (string-equal (assoc-default 'state device) "Booted")))
+                  (swift-mode:list-ios-simulator-devices)))
+      (when (< deadline (float-time))
+        (error "%s: %s" "Cannot boot the iOS simulator" device-identifier))
+      (sit-for 0.5))))
 
 (defun swift-mode:install-ios-app (device-identifier codesigning-folder-path)
   "Install an iOS app to an iOS simulator with DEVICE-IDENTIFIER.
@@ -882,8 +897,10 @@ in Xcode build settings."
          (target-booted
           (string-equal (assoc-default 'state target-device) "Booted"))
          (simulator-running (consp active-devices))
-         (progress-reporter
-          (make-progress-reporter "Waiting for simulator...")))
+         progress-reporter)
+    (unless target-device
+      (error "%s: %s" "No such iOS simulator device" device-identifier))
+    (setq progress-reporter (make-progress-reporter "Waiting for simulator..."))
     (cond
      (target-booted
       ;; The target device is already booted. Does nothing.
