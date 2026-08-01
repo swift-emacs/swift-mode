@@ -48,7 +48,7 @@ Return the error-buffer"
 
   (unless tests
     (dolist (test-source (directory-files swift-mode:test:basedir
-                                          t "swift-mode-test-.*.el"))
+                                          t "\\`swift-mode-test-.*\\.el\\'"))
       (load (file-name-sans-extension test-source) nil 'nomsg))
     (mapatoms (lambda (sym)
                 (and (fboundp sym)
