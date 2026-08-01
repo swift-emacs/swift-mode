@@ -333,12 +333,14 @@ and \"c\".
 
   func foo(a b: Int, c: Int)"
   (let* ((name-token (swift-mode:forward-token-or-list-except-curly-bracket))
+         (name-text (swift-mode:token:text name-token))
          next-token
          parameter-end
          (parameter-names '())
-         (is-operator (let ((char (elt (swift-mode:token:text name-token) 0)))
-                        (or (eq char ?.)
-                            (swift-mode:operator-head-p char)))))
+         (is-operator (and (< 0 (length name-text))
+                           (or (eq (elt name-text 0) ?.)
+                               (swift-mode:operator-head-p
+                                (elt name-text 0))))))
     (cond
      ((eq (swift-mode:token:type name-token) 'identifier)
       (while (progn
@@ -357,8 +359,7 @@ and \"c\".
 
               (when (eq (swift-mode:token:type next-token) 'identifier)
                 (when (or is-operator
-                          (and (equal (swift-mode:token:text name-token)
-                                      "subscript")
+                          (and (equal name-text "subscript")
                                (eq (swift-mode:token:type
                                     (swift-mode:forward-token-or-list))
                                    ':)))
