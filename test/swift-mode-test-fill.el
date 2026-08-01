@@ -53,8 +53,6 @@ interactively."
         (with-temp-buffer
           (switch-to-buffer (current-buffer))
           (swift-mode:test:insert-file-contents swift-file)
-          (let ((coding-system-for-read 'utf-8))
-            (decode-coding-inserted-region (point-min) (point-max) swift-file))
           (swift-mode)
           (font-lock-mode -1)
           (syntax-propertize (point-max))
