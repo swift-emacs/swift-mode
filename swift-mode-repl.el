@@ -191,7 +191,10 @@ Runs the hook `swift-repl-mode-hook' \(after the `comint-mode-hook' is run).
         (setq-default swift-mode:repl-buffer swift-mode:repl-buffer)))
     (with-current-buffer buffer
       (setq old-size (buffer-size))
-      (swift-repl-mode)
+      ;; Initializing the major mode kills buffer local variables including
+      ;; `swift-mode:repl-command-queue'.  Do it only for a fresh buffer.
+      (unless (derived-mode-p 'swift-repl-mode)
+        (swift-repl-mode))
       (setq-local swift-mode:repl-buffer buffer))
     (unless (comint-check-proc buffer)
       (apply #'make-comint-in-buffer
