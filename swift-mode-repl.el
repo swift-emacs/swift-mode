@@ -574,6 +574,7 @@ An list ARGS are appended for builder command line arguments."
   (with-current-buffer (get-buffer-create "*swift-mode:compilation*")
     (fundamental-mode)
     (setq buffer-read-only nil)
+    (erase-buffer)
     (let ((progress-reporter (make-progress-reporter "Building...")))
       (unless
           (zerop
@@ -637,6 +638,7 @@ the value of `swift-mode:ios-project-scheme' is used."
   (with-current-buffer (get-buffer-create "*swift-mode:compilation*")
     (fundamental-mode)
     (setq buffer-read-only nil)
+    (erase-buffer)
     (let ((progress-reporter (make-progress-reporter "Building..."))
           (xcodebuild-args `(,swift-mode:xcodebuild-executable
                              "-configuration" "Debug"
