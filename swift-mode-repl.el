@@ -106,6 +106,14 @@ The string is split by spaces, then unquoted."
   :type 'string
   :safe #'stringp)
 
+(defcustom swift-mode:repl-startup-timeout 30.0
+  "Seconds to wait for the first output of a REPL process.
+
+`swift-mode:run-repl' gives up waiting after this seconds so that a
+process printing nothing does not freeze Emacs."
+  :type 'number
+  :safe #'numberp)
+
 (defcustom swift-mode:swift-testing-command-regexp
   "\\<swift \\(?:test\\|package\\|build\\)\\>"
   "Regexp to of command line of Swift Testing.
@@ -200,8 +208,12 @@ Runs the hook `swift-repl-mode-hook' \(after the `comint-mode-hook' is run).
       (apply #'make-comint-in-buffer
              cmd-string buffer (car cmd-list) nil (cdr cmd-list))
       (with-current-buffer buffer
-        (while (= old-size (buffer-size))
-          (sleep-for .1))))
+        ;; Test the buffer size first; the output may be already processed,
+        ;; in which case `accept-process-output' has nothing to wait for and
+        ;; blocks until the timeout.
+        (when (= old-size (buffer-size))
+          (accept-process-output (get-buffer-process buffer)
+                                 swift-mode:repl-startup-timeout))))
     (unless dont-switch
       (pop-to-buffer buffer))))
 
