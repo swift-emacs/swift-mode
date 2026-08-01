@@ -444,7 +444,7 @@ or its ancestors."
          (flattened (apply #'seq-concatenate 'list (seq-map #'cdr devices)))
          (available-devices
           (seq-filter
-           (lambda (device) (assoc-default 'isAvailable device))
+           (lambda (device) (eq t (assoc-default 'isAvailable device)))
            flattened)))
     available-devices))
 
