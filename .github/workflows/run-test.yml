@@ -20,6 +20,7 @@ jobs:
         # swift-mode-beginning-of-defun.el:1081: All variables and subroutines might as well have a documentation string
         # swift-mode-beginning-of-defun.el:1135: All variables and subroutines might as well have a documentation string
         version:
+          - '30.2'
           - '30.1'
           - '29.4'
           - '29.3'
