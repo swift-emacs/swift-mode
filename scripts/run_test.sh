@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -o pipefail
+
 # Run tests.  Used in Makefile.
 
 ./scripts/invoke_eldev.sh emacs --version || exit 1
