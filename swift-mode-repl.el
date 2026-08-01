@@ -706,7 +706,8 @@ STRING is passed to the command."
          (build-debug-directory
           (swift-mode:join-path project-directory ".build" "debug")))
     (unless c99name (error "Cannot get module name"))
-    (swift-mode:build-swift-module project-directory)
+    (swift-mode:build-swift-module project-directory
+                                   '("-Xswiftc" "-emit-library"))
     (swift-mode:run-repl
      (append
       (swift-mode:command-string-to-list swift-mode:repl-executable)
