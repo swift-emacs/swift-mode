@@ -1549,11 +1549,14 @@ Keep point if point is not after an identifier."
 
 Skip also comments and spaces between point and the identifier.
 
-Keep point if point is not before an identifier."
-  (let ((pos (point)))
+Return non-nil if the point is moved.  Keep point and return nil if point is
+not before an identifier."
+  (let ((pos (point))
+        (sign-skipped nil))
     (forward-comment (point-max))
     (when (memq (char-after) '(?$ ?@ ?#))
-      (forward-char))
+      (forward-char)
+      (setq sign-skipped t))
     (cond
      ((eq (char-after) ?`)
       (swift-mode:forward-string-chunk)
@@ -1561,6 +1564,9 @@ Keep point if point is not before an identifier."
 
      ((and (char-after) (memq (char-syntax (char-after)) '(?w ?_)))
       (skip-syntax-forward "w_")
+      t)
+
+     (sign-skipped
       t)
 
      (t
