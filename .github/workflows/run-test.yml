@@ -55,7 +55,7 @@ jobs:
         chmod a+x $ELDEV_DIR/bin/eldev
     - name: Run linters
       # Indentation rules changed since 29.
-      if: ${{ startsWith(matrix.version, '29.') }}
+      if: ${{ startsWith(matrix.version, '29.') || startsWith(matrix.version, '30.') }}
       run: find ./*.el test/*.el '!' -name '*autoloads.el' -exec ${ELDEV} lint '{}' '+'
     - name: Run tests
       run: ./scripts/run_test.sh
