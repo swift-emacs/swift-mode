@@ -419,13 +419,13 @@ or its ancestors."
   ;; supress warnings:
   ;;   (checkdoc) Probably "contains" should be imperative "contain"
   "Return t if the DIRECTORY contain\u0073 a file *.xcodeproj."
-  (consp (directory-files directory nil ".*\\.xcodeproj")))
+  (consp (directory-files directory nil ".*\\.xcodeproj\\'")))
 
 (defun swift-mode:xcode-workspace-directory-p (directory)
   ;; supress warnings:
   ;;   (checkdoc) Probably "contains" should be imperative "contain"
   "Return t if the DIRECTORY contain\u0073 a file *.xcworkspace."
-  (consp (directory-files directory nil ".*\\.xcworkspace")))
+  (consp (directory-files directory nil ".*\\.xcworkspace\\'")))
 
 (defun swift-mode:find-xcode-project-directory (&optional directory)
   "Find a file *.xcodeproj in the DIRECTORY or its ancestors.
