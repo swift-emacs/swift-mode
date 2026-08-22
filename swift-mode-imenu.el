@@ -380,7 +380,7 @@ and \"c\".
 (defun swift-mode:format-for-imenu:flat (declarations)
   "Convert list of DECLARATIONS to alist for `imenu--index-alist'.
 
-Declarations are organized as trees."
+Declarations are organized as a flat list of fully qualified names."
   (seq-mapcat
    (lambda (declaration)
      (let* ((name-token (swift-mode:declaration:name-token declaration))
@@ -398,7 +398,7 @@ Declarations are organized as trees."
 (defun swift-mode:format-for-imenu:nested (declarations)
   "Convert list of DECLARATIONS to alist for `imenu--index-alist'.
 
-Declarations are organized as a flat list of fully qualified names."
+Declarations are organized as trees."
   (mapcar
    (lambda (declaration)
      (let* ((name-token (swift-mode:declaration:name-token declaration))
