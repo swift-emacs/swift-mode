@@ -303,18 +303,26 @@ The output is parsed as a JSON document.
 EXECUTABLE may be a string or a list.  The string is split by spaces,
 then unquoted.
 ARGS are rest arguments, appended to the argument list."
-  (with-temp-buffer
-    (unless (zerop
-             (swift-mode:do-call-process executable
-                                         nil
-                                         ;; Disregard stderr output, as it
-                                         ;; corrupts JSON.
-                                         (list t nil)
-                                         nil
-                                         args))
-      (error "%s: %s" "Cannot invoke executable" (buffer-string)))
-    (goto-char (point-min))
-    (json-read)))
+  (let ((stderr-file (make-temp-file "swift-mode-stderr")))
+    (unwind-protect
+        (with-temp-buffer
+          (unless (zerop
+                   (swift-mode:do-call-process executable
+                                               nil
+                                               ;; Redirect stderr output to a
+                                               ;; temporary file, as it
+                                               ;; corrupts JSON.
+                                               (list t stderr-file)
+                                               nil
+                                               args))
+            (error "%s: %s"
+                   "Command exited with non-zero status"
+                   (with-temp-buffer
+                     (insert-file-contents stderr-file)
+                     (buffer-string))))
+          (goto-char (point-min))
+          (json-read))
+      (delete-file stderr-file))))
 
 (defun swift-mode:describe-package (project-directory)
   "Read the package definition from the manifest file Package.swift.
