@@ -789,12 +789,16 @@ Return nil otherwise."
       nil)))
 
 (defun swift-mode:kill-ios-simulator ()
-  "Kill an iOS simulator process if exists."
+  "Kill an iOS simulator process if exists.
+
+Wait until the process is terminated."
   (let ((process-identifier (swift-mode:find-ios-simulator-process)))
     (when process-identifier
       (signal-process
        process-identifier
-       'SIGTERM))))
+       'SIGTERM)
+      (while (swift-mode:find-ios-simulator-process)
+        (sit-for 0.5)))))
 
 (defun swift-mode:open-ios-simulator (device-identifier)
   "Open an iOS simulator asynchronously with DEVICE-IDENTIFIER."
