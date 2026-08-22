@@ -707,8 +707,17 @@ STRING is passed to the command."
                   swift-mode:debugger-prompt-regexp)))))
       (when swift-mode:repl-command-queue
         (pop swift-mode:repl-command-queue)
-        (insert (if (consp command) (cdr command) command))
-        (comint-send-input))
+        (let* ((process-mark
+                (process-mark (get-buffer-process (current-buffer))))
+               (pending-input (buffer-substring process-mark (point-max))))
+          ;; Keep partial input typed by the user out of the command.
+          (delete-region process-mark (point-max))
+          (goto-char process-mark)
+          (insert (if (consp command) (cdr command) command))
+          (comint-send-input)
+          ;; Restore the partial input typed by the user.
+          (goto-char (point-max))
+          (insert pending-input)))
       (unless swift-mode:repl-command-queue
         (remove-hook 'comint-output-filter-functions
                      #'swift-mode:wait-for-prompt-then-execute-commands t)))))
