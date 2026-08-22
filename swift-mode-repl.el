@@ -842,7 +842,8 @@ attaches to it."
                      (list device-identifier product-bundle-identifier))))
       (error "%s: %s" "Cannot launch app" (buffer-string)))
     (goto-char (point-min))
-    (search-forward-regexp ": \\([0-9]*\\)$")
+    (unless (search-forward-regexp ": \\([0-9]+\\)$" nil t)
+      (error "%s: %s" "Cannot get PID of app" (buffer-string)))
     (string-to-number (match-string 1))))
 
 (defun swift-mode:search-process-stopped-message (process-identifier)
