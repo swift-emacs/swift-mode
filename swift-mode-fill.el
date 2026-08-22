@@ -220,11 +220,17 @@ comment particularly well)."
           (let* ((edges (swift-mode:find-single-line-comment-edges))
                  (start (car edges))
                  (end (copy-marker (cdr edges))))
-            (if swift-mode:fill-paragraph-entire-comment-or-string
-                (fill-region start end justify)
-              (let ((fill-paragraph-function nil))
-                (fill-paragraph justify)))
-            (indent-region start end)
+            ;; The built-in `fill-comment-paragraph' signals an error if the
+            ;; buffer ends with a bare comment starter without a line break.
+            ;; Do nothing if the comment is empty.
+            (unless (save-excursion
+                      (goto-char start)
+                      (looking-at "//+:?[ \t]*\\'"))
+              (if swift-mode:fill-paragraph-entire-comment-or-string
+                  (fill-region start end justify)
+                (let ((fill-paragraph-function nil))
+                  (fill-paragraph justify)))
+              (indent-region start end))
             (set-marker end nil)))
 
          ;; Multiline comment or string
