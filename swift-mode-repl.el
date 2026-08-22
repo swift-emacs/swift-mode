@@ -143,7 +143,7 @@ When the command of `compile' matches this regexp, its
   :type 'function)
 
 (defvar swift-mode:repl-buffer nil
-  "Stores the name of the current swift REPL buffer, or nil.")
+  "Stores the current swift REPL buffer, or nil.")
 
 (defvar swift-mode:repl-command-queue nil
   "List of strings to be executed on REPL.
@@ -319,8 +319,8 @@ ARGS are rest arguments, appended to the argument list."
 (defun swift-mode:describe-package (project-directory)
   "Read the package definition from the manifest file Package.swift.
 
-The manifest file is searched from the PROJECT-DIRECTORY, defaults to
-`default-directory', or its ancestors.
+The manifest file is read from the PROJECT-DIRECTORY, defaults to
+`default-directory'.
 Return a JSON object."
   (unless project-directory (setq project-directory default-directory))
   (swift-mode:call-process-to-json
@@ -332,8 +332,9 @@ Return a JSON object."
 (defun swift-mode:read-main-module (project-directory)
   "Read the main module description from the manifest file Package.swift.
 
-The manifest file is searched from the PROJECT-DIRECTORY, defaults to
-`default-directory', or its ancestors."
+The main module is the first non-test target.
+The manifest file is read from the PROJECT-DIRECTORY, defaults to
+`default-directory'."
   (let* ((description (swift-mode:describe-package project-directory))
          (modules (assoc-default 'targets description)))
     (seq-find
@@ -341,24 +342,24 @@ The manifest file is searched from the PROJECT-DIRECTORY, defaults to
      modules)))
 
 (defun swift-mode:read-package-name (project-directory)
-  "Read the package name from the manifest file Package.swift.
+  "Read the main module name from the manifest file Package.swift.
 
-The manifest file is searched from the PROJECT-DIRECTORY, defaults to
-`default-directory', or its ancestors."
+The manifest file is read from the PROJECT-DIRECTORY, defaults to
+`default-directory'."
   (assoc-default 'name (swift-mode:read-main-module project-directory)))
 
 (defun swift-mode:read-c99-name (project-directory)
   "Read the C99 name from the manifest file Package.swift.
 
-The manifest file is searched from the PROJECT-DIRECTORY, defaults to
-`default-directory', or its ancestors."
+The manifest file is read from the PROJECT-DIRECTORY, defaults to
+`default-directory'."
   (assoc-default 'c99name (swift-mode:read-main-module project-directory)))
 
 (defun swift-mode:read-module-type (project-directory)
   "Read the module type from the manifest file Package.swift.
 
-The manifest file is searched from the PROJECT-DIRECTORY, defaults to
-`default-directory', or its ancestors."
+The manifest file is read from the PROJECT-DIRECTORY, defaults to
+`default-directory'."
   (assoc-default 'type (swift-mode:read-main-module project-directory)))
 
 (defun swift-mode:join-path (directory &rest components)
@@ -613,8 +614,8 @@ If PROJECT-DIRECTORY is nil or omitted, it is searched from `default-directory'
 or its ancestors.
 DEVICE-IDENTIFIER is the device identifier of the iOS simulator.  If it is nil
 or omitted, the value of `swift-mode:ios-device-identifier' is used.  If it is
-equal to `swift-mode:ios-local-device-identifier', a local device is used via
-`ios-deploy' instead.
+equal to `swift-mode:ios-local-device-identifier', the app is built for
+a local device instead.
 SCHEME is the name of the project scheme in Xcode.  If it is nil or omitted,
 the value of `swift-mode:ios-project-scheme' is used."
   (interactive
@@ -862,7 +863,7 @@ PROCESS-IDENTIFIER is the process ID."
                                            scheme
                                            codesigning-folder-path)
   "Run debugger on an iOS app in the PROJECT-DIRECTORY.
-Run it for the iOS local device DEVICE-IDENTIFIER for the given SCHEME.
+Run it for the iOS local device for the given SCHEME.
 CODESIGNING-FOLDER-PATH is the path of the codesigning folder in Xcode
 build settings."
   (swift-mode:build-ios-app project-directory
@@ -1080,9 +1081,10 @@ If TARGET is non-nil, return only sources of that target."
      test-targets)))
 
 (defun swift-mode:resolve-swift-test-file (file)
-  "Return full path of Swift Testing FILE in the project if any.
+  "Return a list of the full path of Swift Testing FILE in the project if any.
 
-If FILE is an absolute path, return it as is, even if it doesn't exist.
+If FILE is an absolute path, return a list of it as is, even if it doesn't
+exist.
 
 If FILE doesn't exist in the project, return nil."
   (if (file-name-absolute-p file)
