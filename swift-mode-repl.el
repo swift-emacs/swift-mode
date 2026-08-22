@@ -557,7 +557,7 @@ xcodebuild is executed in PROJECT-DIRECTORY."
                    schemes)))
     (pcase (length schemes)
       (1 (car schemes))
-      (0 nil)
+      (0 (error "No schemes found in %s" project-directory))
       (_ (widget-choose "Choose a scheme" choices)))))
 
 (defun swift-mode:locate-xcode ()
