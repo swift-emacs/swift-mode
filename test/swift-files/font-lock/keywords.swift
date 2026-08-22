@@ -15,6 +15,8 @@ class Foo: Foo { // EXPECTED: "class" swift-mode:keyword-face "Foo" swift-mode:t
     lazy var foo = Foo() // EXPECTED: "lazy" swift-mode:keyword-face "var" swift-mode:keyword-face "=" swift-mode:operator-face "Foo" swift-mode:type-face "()" swift-mode:bracket-face
     weak var foo = Foo() // EXPECTED: "weak" swift-mode:keyword-face "var" swift-mode:keyword-face "=" swift-mode:operator-face "Foo" swift-mode:type-face "()" swift-mode:bracket-face
     unowned var foo = Foo() // EXPECTED: "unowned" swift-mode:keyword-face "var" swift-mode:keyword-face "=" swift-mode:operator-face "Foo" swift-mode:type-face "()" swift-mode:bracket-face
+    unowned(safe) var foo = Foo() // EXPECTED: "unowned" swift-mode:keyword-face "(" swift-mode:bracket-face "safe" swift-mode:keyword-face ")" swift-mode:bracket-face "var" swift-mode:keyword-face "=" swift-mode:operator-face "Foo" swift-mode:type-face "()" swift-mode:bracket-face
+    unowned(unsafe) var foo = Foo() // EXPECTED: "unowned" swift-mode:keyword-face "(" swift-mode:bracket-face "unsafe" swift-mode:keyword-face ")" swift-mode:bracket-face "var" swift-mode:keyword-face "=" swift-mode:operator-face "Foo" swift-mode:type-face "()" swift-mode:bracket-face
 
     required init(x: Int) { // EXPECTED: "required" swift-mode:keyword-face "init" swift-mode:keyword-face "(" swift-mode:bracket-face ":" swift-mode:delimiter-face "Int" swift-mode:builtin-type-face ")" swift-mode:bracket-face "{" swift-mode:bracket-face
         super.init(x) // EXPECTED: "super" swift-mode:keyword-face "." swift-mode:operator-face "init" swift-mode:keyword-face "(" swift-mode:bracket-face ")" swift-mode:bracket-face
@@ -196,6 +198,11 @@ extension Foo { // EXPECTED: "extension" swift-mode:keyword-face "Foo" swift-mod
 
 distributed actor Foo { // EXPECTED: "distributed" swift-mode:keyword-face "actor" swift-mode:keyword-face "Foo" swift-mode:type-face "{" swift-mode:bracket-face
     nonisolated func foo() { // EXPECTED: "nonisolated" swift-mode:keyword-face "func" swift-mode:keyword-face "foo" swift-mode:function-name-face "()" swift-mode:bracket-face "{" swift-mode:bracket-face
+    }
+
+    nonisolated(unsafe) var foo = Foo() // EXPECTED: "nonisolated" swift-mode:keyword-face "(" swift-mode:bracket-face "unsafe" swift-mode:keyword-face ")" swift-mode:bracket-face "var" swift-mode:keyword-face "=" swift-mode:operator-face "Foo" swift-mode:type-face "()" swift-mode:bracket-face
+
+    nonisolated(nonsending) func foo() async { // EXPECTED: "nonisolated" swift-mode:keyword-face "(" swift-mode:bracket-face "nonsending" swift-mode:keyword-face ")" swift-mode:bracket-face "func" swift-mode:keyword-face "foo" swift-mode:function-name-face "()" swift-mode:bracket-face "async" swift-mode:keyword-face "{" swift-mode:bracket-face
     }
 }
 

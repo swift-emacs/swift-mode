@@ -899,9 +899,9 @@ Excludes true, false, and keywords begin with a number sign.")
 (defconst swift-mode:context-keywords
   '("Protocol" "Type" "and" "assignment" "associativity" "borrow" "convenience"
     "didSet" "dynamic" "final" "get" "higherThan" "indirect" "infix" "lazy"
-    "left" "lowerThan" "mutate" "mutating" "none" "nonmutating" "optional"
-    "override" "postfix" "precedence" "precedencegroup" "prefix" "required"
-    "right" "set" "unowned" "weak" "willSet" "of")
+    "left" "lowerThan" "mutate" "mutating" "none" "nonmutating" "nonsending"
+    "optional" "override" "postfix" "precedence" "precedencegroup" "prefix"
+    "required" "right" "safe" "set" "unowned" "unsafe" "weak" "willSet" "of")
   "Keywords reserved in particular contexts.")
 
 (defconst swift-mode:build-config-keywords
