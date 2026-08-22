@@ -15,8 +15,8 @@ help:
 # - Remove after colon if the line is not a comment line.
 # - Replace /^## / to "  ".
 # - Remove other comment lines.
-# - Insert newline before rules.
-	@sed -e '/^\s*$$/d; /^[	_.A-Z]/d; /## no-doc/d; s/^\([^#][^:]*\):.*/\1/; s/^## /  /; /^#/d; s/^[^ ]/\n&/' Makefile
+# - Insert empty line before rules (by printing the empty hold space).
+	@sed -e '/^[[:space:]]*$$/d; /^[	_.A-Z]/d; /## no-doc/d; s/^\([^#][^:]*\):.*/\1/; s/^## /  /; /^#/d; /^[^ ]/{x;p;x;}' Makefile
 
 all: package
 ## Builds the package.
