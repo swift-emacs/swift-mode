@@ -402,17 +402,18 @@ Return the new point."
     ;; Note that combining characters are not modified here; they are also
     ;; identifier characters, so they are left as word constituents.  The lexer
     ;; handles them with `swift-mode:operator-combining-character-skip-chars'.
-    (with-syntax-table table
-      (dolist (range swift-mode:operator-head-ranges)
-        (let ((char (car range)))
-          (while (<= char (cdr range))
-            ;; Although characters like 〈, 「, or ⟦ are operator heads in
-            ;; the Swift grammar, they are often used as parentheses in
-            ;; comments and strings.  Keep their parenthesis syntax so that
-            ;; `show-paren-mode' and `forward-sexp' work on them.
-            (unless (memq (char-syntax char) '(?\( ?\)))
-              (modify-syntax-entry char "." table))
-            (setq char (1+ char))))))
+    (with-temp-buffer
+      (with-syntax-table table
+        (dolist (range swift-mode:operator-head-ranges)
+          (let ((char (car range)))
+            (while (<= char (cdr range))
+              ;; Although characters like 〈, 「, or ⟦ are operator heads in
+              ;; the Swift grammar, they are often used as parentheses in
+              ;; comments and strings.  Keep their parenthesis syntax so that
+              ;; `show-paren-mode' and `forward-sexp' work on them.
+              (unless (memq (char-syntax char) '(?\( ?\)))
+                (modify-syntax-entry char "." table))
+              (setq char (1+ char)))))))
     (modify-syntax-entry ?. "." table)
     ;; Separators
     (mapc (lambda (c) (modify-syntax-entry c "." table)) ",;")
