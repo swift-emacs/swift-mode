@@ -731,7 +731,7 @@ This is a list with elements of tuple (PROPERTY FACE [PREPEND]).
 PROPERTY is the property name, FACE is the face to apply.
 
 If PREPEND is non-nil, the face is prepended.  Otherwise, the face is
-overriden.")
+overridden.")
 
 (defun swift-mode:fontify-syntactically (start end &optional _loudly)
   "Fontify strings and comments based on text properties set by lexer.

@@ -224,7 +224,7 @@ Thanks to the following original developer and users for their contributions:
 
 You can find a [full list of those people here](https://github.com/swift-emacs/swift-mode/graphs/contributors).
 
-Thanks to [@purcell](https://github.com/purcell) (Steve Purcell) for advices on the code and arrangement for merging `swift3-mode` and `swift-mode`.
+Thanks to [@purcell](https://github.com/purcell) (Steve Purcell) for advice on the code and arrangement for merging `swift3-mode` and `swift-mode`.
 
 ## License
 
