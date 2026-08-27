@@ -402,6 +402,11 @@ Return the new point."
     ;; Note that combining characters are not modified here; they are also
     ;; identifier characters, so they are left as word constituents.  The lexer
     ;; handles them with `swift-mode:operator-combining-character-skip-chars'.
+    ;;
+    ;; If the current buffer is unibyte, passing a multibyte character to
+    ;; `char-syntax' results in out-of-bounds access.  So we evaluate it in a
+    ;; temporary buffer.
+    ;; https://github.com/swift-emacs/swift-mode/pull/204
     (with-temp-buffer
       (with-syntax-table table
         (dolist (range swift-mode:operator-head-ranges)
