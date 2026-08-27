@@ -256,7 +256,7 @@ original arguments.
 
 Fix up multiline comments.
 
-- When the region contains other than one multline comment, fill normally:
+- When the region contains other than one multiline comment, fill normally:
 
   foo() /* abc def ghi */
   ↓

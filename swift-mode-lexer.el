@@ -737,7 +737,7 @@ If the comment is not closed, move to END."
       (goto-char end))))
 
 (defun swift-mode:put-syntax-multiline-property (start end)
-  "Put `syntax-multiline` text propery from START to END.
+  "Put `syntax-multiline` text property from START to END.
 
 Also call `font-lock-flush' with START and END."
   (put-text-property start end 'syntax-multiline t)

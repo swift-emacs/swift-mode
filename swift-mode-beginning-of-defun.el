@@ -1254,7 +1254,7 @@ of lines.  Empty lines split blocks.  Example:
 
 (defun swift-mode:backward-sentence-inside-interpolated-expression ()
   "Skip backward a sentence in a interpolated expression."
-  (let* ((string-chunk (swift-mode:find-preceeding-string-chunk))
+  (let* ((string-chunk (swift-mode:find-preceding-string-chunk))
          (interpolated-expression-beginning-position
           (swift-mode:token:end string-chunk)))
     (swift-mode:backward-statement)
@@ -1276,8 +1276,8 @@ of lines.  Empty lines split blocks.  Example:
                        string-chunk-after-interpolated-expression)))))
       token)))
 
-(defun swift-mode:find-preceeding-string-chunk ()
-  "Return the preceeding string-chunk token."
+(defun swift-mode:find-preceding-string-chunk ()
+  "Return the preceding string-chunk token."
   (save-excursion
     (swift-mode:backward-sexps-until
      '(string-chunk-before-interpolated-expression))))

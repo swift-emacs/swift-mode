@@ -123,7 +123,7 @@ PROGRESS-REPORTER is the progress-reporter."
   "Parse the current buffer as a test file and return its structure.
 
 The result is a list of remarkable tokens in descendant order.  A remarkable
-token is a list with the follwing elements:
+token is a list with the following elements:
 
 1. Type; one of `beginning-of-defun', `end-of-defun', `beginning-of-sentence',
 `end-of-sentence', `{', or `}'
@@ -255,8 +255,8 @@ CURRENT-LINE is the current line number.
 ERROR-BUFFER is the buffer to output errors.
 EXPECTED-POSITIONS is a list of remarkable tokens
 \(see `swift-mode:parse-beginning-of-defun-test-file').
-LESS-THAN-FUNCTION is a function returns non-nil iff the firt argument is
-before (or after for `end-of-defun' test) the second argument.
+LESS-THAN-FUNCTION is a function returns non-nil if and only if the first
+argument is before (or after for `end-of-defun' test) the second argument.
 BEGINNING-OF-THING-FUNCTION is a function goes to the boundary, that is the
 beginning of a defun or the end of the defun..
 BOUNDARY-SYMBOLS is the type or the list of types of expected remarkable token,
