@@ -31,11 +31,12 @@ package:
 
 install: package
 ## Installs the package.
-	${INVOKE_ELDEV} emacs --batch \
+	SWIFT_MODE_PACKAGE_ARCHIVE="$$( ls dist/*.tar | sort -V | tail -n 1 )" \
+	emacs -Q --batch \
 	  -l package \
 	  -f package-initialize \
 	  -f package-refresh-contents \
-	  --eval '(package-install-file "'"$$( ls dist/*.tar | sort | tail -n 1 )"'")'
+	  --eval '(package-install-file (getenv "SWIFT_MODE_PACKAGE_ARCHIVE"))'
 
 clean:
 ## Cleans the dist directory, *.elc, and .eldev.
