@@ -158,9 +158,10 @@ Signal `scan-error' if it hits opening parentheses."
   ;; See also https://github.com/swift-emacs/swift-mode/pull/179
   (if (fboundp 'speedbar-add-supported-extension)
       (speedbar-add-supported-extension ".swift")
-    (add-hook 'speedbar-load-hook
-              (lambda ()
-                (speedbar-add-supported-extension ".swift")))))
+    (with-no-warnings
+      (add-hook 'speedbar-load-hook
+                (lambda ()
+                  (speedbar-add-supported-extension ".swift"))))))
 
 ;;;###autoload
 (define-derived-mode swift-mode prog-mode "Swift"
